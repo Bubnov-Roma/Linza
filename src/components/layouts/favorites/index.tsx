@@ -121,7 +121,7 @@ export default function ClientFavoritesPage() {
 			icon: Heart,
 			count: favorites.length,
 		},
-		{ id: "sets" as Tab, label: "Сетапы", icon: Layers, count: sets.length },
+		{ id: "sets" as Tab, label: "Сеты", icon: Layers, count: sets.length },
 	];
 
 	return (
@@ -198,32 +198,22 @@ export default function ClientFavoritesPage() {
 									action={{ label: "Перейти в каталог", href: "/equipment" }}
 								/>
 							) : (
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-									<AnimatePresence>
-										{favorites.map((fav) => {
-											const grouped = getFavoriteGrouped(fav, groupedMap);
-											return (
-												<motion.div
-													key={fav.id}
-													layout
-													initial={{ opacity: 0, scale: 0.95 }}
-													animate={{ opacity: 1, scale: 1 }}
-													exit={{ opacity: 0, scale: 0.9 }}
-													transition={{ duration: 0.15 }}
-												>
-													<EquipmentCard
-														item={grouped}
-														variant="favorites"
-														onFavoriteToggle={(e) => {
-															e.preventDefault();
-															e.stopPropagation();
-															handleRemoveFav(fav);
-														}}
-													/>
-												</motion.div>
-											);
-										})}
-									</AnimatePresence>
+								<div className="grid grid-cols sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 md:gap-4">
+									{favorites.map((fav) => {
+										const grouped = getFavoriteGrouped(fav, groupedMap);
+										return (
+											<EquipmentCard
+												key={fav.id}
+												item={grouped}
+												variant="favorites"
+												onFavoriteToggle={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													handleRemoveFav(fav);
+												}}
+											/>
+										);
+									})}
 								</div>
 							)}
 						</motion.div>

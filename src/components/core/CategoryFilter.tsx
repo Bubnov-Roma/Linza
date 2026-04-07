@@ -103,7 +103,7 @@ export function CategoryFilter({
 		<div className="space-y-1">
 			{/* Category row */}
 			<div className="w-full flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar">
-				<div className="tabs-group w-fit no-scrollbar">
+				<div className="tabs-group no-scrollbar">
 					{allCategories.map((cat) => {
 						const isActive = optimisticCategory === cat.slug;
 						const hasSubs =
@@ -130,16 +130,6 @@ export function CategoryFilter({
 										)}
 									/>
 								)}
-								{isActive && (
-									<span
-										className={cn(
-											"absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full",
-											loading
-												? "bg-primary/40 animate-pulse"
-												: "bg-primary animate-in fade-in zoom-in duration-200"
-										)}
-									/>
-								)}
 							</Button>
 						);
 					})}
@@ -149,7 +139,7 @@ export function CategoryFilter({
 			{/* Subcategory row */}
 			{expandedCategory && subcategories.length > 0 && (
 				<div className="w-full flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar animate-in fade-in slide-in-from-top-1 duration-200">
-					<div className="no-scrollbar tabs-group w-fit">
+					<div className="no-scrollbar tabs-group">
 						{subcategories.map((sub) => {
 							const isActive = optimisticSubcategory === sub.slug;
 							return (
@@ -167,14 +157,6 @@ export function CategoryFilter({
 									)}
 								>
 									{sub.name}
-									{isActive && (
-										<span
-											className={cn(
-												"absolute bottom-0.5 left-2 right-2 h-0.5 rounded-full",
-												loading ? "bg-primary/40 animate-pulse" : "bg-primary"
-											)}
-										/>
-									)}
 								</Button>
 							);
 						})}

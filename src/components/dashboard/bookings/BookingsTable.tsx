@@ -15,8 +15,12 @@ import {
 	TableRow,
 } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_STYLES } from "@/constants";
+import type {
+	BookingRow,
+	BookingStatus,
+	DashboardBooking,
+} from "@/core/domain/entities/Booking";
 import { cn } from "@/lib/utils";
-import type { BookingRow, BookingStatus, DashboardBooking } from "@/types";
 import { BookingDetailDialog } from "./Bookingdetailsdialog";
 
 function getStatusLabel(status: string): string {

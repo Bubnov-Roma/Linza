@@ -1,15 +1,15 @@
 "use client";
 
-import type { Role } from "@prisma/client";
 import {
-	Ban,
-	ChevronDown,
-	Edit2,
-	MoreVertical,
-	Search,
-	User,
-	Users,
-} from "lucide-react";
+	CaretDownIcon,
+	DotsThreeVerticalIcon,
+	MagnifyingGlassIcon,
+	PencilSimpleIcon,
+	ProhibitIcon,
+	UserIcon,
+	UsersIcon,
+} from "@phosphor-icons/react";
+import type { Role } from "@prisma/client";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -90,7 +90,7 @@ const APP_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 
 function AppStatusBadge({ status }: { status?: string | undefined }) {
 	const s = status ?? "NO_APPLICATION";
-	const cfg = APP_STATUS_CONFIG[s] ?? APP_STATUS_CONFIG.no_application;
+	const cfg = APP_STATUS_CONFIG[s] ?? APP_STATUS_CONFIG.NO_APPLICATION;
 	return (
 		<Badge
 			variant="outline"
@@ -113,7 +113,13 @@ export default function UsersTable({
 	const [roleFilter, setRoleFilter] = useState("all");
 	const [appFilter, setAppFilter] = useState("all");
 	const [activeUser, setActiveUser] = useState<UserProfile | null>(null);
+	const [sheetOpen, setSheetOpen] = useState(false);
 	const [_isPending, startTransition] = useTransition();
+
+	const openUser = (user: UserProfile) => {
+		setActiveUser(user);
+		setSheetOpen(true);
+	};
 
 	const handleRoleChange = (userId: string, newRole: Role) => {
 		startTransition(async () => {
@@ -162,7 +168,7 @@ export default function UsersTable({
 			{/* Filters */}
 			<CardContent className="flex flex-col sm:flex-row gap-3 flex-wrap justify-between">
 				<div className="relative flex-1 min-w-48">
-					<Search className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+					<MagnifyingGlassIcon className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
 					<Input
 						placeholder="Поиск по имени, email, телефону..."
 						className="pl-9 h-9"
@@ -237,9 +243,9 @@ export default function UsersTable({
 								className={cn(
 									"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
 									user.isBlocked && "opacity-50",
-									activeUser?.id === user.id && "bg-foreground/5"
+									activeUser?.id === user.id && sheetOpen && "bg-foreground/5"
 								)}
-								onClick={() => setActiveUser(user)}
+								onClick={() => openUser(user)}
 							>
 								<TableCell>
 									<div className="flex items-center gap-3">
@@ -253,7 +259,7 @@ export default function UsersTable({
 													className="object-cover"
 												/>
 											) : (
-												<User className="h-4 w-4 text-muted-foreground" />
+												<UserIcon className="h-4 w-4 text-muted-foreground" />
 											)}
 										</div>
 										<div>
@@ -276,7 +282,7 @@ export default function UsersTable({
 													className="flex items-center gap-1 hover:opacity-80"
 												>
 													<RoleBadge role={user.role ?? "user"} />
-													<ChevronDown
+													<CaretDownIcon
 														size={10}
 														className="text-muted-foreground"
 													/>
@@ -297,7 +303,6 @@ export default function UsersTable({
 											</DropdownMenuContent>
 										</DropdownMenu>
 									) : (
-										/* Если не админ — просто показываем бейдж без дропдауна */
 										<RoleBadge role={user.role ?? "user"} />
 									)}
 								</TableCell>
@@ -312,7 +317,7 @@ export default function UsersTable({
 											variant="outline"
 											className="text-[10px] bg-red-500/10 text-red-400 border-red-500/20"
 										>
-											<Ban size={10} className="mr-1" /> Заблокирован
+											<ProhibitIcon size={10} className="mr-1" /> Заблокирован
 										</Badge>
 									) : (
 										<Badge
@@ -335,12 +340,13 @@ export default function UsersTable({
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<MoreVertical className="h-4 w-4" />
+												<DotsThreeVerticalIcon className="h-4 w-4" />
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => setActiveUser(user)}>
-												<Edit2 className="w-4 h-4 mr-2" /> Редактировать
+											<DropdownMenuItem onClick={() => openUser(user)}>
+												<PencilSimpleIcon className="w-4 h-4 mr-2" />{" "}
+												Редактировать
 											</DropdownMenuItem>
 											<DropdownMenuSeparator />
 											<DropdownMenuItem
@@ -367,7 +373,7 @@ export default function UsersTable({
 													} else toast.error(r.error);
 												}}
 											>
-												<Ban className="w-4 h-4 mr-2" />
+												<ProhibitIcon className="w-4 h-4 mr-2" />
 												{user.isBlocked ? "Разблокировать" : "Заблокировать"}
 											</DropdownMenuItem>
 										</DropdownMenuContent>
@@ -380,37 +386,28 @@ export default function UsersTable({
 
 				{filtered.length === 0 && (
 					<div className="py-16 text-center space-y-2">
-						<Users size={32} className="mx-auto text-muted-foreground/20" />
+						<UsersIcon size={32} className="mx-auto text-muted-foreground/20" />
 						<p className="text-sm text-muted-foreground">
 							{users.length === 0
 								? "Нет пользователей в базе данных"
 								: "Пользователи не найдены по фильтрам"}
 						</p>
-						{users.length === 0 && (
-							<p className="text-xs text-muted-foreground/50 max-w-sm mx-auto mt-1">
-								Убедитесь что применена миграция migration_admin_access_v3.sql —
-								без политики «Admins can view all profiles» запрос вернёт пустой
-								массив
-							</p>
-						)}
 					</div>
 				)}
 			</Card>
 
-			{activeUser && (
-				<>
-					<button
-						type="button"
-						className="fixed inset-0 bg-black/40 z-40"
-						onClick={() => setActiveUser(null)}
-					/>
-					<UserDetailPanel
-						user={activeUser}
-						onClose={() => setActiveUser(null)}
-						onUpdate={(updated) => handleUserUpdate(activeUser.id, updated)}
-					/>
-				</>
-			)}
+			{/* Sheet — no backdrop button needed, Sheet handles it */}
+			<UserDetailPanel
+				user={activeUser}
+				open={sheetOpen}
+				onOpenChange={(open) => {
+					setSheetOpen(open);
+					if (!open) setActiveUser(null);
+				}}
+				onUpdate={(updated) =>
+					activeUser && handleUserUpdate(activeUser.id, updated)
+				}
+			/>
 		</div>
 	);
 }

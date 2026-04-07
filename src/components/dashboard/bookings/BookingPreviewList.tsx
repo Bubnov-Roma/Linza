@@ -8,8 +8,11 @@ import { BookingDetailDialog } from "@/components/dashboard/bookings/Bookingdeta
 import { ClientTime } from "@/components/shared";
 import { Button } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_STYLES } from "@/constants";
+import type {
+	BookingStatus,
+	DashboardBooking,
+} from "@/core/domain/entities/Booking";
 import { cn } from "@/lib/utils";
-import type { BookingStatus, DashboardBooking } from "@/types";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {

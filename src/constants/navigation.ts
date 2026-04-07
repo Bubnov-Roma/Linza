@@ -1,20 +1,20 @@
 "use client";
 
+import type { Icon } from "@phosphor-icons/react";
 import {
+	CalendarIcon,
 	CameraIcon,
-	ChartBarIcon,
 	ChatsIcon,
-	CubeFocusIcon,
+	FileTextIcon,
 	GearIcon,
 	HeartIcon,
 	HouseLineIcon,
-	type Icon,
 	LayoutIcon,
+	PackageIcon,
 	ShoppingCartSimpleIcon,
 	SquaresFourIcon,
 	UsersIcon,
-} from "@phosphor-icons/react";
-import { CalendarIcon } from "@phosphor-icons/react/dist/ssr";
+} from "@phosphor-icons/react/dist/ssr";
 
 export type NavItem = {
 	title: string;
@@ -38,7 +38,7 @@ export const ADMIN_NAV: NavItem[] = [
 	{
 		title: "Бронирования",
 		href: "/admin/bookings",
-		icon: CubeFocusIcon,
+		icon: PackageIcon,
 		badge: "18",
 	},
 	{
@@ -60,9 +60,9 @@ export const ADMIN_NAV: NavItem[] = [
 		badge: "23",
 	},
 	{
-		title: "Аналитика",
-		href: "/admin/analytics",
-		icon: ChartBarIcon,
+		title: "Документы",
+		href: "/admin/documents",
+		icon: FileTextIcon,
 	},
 	{
 		title: "Настройки",

@@ -38,8 +38,11 @@ import {
 	STATUS_STEPS,
 	type SupportInfo,
 } from "@/constants";
+import type {
+	BookingDetailRow,
+	BookingStatus,
+} from "@/core/domain/entities/Booking";
 import { cn } from "@/lib/utils";
-import type { BookingDetailRow, BookingStatus } from "@/types";
 import { formatPlural } from "@/utils";
 
 export function BookingDetailClient({

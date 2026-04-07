@@ -23,8 +23,11 @@ import {
 	BOOKING_STATUS_LABELS,
 	BOOKING_STATUS_STYLES,
 } from "@/constants/booking-status";
+import type {
+	BookingDetailRow,
+	BookingStatus,
+} from "@/core/domain/entities/Booking";
 import { cn, combineDateAndTime } from "@/lib/utils";
-import type { BookingDetailRow, BookingStatus } from "@/types";
 
 interface EditDatesClientProps {
 	booking: BookingDetailRow;

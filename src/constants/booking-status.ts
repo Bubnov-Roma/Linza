@@ -1,4 +1,4 @@
-import type { BookingStatus } from "@/types";
+import type { BookingStatus } from "@/core/domain/entities/Booking";
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
 	PENDING_REVIEW: "Проверка техники",

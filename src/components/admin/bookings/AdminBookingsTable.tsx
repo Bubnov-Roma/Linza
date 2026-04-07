@@ -1,23 +1,23 @@
 "use client";
 
 import {
-	Ban,
-	Calendar,
-	ChevronDown,
-	ChevronsUpDown,
-	ChevronUp,
-	Clock,
-	Download,
-	Eye,
-	Filter,
-	MoreVertical,
-	RefreshCw,
-	Search,
-	X,
-} from "lucide-react";
-import { useCallback, useState, useTransition } from "react";
+	ArrowsClockwiseIcon,
+	CaretDownIcon,
+	CaretUpDownIcon,
+	CaretUpIcon,
+	ClockIcon,
+	DotsThreeVerticalIcon,
+	EyeIcon,
+	FunnelIcon,
+	MagnifyingGlassIcon,
+	ProhibitIcon,
+	UploadSimpleIcon,
+	XIcon,
+} from "@phosphor-icons/react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { updateBookingStatusAction } from "@/actions/booking-actions";
+import { BookingDetailSheet } from "@/components/admin/bookings/BookingDetailSheet";
 import {
 	Badge,
 	Button,
@@ -42,37 +42,34 @@ import {
 	TableRow,
 } from "@/components/ui";
 import { BOOKING_STATUS_CONFIG } from "@/constants";
+import type { BookingStatus } from "@/core/domain/entities/Booking";
 import { cn } from "@/lib/utils";
-import type { BookingStatus } from "@/types";
+import type { AdminBookingRow } from "./BookingDetailSheet";
 
-export interface AdminBookingRow {
-	id: string;
-	status: BookingStatus;
-	totalAmount: number;
-	createdAt: string;
-	startDate: string;
-	endDate: string;
-	insuranceIncluded: boolean | null;
-	totalReplacementValue: number | null;
-	cancellationReason: string | null;
-	cancelledAt: string | null;
-	// Joined
-	clientName: string | null;
-	clientEmail: string | null;
-	equipmentTitles: string[];
-	itemCount: number;
+export type { AdminBookingRow };
+
+// ─── Sort ─────────────────────────────────────────────────────────────────────
+
+type SortField = "createdAt" | "startDate" | "totalAmount" | "status";
+type SortDir = "asc" | "desc";
+
+function SortIcon({
+	field,
+	active,
+	dir,
+}: {
+	field: SortField;
+	active: SortField;
+	dir: SortDir;
+}) {
+	if (field !== active)
+		return <CaretUpDownIcon size={12} className="opacity-30" />;
+	return dir === "asc" ? (
+		<CaretUpIcon size={12} className="text-primary" />
+	) : (
+		<CaretDownIcon size={12} className="text-primary" />
+	);
 }
-
-// Allowed status transitions for admin
-const NEXT_STATUSES: Record<BookingStatus, BookingStatus[]> = {
-	PENDING_REVIEW: ["WAIT_PAYMENT", "READY_TO_RENT", "CANCELLED"],
-	WAIT_PAYMENT: ["READY_TO_RENT", "CANCELLED"],
-	READY_TO_RENT: ["ACTIVE", "CANCELLED"],
-	ACTIVE: ["COMPLETED"],
-	COMPLETED: [],
-	CANCELLED: [],
-	EXPIRED: ["PENDING_REVIEW", "CANCELLED"],
-};
 
 function StatusBadge({ status }: { status: BookingStatus }) {
 	const cfg = BOOKING_STATUS_CONFIG[status] ?? {
@@ -91,219 +88,17 @@ function StatusBadge({ status }: { status: BookingStatus }) {
 	);
 }
 
-// ─── Sort ─────────────────────────────────────────────────────────────────────
+const NEXT_STATUSES: Record<BookingStatus, BookingStatus[]> = {
+	PENDING_REVIEW: ["WAIT_PAYMENT", "READY_TO_RENT", "CANCELLED"],
+	WAIT_PAYMENT: ["READY_TO_RENT", "CANCELLED"],
+	READY_TO_RENT: ["ACTIVE", "CANCELLED"],
+	ACTIVE: ["COMPLETED"],
+	COMPLETED: [],
+	CANCELLED: [],
+	EXPIRED: ["PENDING_REVIEW", "CANCELLED"],
+};
 
-type SortField = "createdAt" | "startDate" | "totalAmount" | "status";
-type SortDir = "asc" | "desc";
-
-function SortIcon({
-	field,
-	active,
-	dir,
-}: {
-	field: SortField;
-	active: SortField;
-	dir: SortDir;
-}) {
-	if (field !== active)
-		return <ChevronsUpDown size={12} className="opacity-30" />;
-	return dir === "asc" ? (
-		<ChevronUp size={12} className="text-primary" />
-	) : (
-		<ChevronDown size={12} className="text-primary" />
-	);
-}
-
-// ─── Booking detail drawer ────────────────────────────────────────────────────
-
-function BookingDetailPanel({
-	booking,
-	onClose,
-	onStatusUpdate,
-}: {
-	booking: AdminBookingRow;
-	onClose: () => void;
-	onStatusUpdate: (id: string, status: BookingStatus) => void;
-}) {
-	const [isPending, startTransition] = useTransition();
-	const nextStatuses = NEXT_STATUSES[booking.status] ?? [];
-
-	const handleStatusChange = (newStatus: BookingStatus) => {
-		startTransition(async () => {
-			const r = await updateBookingStatusAction(booking.id, newStatus);
-			if (r.success) {
-				onStatusUpdate(booking.id, newStatus);
-				toast.success(`Статус → ${BOOKING_STATUS_CONFIG[newStatus].label}`);
-			} else {
-				toast.error(r.error ?? "Ошибка обновления статуса");
-			}
-		});
-	};
-
-	const startDate = new Date(booking.startDate).toLocaleDateString("ru-RU", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	});
-	const endDate = new Date(booking.endDate).toLocaleDateString("ru-RU", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	});
-
-	return (
-		<div className="fixed inset-y-0 right-0 w-96 bg-background border-l border-foreground/8 shadow-2xl z-50 flex flex-col overflow-hidden">
-			{/* Header */}
-			<div className="flex items-center justify-between px-5 py-4 border-b border-foreground/8">
-				<div>
-					<p className="font-bold text-sm">Бронирование</p>
-					<p className="text-xs text-muted-foreground font-mono">
-						{booking.id.slice(0, 8)}…
-					</p>
-				</div>
-				<button
-					type="button"
-					onClick={onClose}
-					className="p-1.5 rounded-lg hover:bg-foreground/8"
-				>
-					<X size={15} />
-				</button>
-			</div>
-
-			<div className="flex-1 overflow-y-auto divide-y divide-foreground/5">
-				{/* Status */}
-				<div className="p-4 space-y-3">
-					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Статус
-					</p>
-					<StatusBadge status={booking.status} />
-					{nextStatuses.length > 0 && (
-						<div className="space-y-1.5 pt-1">
-							<p className="text-xs text-muted-foreground">Перевести в:</p>
-							<div className="flex flex-wrap gap-1.5">
-								{nextStatuses.map((s) => (
-									<button
-										key={s}
-										type="button"
-										disabled={isPending}
-										onClick={() => handleStatusChange(s)}
-										className={cn(
-											"text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors",
-											BOOKING_STATUS_CONFIG[s].color,
-											"hover:opacity-80 disabled:opacity-40"
-										)}
-									>
-										{BOOKING_STATUS_CONFIG[s].label}
-									</button>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
-
-				{/* Client */}
-				<div className="p-4 space-y-1">
-					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Клиент
-					</p>
-					<p className="font-semibold text-sm">
-						{booking.clientName || "Без имени"}
-					</p>
-					<p className="text-xs text-muted-foreground">
-						{booking.clientEmail || "—"}
-					</p>
-				</div>
-
-				{/* Dates */}
-				<div className="p-4 space-y-1">
-					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Период
-					</p>
-					<p className="text-sm font-semibold flex items-center gap-2">
-						<Calendar size={13} className="text-muted-foreground" />
-						{startDate} — {endDate}
-					</p>
-				</div>
-
-				{/* Equipment */}
-				<div className="p-4 space-y-2">
-					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Техника ({booking.itemCount} позиций)
-					</p>
-					<div className="space-y-1">
-						{booking.equipmentTitles.map((title, i) => (
-							<p key={i} className="text-sm text-foreground/80 truncate">
-								{title}
-							</p>
-						))}
-					</div>
-				</div>
-
-				{/* Financial */}
-				<div className="p-4 space-y-2">
-					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-						Финансы
-					</p>
-					<div className="space-y-1">
-						<div className="flex justify-between text-sm">
-							<span className="text-muted-foreground">Сумма аренды</span>
-							<span className="font-bold">
-								{booking.totalAmount.toLocaleString("ru-RU")} ₽
-							</span>
-						</div>
-						{booking.totalReplacementValue ? (
-							<div className="flex justify-between text-sm">
-								<span className="text-muted-foreground">
-									Залог (стоимость замены)
-								</span>
-								<span className="font-bold">
-									{booking.totalReplacementValue.toLocaleString("ru-RU")} ₽
-								</span>
-							</div>
-						) : null}
-						<div className="flex justify-between text-sm">
-							<span className="text-muted-foreground">Страховка</span>
-							<span
-								className={cn(
-									"font-bold text-xs",
-									booking.insuranceIncluded
-										? "text-green-400"
-										: "text-muted-foreground"
-								)}
-							>
-								{booking.insuranceIncluded ? "Включена" : "Нет"}
-							</span>
-						</div>
-					</div>
-				</div>
-
-				{/* Cancellation */}
-				{booking.cancellationReason && (
-					<div className="p-4 space-y-1">
-						<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-							<Ban size={10} /> Причина отмены
-						</p>
-						<p className="text-sm text-foreground/70">
-							{booking.cancellationReason}
-						</p>
-					</div>
-				)}
-
-				{/* Meta */}
-				<div className="p-4 space-y-1">
-					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-						<Clock size={10} /> Создан
-					</p>
-					<p className="text-xs text-muted-foreground">
-						{new Date(booking.createdAt).toLocaleString("ru-RU")}
-					</p>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function AdminBookingsTable({
 	initialBookings,
@@ -320,9 +115,15 @@ export default function AdminBookingsTable({
 	const [activeBooking, setActiveBooking] = useState<AdminBookingRow | null>(
 		null
 	);
+	const [sheetOpen, setSheetOpen] = useState(false);
 	const [showFilters, setShowFilters] = useState(false);
 	const [dateFrom, setDateFrom] = useState("");
 	const [dateTo, setDateTo] = useState("");
+
+	const openBooking = (booking: AdminBookingRow) => {
+		setActiveBooking(booking);
+		setSheetOpen(true);
+	};
 
 	const handleSort = (field: SortField) => {
 		if (sortField === field) {
@@ -343,6 +144,18 @@ export default function AdminBookingsTable({
 			}
 		},
 		[activeBooking]
+	);
+
+	const handleBookingUpdate = useCallback(
+		(updatedBooking: AdminBookingRow) => {
+			setBookings((prev) =>
+				prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b))
+			);
+			if (activeBooking?.id === updatedBooking.id) {
+				setActiveBooking(updatedBooking);
+			}
+		},
+		[activeBooking?.id]
 	);
 
 	const handleExport = () => {
@@ -379,7 +192,6 @@ export default function AdminBookingsTable({
 		toast.success("CSV экспортирован");
 	};
 
-	// ── Filter + sort ──────────────────────────────────────────────────────────
 	const filtered = bookings
 		.filter((b) => {
 			if (statusFilter !== "all" && b.status !== statusFilter) return false;
@@ -422,9 +234,8 @@ export default function AdminBookingsTable({
 			<Card>
 				<CardContent className="p-3">
 					<div className="flex flex-col sm:flex-row gap-3">
-						{/* Search */}
 						<div className="relative flex-1">
-							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+							<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
 							<Input
 								placeholder="Поиск по клиенту, технике, ID..."
 								className="pl-9 h-9"
@@ -433,7 +244,6 @@ export default function AdminBookingsTable({
 							/>
 						</div>
 
-						{/* Status filter */}
 						<Select
 							value={statusFilter}
 							onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
@@ -453,14 +263,13 @@ export default function AdminBookingsTable({
 							</SelectContent>
 						</Select>
 
-						{/* Filter toggle */}
 						<Button
 							variant="outline"
 							size="sm"
 							className="h-9 gap-2"
 							onClick={() => setShowFilters((v) => !v)}
 						>
-							<Filter size={13} />
+							<FunnelIcon size={13} />
 							Фильтры
 							{(dateFrom || dateTo) && (
 								<span className="w-4 h-4 rounded-full bg-primary text-white text-[9px] flex items-center justify-center">
@@ -469,24 +278,22 @@ export default function AdminBookingsTable({
 							)}
 						</Button>
 
-						{/* Export */}
 						<Button
 							variant="outline"
 							size="sm"
 							className="h-9 gap-2"
 							onClick={handleExport}
 						>
-							<Download size={13} />
+							<UploadSimpleIcon size={13} />
 							CSV
 						</Button>
 					</div>
 
-					{/* Extended filters */}
 					{showFilters && (
 						<div className="mt-3 pt-3 border-t border-foreground/5 flex flex-wrap gap-3 items-end">
 							<div className="space-y-1">
 								<p className="text-xs text-muted-foreground font-medium">
-									Дата начала аренды от
+									Дата начала от
 								</p>
 								<Input
 									type="date"
@@ -514,7 +321,7 @@ export default function AdminBookingsTable({
 										setDateTo("");
 									}}
 								>
-									<X size={11} /> Сбросить даты
+									<XIcon size={11} /> Сбросить
 								</Button>
 							)}
 						</div>
@@ -530,7 +337,7 @@ export default function AdminBookingsTable({
 				</span>
 				{pendingCount > 0 && (
 					<span className="text-amber-400 font-medium flex items-center gap-1">
-						<Clock size={12} /> {pendingCount} ожидает проверки
+						<ClockIcon size={12} /> {pendingCount} ожидает проверки
 					</span>
 				)}
 				<span className="ml-auto font-bold text-foreground">
@@ -618,9 +425,11 @@ export default function AdminBookingsTable({
 									key={booking.id}
 									className={cn(
 										"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
-										activeBooking?.id === booking.id && "bg-foreground/5"
+										activeBooking?.id === booking.id &&
+											sheetOpen &&
+											"bg-foreground/5"
 									)}
-									onClick={() => setActiveBooking(booking)}
+									onClick={() => openBooking(booking)}
 								>
 									<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
 										{createdDate}
@@ -659,14 +468,12 @@ export default function AdminBookingsTable({
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
 												<Button variant="ghost" size="icon" className="h-8 w-8">
-													<MoreVertical className="h-4 w-4" />
+													<DotsThreeVerticalIcon className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
-												<DropdownMenuItem
-													onClick={() => setActiveBooking(booking)}
-												>
-													<Eye className="w-4 h-4 mr-2" /> Подробнее
+												<DropdownMenuItem onClick={() => openBooking(booking)}>
+													<EyeIcon className="w-4 h-4 mr-2" /> Подробнее
 												</DropdownMenuItem>
 												{(NEXT_STATUSES[booking.status] ?? []).length > 0 && (
 													<>
@@ -693,9 +500,9 @@ export default function AdminBookingsTable({
 																}
 															>
 																{s === "CANCELLED" ? (
-																	<Ban className="w-4 h-4 mr-2" />
+																	<ProhibitIcon className="w-4 h-4 mr-2" />
 																) : (
-																	<RefreshCw className="w-4 h-4 mr-2" />
+																	<ArrowsClockwiseIcon className="w-4 h-4 mr-2" />
 																)}
 																→ {BOOKING_STATUS_CONFIG[s].label}
 															</DropdownMenuItem>
@@ -717,21 +524,17 @@ export default function AdminBookingsTable({
 				)}
 			</Card>
 
-			{/* Detail panel */}
-			{activeBooking && (
-				<>
-					<button
-						type="button"
-						className="fixed inset-0 bg-black/40 z-40"
-						onClick={() => setActiveBooking(null)}
-					/>
-					<BookingDetailPanel
-						booking={activeBooking}
-						onClose={() => setActiveBooking(null)}
-						onStatusUpdate={handleStatusUpdate}
-					/>
-				</>
-			)}
+			{/* Sheet */}
+			<BookingDetailSheet
+				booking={activeBooking}
+				open={sheetOpen}
+				onOpenChange={(open) => {
+					setSheetOpen(open);
+					if (!open) setActiveBooking(null);
+				}}
+				onStatusUpdate={handleStatusUpdate}
+				onBookingUpdate={handleBookingUpdate}
+			/>
 		</div>
 	);
 }

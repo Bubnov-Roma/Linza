@@ -1,13 +1,13 @@
-import { ApplicationStatus, BookingStatus } from "@prisma/client";
 import {
-	Boxes,
-	Calendar,
-	Heart,
-	Package,
-	Package2,
-	PackageOpen,
-	User,
-} from "lucide-react";
+	BoxArrowDownIcon,
+	BoxArrowUpIcon,
+	CalendarIcon,
+	HeartIcon,
+	PackageIcon,
+	UserIcon,
+	XSquareIcon,
+} from "@phosphor-icons/react/dist/ssr";
+import { ApplicationStatus, BookingStatus } from "@prisma/client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -16,8 +16,8 @@ import { VerificationBanner } from "@/components/forms/verification/Verification
 import { ClientTime } from "@/components/shared";
 import { QuickActionLink } from "@/components/shared/QuickActionLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import type { DashboardBooking } from "@/core/domain/entities/Booking";
 import { prisma } from "@/lib/prisma";
-import type { DashboardBooking } from "@/types";
 
 export default async function DashboardPage() {
 	const session = await auth();
@@ -138,22 +138,22 @@ export default async function DashboardPage() {
 				<StatCard
 					title="Всего"
 					value={stats.totalBookings}
-					icon={<Boxes size={18} />}
+					icon={<PackageIcon size={18} />}
 				/>
 				<StatCard
 					title="Активных"
 					value={stats.activeBookings}
-					icon={<PackageOpen size={18} />}
+					icon={<BoxArrowUpIcon size={18} />}
 				/>
 				<StatCard
 					title="Завершённых"
 					value={stats.completedBookings}
-					icon={<Package size={18} />}
+					icon={<BoxArrowDownIcon size={18} />}
 				/>
 				<StatCard
 					title="Отменённых"
 					value={stats.cancelledBookings}
-					icon={<Package2 size={18} />}
+					icon={<XSquareIcon size={18} />}
 				/>
 			</div>
 
@@ -225,19 +225,19 @@ export default async function DashboardPage() {
 						<div className="flex flex-col gap-2 w-full">
 							<QuickActionLink
 								href="/booking/new"
-								icon={<Calendar size={18} />}
+								icon={<CalendarIcon size={18} />}
 								label="Новая бронь"
 								description="Выбрать технику"
 							/>
 							<QuickActionLink
 								href="/dashboard/profile"
-								icon={<User size={18} />}
+								icon={<UserIcon size={18} />}
 								label="Профиль"
 								description="Данные и настройки"
 							/>
 							<QuickActionLink
 								href="/favorites"
-								icon={<Heart size={18} />}
+								icon={<HeartIcon size={18} />}
 								label="Избранное"
 								description="Понравившаяся техника"
 							/>

@@ -288,7 +288,7 @@ export function AddToCartButton({
 				type="button"
 				onClick={handleRemove}
 				className={cn(
-					"flex items-center justify-center shrink-0 h-full hover:bg-foreground/20 active:scale-75 active:rounded-l-md transition-all",
+					"flex items-center justify-center shrink-0 h-full hover:bg-foreground/20 active:scale-75 active:rounded-l-md transition-all mx-1.5",
 					s.side
 				)}
 			>
@@ -311,7 +311,7 @@ export function AddToCartButton({
 				disabled={quantity >= (item.availableCount || 99)}
 				className={cn(
 					"flex items-center justify-center shrink-0 h-full",
-					"hover:bg-foreground/20 active:scale-75 transition-all text-foreground active:rounded-r-md",
+					"hover:bg-foreground/20 active:scale-75 transition-all text-foreground active:rounded-r-md mx-1.5",
 					"disabled:opacity-20",
 					s.side
 				)}

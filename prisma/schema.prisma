@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -77,6 +78,15 @@ enum CategoryEntityType {
   SUBCATEGORY
 }
 
+enum DocumentTemplateType {
+  CONTRACT_INDIVIDUAL   // Договор для физ. лица
+  CONTRACT_LEGAL        // Договор для юр. лица
+  ACT                   // Акт выполненных работ
+  INVOICE               // Счёт на оплату
+  RECEIPT               // Квитанция
+  CUSTOM                // Произвольный
+}
+
 // ─── NEXTAUTH & PROFILES ───────────────────────────────────────────────────
 
 model User {
@@ -101,23 +111,32 @@ model User {
   permissions         Json        @default("{}")
   deletionScheduledAt DateTime?
   createdAt           DateTime    @default(now())
+  balance             Float  @default(0)
 
-  accounts           Account[]
-  sessions           Session[]
-  bookings           Booking[]
-  cartItems          CartItem[]
-  favorites          Favorite[]
-  equipmentSets      EquipmentSet[]
-  clientApplication  ClientApplication?
-  adminNotifications AdminNotification[]
-  categoryHistory    CategoryHistory[]
-  userDiscounts      UserDiscount[]       @relation("DiscountUser")
-  createdDiscounts   UserDiscount[]       @relation("DiscountCreator")
-  faqCreated         FaqItem[]            @relation("FaqCreator")
-  faqUpdated         FaqItem[]            @relation("FaqUpdater")
-  notesReceived      UserAdminNote[]      @relation("NoteTarget")
-  notesWritten       UserAdminNote[]      @relation("NoteAuthor")
-  bannersCreated     Banner[] @relation("BannerCreator")
+  accounts            Account[]
+  sessions            Session[]
+  bookings            Booking[]
+  cartItems           CartItem[]
+  favorites           Favorite[]
+  equipmentSets       EquipmentSet[]
+  clientApplication   ClientApplication?
+  adminNotifications  AdminNotification[]
+  categoryHistory     CategoryHistory[]
+  userDiscounts       UserDiscount[]       @relation("DiscountUser")
+  createdDiscounts    UserDiscount[]       @relation("DiscountCreator")
+  faqCreated          FaqItem[]            @relation("FaqCreator")
+  faqUpdated          FaqItem[]            @relation("FaqUpdater")
+  notesReceived       UserAdminNote[]      @relation("NoteTarget")
+  notesWritten        UserAdminNote[]      @relation("NoteAuthor")
+  bannersCreated      Banner[] @relation("BannerCreator")
+  balanceTransactions BalanceTransaction[] @relation("UserBalance")
+  balanceTxAuthored   BalanceTransaction[] @relation("TxAuthor")
+  bookingAuditLogs    BookingAuditLog[]    @relation("AuditAuthor")
+  bookingLabels       BookingLabel[]       @relation("LabelAuthor")
+
+  documentGenerationLogs DocumentGenerationLog[] @relation("DocGenAuthor")
+
+  documentTemplates DocumentTemplate[] @relation("TemplateCreator")
 }
 
 model Account {
@@ -183,9 +202,16 @@ model Booking {
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id])
-  bookingItems BookingItem[]
+  user                  User          @relation(fields: [userId], references: [id])
+  bookingItems          BookingItem[]
+  auditLogs             BookingAuditLog[]
+  labels                BookingLabel[]
+
+  balanceTransactions   BalanceTransaction[]
+  generatedDocuments    DocumentGenerationLog[]
 }
+
+
 
 model BookingItem {
   id                        String   @id @default(uuid())
@@ -195,8 +221,59 @@ model BookingItem {
   depositAtBooking          Float?   @default(0)
   replacementValueAtBooking Float?   @default(0)
 
-  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  booking                   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  equipment                 Equipment @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+}
+
+model BookingAuditLog {
+  id          String   @id @default(uuid())
+  bookingId   String
+  authorId    String?
+  authorName  String?
+  action      String
+  fieldName   String?
+  valueBefore String?  @db.Text
+  valueAfter  String?  @db.Text
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  booking     Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author      User?   @relation("AuditAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+}
+model BookingLabel {
+  id             String    @id @default(uuid())
+  bookingId      String
+  authorId       String?
+  text           String
+  color          String    @default("amber")
+  dueDate        DateTime?
+  shift          String?
+  createdAt      DateTime  @default(now())
+
+  booking        Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author         User?   @relation("LabelAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+enum BalanceTxType {
+  REFUND
+  CREDIT
+  DEBIT
+  MANUAL
+}
+
+model BalanceTransaction {
+  id          String        @id @default(uuid())
+  userId      String
+  bookingId   String?
+  type        BalanceTxType
+  amount      Float
+  description String?       @db.Text
+  authorId    String?
+  createdAt   DateTime      @default(now())
+
+  user        User          @relation("UserBalance", fields: [userId], references: [id], onDelete: Cascade)
+  booking     Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  author      User?         @relation("TxAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
 
 model Equipment {
@@ -443,4 +520,35 @@ model UserDiscount {
 
   user    User  @relation("DiscountUser", fields: [userId], references: [id], onDelete: Cascade)
   creator User? @relation("DiscountCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+}
+
+model DocumentTemplate {
+  id                 String               @id @default(uuid())
+  name               String               // "Договор аренды физ. лицо"
+  type               DocumentTemplateType
+  fileUrl            String               // S3 URL загруженного шаблона
+  fileFormat         String               // "docx" | "xlsx" | "pdf"
+  variables          Json                 @default("[]")  // список доступных переменных
+  description        String?
+  isActive           Boolean              @default(true)
+  sortOrder          Int                  @default(0)
+  createdBy          String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  creator            User?                  @relation("TemplateCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  generationLogs     DocumentGenerationLog[]
+}
+
+model DocumentGenerationLog {
+  id               String           @id @default(uuid())
+  bookingId        String
+  templateId       String
+  generatedUrl     String   // S3 URL сгенерированного документа
+  generatedBy      String?
+  createdAt        DateTime         @default(now())
+
+  booking          Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  template         DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  author           User?            @relation("DocGenAuthor", fields: [generatedBy], references: [id], onDelete: SetNull)
 }

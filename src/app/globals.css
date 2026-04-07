@@ -322,7 +322,7 @@
   }
 
   .tabs-group {
-    @apply flex gap-1 p-1 bg-foreground/5 rounded-2xl w-fit
+    @apply flex gap-1 p-1 w-fit bg-foreground/5 rounded-2xl overflow-x-auto shadow-neumorph-inset shadow-muted-foreground/10;
   }
 
   [data-slot="calendar"] {

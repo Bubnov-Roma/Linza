@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getSupportInfo } from "@/actions/settings-actions";
 import { auth } from "@/auth";
 import { BookingDetailClient } from "@/components/dashboard/bookings/BookingDetailClient";
+import { toBookingDetailRow } from "@/core/domain/entities/Booking";
 import { prisma } from "@/lib/prisma";
-import { toBookingDetailRow } from "@/types";
 
 interface Props {
 	params: Promise<{ id: string }>;

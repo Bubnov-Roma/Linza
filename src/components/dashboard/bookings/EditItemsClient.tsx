@@ -25,13 +25,13 @@ import {
 	BOOKING_STATUS_LABELS,
 	BOOKING_STATUS_STYLES,
 } from "@/constants/booking-status";
-import type { DbEquipment } from "@/core/domain/entities/Equipment";
-import { calculateItemPrice, cn } from "@/lib/utils";
 import type {
 	BookingDetailRow,
 	BookingItemDetailRow,
 	BookingStatus,
-} from "@/types/booking.types";
+} from "@/core/domain/entities/Booking";
+import type { DbEquipment } from "@/core/domain/entities/Equipment";
+import { calculateItemPrice, cn } from "@/lib/utils";
 
 interface LocalItem {
 	equipment: NonNullable<BookingItemDetailRow["equipment"]>;

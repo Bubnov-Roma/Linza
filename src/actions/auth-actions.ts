@@ -1,6 +1,8 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
+import { auth } from "@/auth";
 import { transporter } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
 
@@ -88,5 +90,42 @@ export async function sendOtpCode(email: string) {
 	} catch (error) {
 		console.error("Ошибка при отправке OTP:", error);
 		return { error: "Не удалось отправить код" };
+	}
+}
+
+/**
+ * Устанавливает пароль для текущего залогиненного пользователя.
+ * Используется на странице /dashboard/set-password после перехода по инвайту,
+ * и в будущем — для смены пароля из профиля.
+ */
+export async function setPasswordAction(
+	newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) {
+			return { success: false, error: "Не авторизован" };
+		}
+
+		if (newPassword.length < 8) {
+			return {
+				success: false,
+				error: "Пароль должен содержать минимум 8 символов",
+			};
+		}
+
+		const hash = await bcrypt.hash(newPassword, 10);
+
+		await prisma.user.update({
+			where: { id: session.user.id },
+			data: { password: hash },
+		});
+
+		return { success: true };
+	} catch (e) {
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : "Ошибка сохранения пароля",
+		};
 	}
 }

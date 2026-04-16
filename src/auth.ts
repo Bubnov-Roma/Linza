@@ -5,15 +5,13 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/prisma";
 
-const providers = [];
-
-providers.push();
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
 	...authConfig,
 	adapter: PrismaAdapter(prisma) as Adapter,
 	providers: [
 		...authConfig.providers,
+
+		// ── Вход по OTP-коду ──────────────────────────────────
 		Credentials({
 			id: "otp",
 			name: "OTP",
@@ -27,7 +25,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 				const email = credentials.email as string;
 				const code = credentials.code as string;
 
-				// 1. Ищем валидный токен в БД
 				const tokenRecord = await prisma.verificationToken.findFirst({
 					where: { identifier: email, token: code },
 				});
@@ -36,7 +33,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 					throw new Error("Неверный или просроченный код");
 				}
 
-				// 2. Код верный! Ищем пользователя или создаем нового
 				let user = await prisma.user.findUnique({ where: { email } });
 
 				if (!user) {
@@ -45,7 +41,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 					});
 				}
 
-				// 3. Удаляем использованный токен
 				await prisma.verificationToken.delete({
 					where: {
 						identifier_token: { identifier: email, token: code },
@@ -53,6 +48,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 				});
 
 				return user;
+			},
+		}),
+
+		// ── Вход по invite-токену (новый) ──────────────────────────────
+		// Используется только из signInByUserId() на сервере.
+		// Клиентский signIn("invite", ...) намеренно не предусмотрен —
+		// consumeInviteTokenAction проверяет токен ДО вызова этого провайдера,
+		// поэтому здесь мы уже доверяем userId и просто отдаём пользователя.
+		Credentials({
+			id: "invite",
+			name: "Invite",
+			credentials: {
+				userId: { label: "User ID", type: "text" },
+			},
+			async authorize(credentials) {
+				if (!credentials?.userId) return null;
+
+				const userId = credentials.userId as string;
+
+				// Проверяем что пользователь существует и не заблокирован
+				const user = await prisma.user.findUnique({
+					where: { id: userId },
+					select: {
+						id: true,
+						name: true,
+						email: true,
+						image: true,
+						role: true,
+						isBlocked: true,
+					},
+				});
+
+				if (!user || user.isBlocked) return null;
+
+				// Возвращаем объект совместимый с NextAuth User
+				return {
+					id: user.id,
+					name: user.name,
+					email: user.email,
+					image: user.image,
+					role: user.role,
+				};
 			},
 		}),
 	],

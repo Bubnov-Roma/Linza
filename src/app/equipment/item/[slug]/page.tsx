@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { getCategoriesFromDb } from "@/actions/category-actions";
-import { getEquipmentBySlug } from "@/actions/equipment-actions";
+import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getEquipmentBySlug } from "@/actions/admin-equipment-actions";
 import EquipmentDetails, {
 	type EquipmentFormState,
 } from "@/components/core/EquipmentDetails";

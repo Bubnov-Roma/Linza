@@ -11,7 +11,7 @@ import {
 import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { getCategoryHistoryAction } from "@/actions/category-actions";
+import { getCategoryHistoryAction } from "@/actions/admin-category-actions";
 import { uploadCategoryImageAction } from "@/actions/upload-actions";
 import { IconPicker } from "@/components/admin/categories/IconPicker";
 import { SubcategoryRow } from "@/components/admin/categories/SubcategoryRow";
@@ -158,7 +158,7 @@ export function CategoryRow({
 					className="flex items-center justify-start gap-2 flex-1 min-w-0 h-14 text-left cursor-pointer"
 				>
 					{/* Иконка категории — показываем саму иконку, не текст */}
-					<IconComp size={18} weight="fill" className="text-primary shrink-0" />
+					<IconComp size={18} weight="fill" className="shrink-0" />
 
 					{editing ? (
 						<Input

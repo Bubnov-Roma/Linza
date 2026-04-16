@@ -6,7 +6,7 @@ import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupButton,
-	InputGroupInput,
+	InputGroupTextarea,
 } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ interface InlineEditFieldProps {
 	/** Called when user wants to add a new item (for creation mode) */
 	onAdd?: (value: string) => Promise<void> | void;
 	placeholder?: string;
-	type?: React.InputHTMLAttributes<HTMLInputElement>["type"];
+	type?: React.InputHTMLAttributes<HTMLTextAreaElement>["type"];
 	icon?: React.ReactNode;
 	/** Extra classes on the wrapping InputGroup */
 	className?: string;
@@ -29,7 +29,7 @@ interface InlineEditFieldProps {
 	disabled?: boolean;
 	/** Mode of the inline edit field */
 	mode?: "edit" | "create";
-	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -47,7 +47,6 @@ export function InlineEditField({
 	onCancel,
 	onAdd,
 	placeholder,
-	type = "text",
 	icon,
 	onChange,
 	className,
@@ -57,7 +56,7 @@ export function InlineEditField({
 }: InlineEditFieldProps) {
 	const [draft, setDraft] = useState(savedValue);
 	const [saving, setSaving] = useState(false);
-	const inputRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLTextAreaElement>(null);
 
 	// Sync if parent value changes (e.g. after successful save)
 	useEffect(() => {
@@ -82,7 +81,7 @@ export function InlineEditField({
 				setDraft(""); // Clear after successful add
 				onChange?.({
 					target: { value: "" },
-				} as React.ChangeEvent<HTMLInputElement>);
+				} as React.ChangeEvent<HTMLTextAreaElement>);
 			} finally {
 				setSaving(false);
 			}
@@ -102,14 +101,14 @@ export function InlineEditField({
 			setDraft("");
 			onChange?.({
 				target: { value: "" },
-			} as React.ChangeEvent<HTMLInputElement>);
+			} as React.ChangeEvent<HTMLTextAreaElement>);
 		} else {
 			setDraft(savedValue);
 		}
 		onCancel?.();
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 		if (e.key === "Enter") {
 			e.preventDefault();
 			if (isCreateMode) {
@@ -125,7 +124,7 @@ export function InlineEditField({
 		}
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 		setDraft(e.target.value);
 		onChange?.(e);
 	};
@@ -133,12 +132,11 @@ export function InlineEditField({
 	const showButton = isCreateMode ? draft.trim().length > 0 : isDirty || saving;
 
 	return (
-		<InputGroup className={cn("h-10 group", className)} error={false}>
+		<InputGroup className={cn("min-h-10 h-fit group", className)} error={false}>
 			{icon && <InputGroupAddon align="inline-start">{icon}</InputGroupAddon>}
 
-			<InputGroupInput
+			<InputGroupTextarea
 				ref={inputRef}
-				type={type}
 				value={draft}
 				placeholder={placeholder}
 				disabled={disabled || saving}

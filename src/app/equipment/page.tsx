@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { getCategoriesFromDb } from "@/actions/category-actions";
-import { getEquipment } from "@/actions/equipment-actions";
+import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getEquipment } from "@/actions/admin-equipment-actions";
 import EquipmentClientPage from "@/components/core/EquipmentClientPage";
 import { EquipmentGrid } from "@/components/core/EquipmentGrid";
 export type EquipmentSearchParams = {

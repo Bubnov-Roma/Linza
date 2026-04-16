@@ -2,28 +2,39 @@
 
 import {
 	CaretDownIcon,
+	CaretUpDownIcon,
+	CaretUpIcon,
+	CopyIcon,
 	DotsThreeVerticalIcon,
+	FunnelIcon,
 	MagnifyingGlassIcon,
-	PencilSimpleIcon,
+	PlusIcon,
 	ProhibitIcon,
+	TagIcon,
+	UploadSimpleIcon,
 	UserIcon,
 	UsersIcon,
+	XIcon,
 } from "@phosphor-icons/react";
-import type { Role } from "@prisma/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useDebounceValue } from "usehooks-ts";
 import {
-	toggleUserBlockAction,
-	updateUserRoleAction,
-} from "@/actions/client-application-actions";
-import { RoleBadge } from "@/components/admin/users/RoleBadge";
-import { UserDetailPanel } from "@/components/admin/users/UserDetailPanel";
+	exportAdminUsersAction,
+	getPaginatedUsersAction,
+} from "@/actions/admin-user-actions";
+import { toggleUserBlockAction } from "@/actions/client-application-actions";
+import { CreateUserSheet } from "@/components/admin/users/CreateUserSheet";
+import { AppStatusBadge } from "@/components/admin/users/details-panel/AppStatusBadge";
+import { UserDetailPanel } from "@/components/admin/users/details-panel/UserDetailPanel";
 import {
 	Badge,
 	Button,
 	Card,
 	CardContent,
+	Checkbox,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -41,372 +52,877 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 } from "@/components/ui";
+import { LABEL_COLORS, VERIFICATION_CONFIG } from "@/constants";
 import type { UserProfile } from "@/core/domain/entities/User";
 import { cn } from "@/lib/utils";
 
-const APP_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-	LOADING: {
-		label: "...",
-		color: "bg-foreground/8 text-foreground/40 border-foreground/10",
-	},
-	NO_APPLICATION: {
-		label: "Нет анкеты",
-		color: "bg-foreground/8 text-foreground/40 border-foreground/10",
-	},
-	DRAFT: {
-		label: "Черновик",
-		color: "bg-foreground/8 text-foreground/50 border-foreground/10",
-	},
-	PENDING: {
-		label: "На проверке",
-		color: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-	},
-	REVIEWING: {
-		label: "Изучается",
-		color: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-	},
-	CLARIFICATION: {
-		label: "Уточнение",
-		color: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-	},
-	STANDARD: {
-		label: "Стандарт",
-		color: "bg-teal-500/15 text-teal-400 border-teal-500/20",
-	},
-	APPROVED: {
-		label: "Одобрено",
-		color: "bg-green-500/15 text-green-400 border-green-500/20",
-	},
-	REJECTED: {
-		label: "Отклонено",
-		color: "bg-red-500/15 text-red-400 border-red-500/20",
-	},
-	BLOCKED: {
-		label: "Заблокирован",
-		color: "bg-red-500/15 text-red-400 border-red-500/20",
-	},
-};
+const PAGE_SIZE = 25;
 
-function AppStatusBadge({ status }: { status?: string | undefined }) {
-	const s = status ?? "NO_APPLICATION";
-	const cfg = APP_STATUS_CONFIG[s] ?? APP_STATUS_CONFIG.NO_APPLICATION;
+// ─── Sort ─────────────────────────────────────────────────────────────────────
+
+type SortField = "createdAt" | "name";
+type SortDir = "asc" | "desc";
+
+function SortIcon({
+	field,
+	active,
+	dir,
+}: {
+	field: SortField;
+	active: SortField;
+	dir: SortDir;
+}) {
+	if (field !== active)
+		return <CaretUpDownIcon size={12} className="opacity-30" />;
+	return dir === "asc" ? (
+		<CaretUpIcon size={12} className="text-primary" />
+	) : (
+		<CaretDownIcon size={12} className="text-primary" />
+	);
+}
+
+// ─── Active filter chip ────────────────────────────────────────────────────────
+
+function ActiveFilterChip({
+	label,
+	onRemove,
+}: {
+	label: string;
+	onRemove: () => void;
+}) {
+	return (
+		<span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium border border-primary/20">
+			{label}
+			<button
+				type="button"
+				onClick={onRemove}
+				className="hover:text-primary/60 transition-colors"
+			>
+				<XIcon size={10} />
+			</button>
+		</span>
+	);
+}
+
+// ─── Discount badge ────────────────────────────────────────────────────────────
+
+function DiscountBadge({ user }: { user: UserProfile }) {
+	const discount = user.discount;
+	if (!discount || discount.value === 0) return null;
+
+	const label =
+		discount.type === "PERCENT"
+			? `${discount.value}%`
+			: discount.type === "FIXED"
+				? `−${discount.value} ₽`
+				: (discount.promoCode ?? "PROMO");
 	return (
 		<Badge
 			variant="outline"
-			className={cn("text-[10px] border font-semibold", cfg?.color)}
+			className="text-[10px] font-bold text-primary border-primary/30 bg-primary/5 whitespace-nowrap"
 		>
-			{cfg?.label}
+			<TagIcon size={9} className="mr-0.5" />
+			{label}
 		</Badge>
 	);
 }
 
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
 export default function UsersTable({
 	initialUsers,
-	currentUserRole,
+	initialCount,
 }: {
 	initialUsers: UserProfile[];
-	currentUserRole?: string | undefined;
+	initialCount: number;
 }) {
-	const [users, setUsers] = useState(initialUsers);
+	const queryClient = useQueryClient();
+
+	// ── Search & filters
 	const [search, setSearch] = useState("");
-	const [roleFilter, setRoleFilter] = useState("all");
+	const [debouncedSearch] = useDebounceValue(search, 300);
 	const [appFilter, setAppFilter] = useState("all");
+	const [blockFilter, setBlockFilter] = useState<"all" | "active" | "blocked">(
+		"all"
+	);
+	const [discountFilter, setDiscountFilter] = useState<
+		"all" | "has_discount" | "no_discount"
+	>("all");
+	const [showFilters, setShowFilters] = useState(false);
+	const [regFrom, setRegFrom] = useState("");
+	const [regTo, setRegTo] = useState("");
+
+	// ── Sort & Pagination
+	const [page, setPage] = useState(1);
+	const [sortField, setSortField] = useState<SortField>("createdAt");
+	const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+	// ── Selection & Sheets
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [activeUser, setActiveUser] = useState<UserProfile | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
-	const [_isPending, startTransition] = useTransition();
+	const [createOpen, setCreateOpen] = useState(false);
+
+	// ── CSV import
+	const csvInputRef = useRef<HTMLInputElement>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <Reset page on filter changes>
+	useEffect(() => {
+		setPage(1);
+	}, [
+		debouncedSearch,
+		appFilter,
+		blockFilter,
+		discountFilter,
+		regFrom,
+		regTo,
+		sortField,
+		sortDir,
+	]);
+
+	// ── Fetch Data
+	const queryKey = [
+		"admin-users",
+		debouncedSearch,
+		appFilter,
+		blockFilter,
+		discountFilter,
+		regFrom,
+		regTo,
+		sortField,
+		sortDir,
+		page,
+	] as const;
+
+	const { data: queryData, isFetching } = useQuery({
+		queryKey,
+		queryFn: () =>
+			getPaginatedUsersAction({
+				search: debouncedSearch,
+				appFilter,
+				blockFilter,
+				discountFilter,
+				regFrom,
+				regTo,
+				sortField,
+				sortDir,
+				limit: PAGE_SIZE,
+				offset: (page - 1) * PAGE_SIZE,
+			}),
+		placeholderData: (prev) => prev,
+	});
+
+	const users = (queryData?.data as UserProfile[]) ?? initialUsers;
+	const totalCount = queryData?.count ?? initialCount;
+	const isLoading = isFetching && !queryData;
+	const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
+
+	const refreshData = () => {
+		queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+	};
 
 	const openUser = (user: UserProfile) => {
 		setActiveUser(user);
 		setSheetOpen(true);
 	};
 
-	const handleRoleChange = (userId: string, newRole: Role) => {
-		startTransition(async () => {
-			const r = await updateUserRoleAction(userId, newRole);
-			if (r.success) {
-				setUsers((prev) =>
-					prev.map((u) =>
-						u.id === userId ? { ...u, role: newRole as UserProfile["role"] } : u
-					)
-				);
-				toast.success(`Роль → ${newRole}`);
-			} else toast.error(r.error);
-		});
-	};
-
-	const handleUserUpdate = (userId: string, updated: Partial<UserProfile>) => {
-		setUsers((prev) =>
-			prev.map((u) => (u.id === userId ? { ...u, ...updated } : u))
-		);
-		if (activeUser?.id === userId) {
-			setActiveUser((u) => (u ? { ...u, ...updated } : u));
+	const handleSort = (field: SortField) => {
+		if (sortField === field) {
+			setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+		} else {
+			setSortField(field);
+			setSortDir("asc");
 		}
 	};
 
-	const pendingCount = users.filter(
-		(u) => u.application?.status === "PENDING"
-	).length;
+	// ── CSV Export
+	const handleExport = async () => {
+		try {
+			const dataToExport = await exportAdminUsersAction(
+				selectedIds.size > 0 ? Array.from(selectedIds) : undefined
+			);
 
-	const filtered = users.filter((u) => {
-		const q = search.toLowerCase();
-		const matchSearch =
-			!q ||
-			u.name?.toLowerCase().includes(q) ||
-			u.email?.toLowerCase().includes(q) ||
-			u.phone?.toLowerCase().includes(q);
-		const matchRole = roleFilter === "all" || u.role === roleFilter;
-		const matchApp =
-			appFilter === "all" ||
-			(appFilter === "none" && !u.application) ||
-			u.application?.status === appFilter;
-		return matchSearch && matchRole && matchApp;
-	});
+			const rows = [
+				[
+					"ID",
+					"Имя",
+					"Email",
+					"Телефон",
+					"Статус анкеты",
+					"Заблокирован",
+					"Дата регистрации",
+				],
+				...dataToExport.map((u) => [
+					u.id,
+					u.name,
+					u.email,
+					u.phone,
+					u.status,
+					u.isBlocked,
+					new Date(u.createdAt).toLocaleDateString("ru-RU"),
+				]),
+			];
+
+			const csv = rows.map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+			const blob = new Blob([`\ufeff${csv}`], {
+				type: "text/csv;charset=utf-8;",
+			});
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `clients_${new Date().toISOString().slice(0, 10)}.csv`;
+			a.click();
+			URL.revokeObjectURL(url);
+			toast.success(
+				selectedIds.size > 0
+					? "Выбранные клиенты экспортированы"
+					: "Все клиенты экспортированы"
+			);
+		} catch {
+			toast.error("Ошибка экспорта");
+		}
+	};
+
+	// ── CSV Import placeholder
+	const handleCSVImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		toast.info("Импорт в разработке");
+		e.target.value = "";
+	};
+
+	// ── Active filter chips
+	const activeFilters: { label: string; onRemove: () => void }[] = [];
+	if (appFilter !== "all") {
+		const label =
+			appFilter === "none"
+				? "Без анкеты"
+				: (VERIFICATION_CONFIG[appFilter as keyof typeof VERIFICATION_CONFIG]
+						?.label ?? appFilter);
+		activeFilters.push({
+			label: `Анкета: ${label}`,
+			onRemove: () => setAppFilter("all"),
+		});
+	}
+	if (blockFilter !== "all") {
+		activeFilters.push({
+			label: blockFilter === "active" ? "Только активные" : "Только заблок.",
+			onRemove: () => setBlockFilter("all"),
+		});
+	}
+	if (discountFilter !== "all") {
+		activeFilters.push({
+			label: discountFilter === "has_discount" ? "Со скидкой" : "Без скидки",
+			onRemove: () => setDiscountFilter("all"),
+		});
+	}
+	if (regFrom)
+		activeFilters.push({
+			label: `Рег. от: ${new Date(regFrom).toLocaleDateString("ru-RU")}`,
+			onRemove: () => setRegFrom(""),
+		});
+	if (regTo)
+		activeFilters.push({
+			label: `Рег. до: ${new Date(regTo).toLocaleDateString("ru-RU")}`,
+			onRemove: () => setRegTo(""),
+		});
 
 	return (
-		<div className="space-y-4">
-			{/* Filters */}
-			<CardContent className="flex flex-col sm:flex-row gap-3 flex-wrap justify-between">
-				<div className="relative flex-1 min-w-48">
-					<MagnifyingGlassIcon className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
-					<Input
-						placeholder="Поиск по имени, email, телефону..."
-						className="pl-9 h-9"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-					/>
-				</div>
-				<div className="flex justify-between gap-2">
-					<Select value={roleFilter} onValueChange={setRoleFilter}>
-						<SelectTrigger className="h-9 w-35">
-							<SelectValue placeholder="Все роли" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Все роли</SelectItem>
-							<SelectItem value="admin">Админы</SelectItem>
-							<SelectItem value="manager">Менеджеры</SelectItem>
-							<SelectItem value="partner">Партнёры</SelectItem>
-							<SelectItem value="user">Клиенты</SelectItem>
-						</SelectContent>
-					</Select>
-					<Select value={appFilter} onValueChange={setAppFilter}>
-						<SelectTrigger className="h-9 w-35">
-							<SelectValue placeholder="Статус анкеты" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Все анкеты</SelectItem>
-							<SelectItem value="none">Без анкеты</SelectItem>
-							<SelectItem value="pending">На проверке</SelectItem>
-							<SelectItem value="approved">Одобрено</SelectItem>
-							<SelectItem value="rejected">Отклонено</SelectItem>
-							<SelectItem value="draft">Черновик</SelectItem>
-							<SelectItem value="clarification">Уточнение</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
-			</CardContent>
+		<div className="space-y-4 relative">
+			{/* Controls */}
+			<Card>
+				<CardContent className="p-3 space-y-3">
+					<div className="flex flex-col sm:flex-row gap-3">
+						{/* Search */}
+						<div className="relative flex-1">
+							<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+							<Input
+								placeholder="Имя, email, телефон..."
+								className="pl-9 h-9"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+							{search && (
+								<button
+									type="button"
+									onClick={() => setSearch("")}
+									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								>
+									<XIcon size={12} />
+								</button>
+							)}
+						</div>
 
-			{/* Stats strip */}
-			<div className="flex gap-4 text-sm text-muted-foreground px-1 justify-center sm:justify-start">
-				{pendingCount > 0 && (
-					<span className="bg-secondary px-1 rounded-2xl font-black text-primary-accent">
-						Ожидает проверки:{" "}
-						<strong className="text-foreground">{pendingCount}</strong>
+						{/* App status filter */}
+						<Select value={appFilter} onValueChange={setAppFilter}>
+							<SelectTrigger className="h-9 w-44">
+								<SelectValue placeholder="Статус анкеты" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">Все анкеты</SelectItem>
+								<SelectItem value="none">Без анкеты</SelectItem>
+								<SelectItem value="PENDING">На проверке</SelectItem>
+								<SelectItem value="REVIEWING">Проверяется</SelectItem>
+								<SelectItem value="CLARIFICATION">Уточнение</SelectItem>
+								<SelectItem value="APPROVED">Одобрена</SelectItem>
+								<SelectItem value="STANDARD">Стандарт</SelectItem>
+								<SelectItem value="REJECTED">Отклонена</SelectItem>
+								<SelectItem value="DRAFT">Черновик</SelectItem>
+							</SelectContent>
+						</Select>
+
+						{/* Block filter */}
+						<Select
+							value={blockFilter}
+							onValueChange={(v) => setBlockFilter(v as typeof blockFilter)}
+						>
+							<SelectTrigger className="h-9 w-44">
+								<SelectValue placeholder="Состояние" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">Все клиенты</SelectItem>
+								<SelectItem value="active">Только активные</SelectItem>
+								<SelectItem value="blocked">Заблокированные</SelectItem>
+							</SelectContent>
+						</Select>
+
+						{/* Action buttons */}
+						<div className="flex gap-2 shrink-0">
+							<Button
+								variant="outline"
+								size="sm"
+								className={cn(
+									"h-9 gap-2",
+									showFilters && "border-primary text-primary"
+								)}
+								onClick={() => setShowFilters((v) => !v)}
+							>
+								<FunnelIcon size={13} />
+								Ещё
+								{(discountFilter !== "all" || regFrom || regTo) && (
+									<span className="w-4 h-4 rounded-full bg-primary text-white text-[9px] flex items-center justify-center">
+										{(discountFilter !== "all" ? 1 : 0) +
+											(regFrom ? 1 : 0) +
+											(regTo ? 1 : 0)}
+									</span>
+								)}
+							</Button>
+
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-9 gap-2"
+								onClick={handleExport}
+							>
+								<UploadSimpleIcon size={13} />
+								CSV {selectedIds.size > 0 && `(${selectedIds.size})`}
+							</Button>
+
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-9 gap-2"
+								onClick={() => csvInputRef.current?.click()}
+							>
+								<UploadSimpleIcon size={13} />
+								Импорт
+							</Button>
+							<input
+								ref={csvInputRef}
+								type="file"
+								accept=".csv"
+								className="hidden"
+								onChange={handleCSVImport}
+							/>
+
+							<Button
+								size="sm"
+								className="h-9 gap-2 font-bold"
+								onClick={() => setCreateOpen(true)}
+							>
+								<PlusIcon size={14} />
+								Новый клиент
+							</Button>
+						</div>
+					</div>
+
+					{/* Extended filters panel */}
+					{showFilters && (
+						<div className="pt-2 border-t border-foreground/5 flex flex-wrap gap-3 items-end">
+							<div className="space-y-1">
+								<p className="text-xs text-muted-foreground font-medium">
+									Скидка
+								</p>
+								<Select
+									value={discountFilter}
+									onValueChange={(v) =>
+										setDiscountFilter(v as typeof discountFilter)
+									}
+								>
+									<SelectTrigger className="h-8 text-xs w-38">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">Любая</SelectItem>
+										<SelectItem value="has_discount">Со скидкой</SelectItem>
+										<SelectItem value="no_discount">Без скидки</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="space-y-1">
+								<p className="text-xs text-muted-foreground font-medium">
+									Регистрация от
+								</p>
+								<Input
+									type="date"
+									className="h-8 text-xs w-36"
+									value={regFrom}
+									onChange={(e) => setRegFrom(e.target.value)}
+								/>
+							</div>
+							<div className="space-y-1">
+								<p className="text-xs text-muted-foreground font-medium">до</p>
+								<Input
+									type="date"
+									className="h-8 text-xs w-36"
+									value={regTo}
+									onChange={(e) => setRegTo(e.target.value)}
+								/>
+							</div>
+							{(regFrom || regTo || discountFilter !== "all") && (
+								<Button
+									variant="ghost"
+									size="sm"
+									className="h-8 text-xs text-muted-foreground gap-1"
+									onClick={() => {
+										setRegFrom("");
+										setRegTo("");
+										setDiscountFilter("all");
+									}}
+								>
+									<XIcon size={11} /> Сброс
+								</Button>
+							)}
+						</div>
+					)}
+
+					{/* Active filter chips */}
+					{activeFilters.length > 0 && (
+						<div className="flex flex-wrap gap-1.5 items-center pt-1 border-t border-foreground/5">
+							<span className="text-[10px] text-muted-foreground">
+								Активные:
+							</span>
+							{activeFilters.map((f) => (
+								<ActiveFilterChip
+									key={f.label}
+									label={f.label}
+									onRemove={f.onRemove}
+								/>
+							))}
+							<button
+								type="button"
+								onClick={() => {
+									setAppFilter("all");
+									setBlockFilter("all");
+									setDiscountFilter("all");
+									setRegFrom("");
+									setRegTo("");
+								}}
+								className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors ml-1"
+							>
+								Сбросить все
+							</button>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Summary strip */}
+			<div className="flex items-center gap-4 text-sm text-muted-foreground px-1">
+				<span>
+					Найдено: <strong className="text-foreground">{totalCount}</strong>
+				</span>
+				{isFetching && !isLoading && (
+					<span className="text-primary-accent/60 flex items-center gap-1">
+						<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
+						Обновление...
 					</span>
 				)}
-				<span>
-					Всего: <strong className="text-foreground">{users.length}</strong>
-				</span>
-				<span>
-					Показано:{" "}
-					<strong className="text-foreground">{filtered.length}</strong>
-				</span>
+				{selectedIds.size > 0 && (
+					<span className="text-primary font-medium">
+						Выбрано: {selectedIds.size}
+					</span>
+				)}
 			</div>
 
 			{/* Table */}
-			<Card>
-				<Table>
-					<TableHeader>
-						<TableRow className="border-foreground/5">
-							<TableHead>Пользователь</TableHead>
-							<TableHead>Роль</TableHead>
-							<TableHead>Анкета</TableHead>
-							<TableHead>Статус</TableHead>
-							<TableHead>Регистрация</TableHead>
-							<TableHead className="text-right">Действия</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{filtered.map((user) => (
-							<TableRow
-								key={user.id}
-								className={cn(
-									"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
-									user.isBlocked && "opacity-50",
-									activeUser?.id === user.id && sheetOpen && "bg-foreground/5"
-								)}
-								onClick={() => openUser(user)}
-							>
-								<TableCell>
-									<div className="flex items-center gap-3">
-										<div className="h-9 w-9 rounded-full bg-foreground/8 flex items-center justify-center overflow-hidden shrink-0">
-											{user.avatarUrl ? (
-												<Image
-													src={user.avatarUrl}
-													alt=""
-													width={36}
-													height={36}
-													className="object-cover"
-												/>
-											) : (
-												<UserIcon className="h-4 w-4 text-muted-foreground" />
-											)}
-										</div>
-										<div>
-											<p className="font-medium text-sm">
-												{user.name || "Без имени"}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												{user.email}
-											</p>
-										</div>
-									</div>
-								</TableCell>
+			<Card className="overflow-hidden relative">
+				{/* NpLoader */}
+				<div
+					className={cn(
+						"absolute top-0 left-0 w-full h-2 z-50 bg-primary/10 overflow-hidden transition-opacity duration-300",
+						isFetching ? "opacity-100" : "opacity-0"
+					)}
+				>
+					<div className="h-full bg-primary w-1/2 rounded-full animate-[pulse_1s_ease-in-out_infinite] origin-left" />
+				</div>
 
-								<TableCell onClick={(e) => e.stopPropagation()}>
-									{currentUserRole === "ADMIN" ? (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<button
-													type="button"
-													className="flex items-center gap-1 hover:opacity-80"
-												>
-													<RoleBadge role={user.role ?? "user"} />
-													<CaretDownIcon
-														size={10}
-														className="text-muted-foreground"
-													/>
-												</button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent>
-												{(
-													["USER", "PARTNER", "MANAGER", "ADMIN"] as Role[]
-												).map((r) => (
-													<DropdownMenuItem
-														key={r}
-														onClick={() => handleRoleChange(user.id, r)}
-														className={user.role === r ? "font-bold" : ""}
-													>
-														{r}
-													</DropdownMenuItem>
-												))}
-											</DropdownMenuContent>
-										</DropdownMenu>
-									) : (
-										<RoleBadge role={user.role ?? "user"} />
-									)}
-								</TableCell>
+				<div className="overflow-x-auto">
+					<Table className="w-full backdrop-blur-2xl bg-muted-foreground/5 rounded-lg overflow-hidden">
+						<TableHeader
+							className={cn(
+								"bg-muted-foreground/20",
+								isFetching &&
+									!isLoading &&
+									"opacity-80 transition-opacity duration-200"
+							)}
+						>
+							<TableRow className="border-foreground/5 font-black hover:bg-transparent">
+								<TableHead className="w-10">
+									<Checkbox
+										checked={
+											users.length > 0 && selectedIds.size === users.length
+										}
+										onCheckedChange={(checked) => {
+											setSelectedIds(
+												checked ? new Set(users.map((i) => i.id)) : new Set()
+											);
+										}}
+									/>
+								</TableHead>
 
-								<TableCell>
-									<AppStatusBadge status={user.application?.status} />
-								</TableCell>
-
-								<TableCell>
-									{user.isBlocked ? (
-										<Badge
-											variant="outline"
-											className="text-[10px] bg-red-500/10 text-red-400 border-red-500/20"
-										>
-											<ProhibitIcon size={10} className="mr-1" /> Заблокирован
-										</Badge>
-									) : (
-										<Badge
-											variant="outline"
-											className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20"
-										>
-											Активен
-										</Badge>
-									)}
-								</TableCell>
-
-								<TableCell className="text-xs text-muted-foreground">
-									{new Date(user.createdAt).toLocaleDateString("ru-RU")}
-								</TableCell>
-
-								<TableCell
-									className="text-right"
-									onClick={(e) => e.stopPropagation()}
+								{/* Name */}
+								<TableHead
+									className="cursor-pointer select-none hover:text-foreground transition-colors min-w-48"
+									onClick={() => handleSort("name")}
 								>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<DotsThreeVerticalIcon className="h-4 w-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => openUser(user)}>
-												<PencilSimpleIcon className="w-4 h-4 mr-2" />{" "}
-												Редактировать
-											</DropdownMenuItem>
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												className={
-													user.isBlocked ? "text-green-500" : "text-red-500"
-												}
-												onClick={async () => {
-													const reason = user.isBlocked
-														? undefined
-														: (window.prompt("Причина блокировки:") ?? "");
-													const r = await toggleUserBlockAction(
-														user.id,
-														!user.isBlocked,
-														reason
-													);
-													if (r.success) {
-														handleUserUpdate(user.id, {
-															isBlocked: !user.isBlocked,
-															blockedReason: reason ?? null,
-														});
-														toast.success(
-															user.isBlocked ? "Разблокирован" : "Заблокирован"
-														);
-													} else toast.error(r.error);
-												}}
-											>
-												<ProhibitIcon className="w-4 h-4 mr-2" />
-												{user.isBlocked ? "Разблокировать" : "Заблокировать"}
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
+									<span className="flex items-center gap-1">
+										Клиент{" "}
+										<SortIcon field="name" active={sortField} dir={sortDir} />
+									</span>
+								</TableHead>
 
-				{filtered.length === 0 && (
+								{/* Email and Phone */}
+								<TableHead>Email</TableHead>
+								<TableHead>Телефон</TableHead>
+
+								{/* App & Status */}
+								<TableHead>Анкета</TableHead>
+								<TableHead>Статус</TableHead>
+
+								{/* Labels & Discount */}
+								<TableHead>Метки</TableHead>
+								<TableHead>Скидка</TableHead>
+
+								{/* Reg date */}
+								<TableHead
+									className="cursor-pointer select-none hover:text-foreground transition-colors"
+									onClick={() => handleSort("createdAt")}
+								>
+									<span className="flex items-center gap-1">
+										Регистрация{" "}
+										<SortIcon
+											field="createdAt"
+											active={sortField}
+											dir={sortDir}
+										/>
+									</span>
+								</TableHead>
+
+								<TableHead className="text-right">Действия</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{users.map((user) => {
+								const labels = user.labels ?? [];
+
+								return (
+									<TableRow
+										key={user.id}
+										className={cn(
+											"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
+											user.isBlocked && "opacity-50",
+											selectedIds.has(user.id) && "bg-primary/10",
+											activeUser?.id === user.id &&
+												sheetOpen &&
+												"bg-foreground/5"
+										)}
+										onClick={() => openUser(user)}
+									>
+										<TableCell onClick={(e) => e.stopPropagation()}>
+											<Checkbox
+												checked={selectedIds.has(user.id)}
+												onCheckedChange={(checked) => {
+													const newSelected = new Set(selectedIds);
+													if (checked) newSelected.add(user.id);
+													else newSelected.delete(user.id);
+													setSelectedIds(newSelected);
+												}}
+											/>
+										</TableCell>
+
+										{/* Клиент */}
+										<TableCell>
+											<div className="flex items-center gap-3">
+												<div className="h-8 w-8 rounded-full bg-foreground/8 flex items-center justify-center overflow-hidden shrink-0">
+													{user.avatarUrl ? (
+														<Image
+															src={user.avatarUrl}
+															alt=""
+															width={32}
+															height={32}
+															className="object-cover"
+														/>
+													) : (
+														<UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
+													)}
+												</div>
+												<div className="min-w-0">
+													<p className="font-medium text-sm truncate max-w-48">
+														{user.name || "Без имени"}
+													</p>
+												</div>
+											</div>
+										</TableCell>
+
+										{/* Email */}
+										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+											{user.email || "—"}
+										</TableCell>
+
+										{/* Телефон */}
+										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+											{user.phone || "—"}
+										</TableCell>
+
+										{/* Анкета */}
+										<TableCell onClick={(e) => e.stopPropagation()}>
+											<AppStatusBadge
+												status={user.application?.status}
+												onUpdate={() => refreshData()}
+												app={user.application}
+											/>
+										</TableCell>
+
+										{/* Статус блок./активен */}
+										<TableCell>
+											{user.isBlocked ? (
+												<Badge
+													variant="outline"
+													className="text-[10px] bg-red-500/10 text-red-400 border-red-500/20 gap-1"
+												>
+													<ProhibitIcon size={9} /> Заблок.
+												</Badge>
+											) : (
+												<Badge
+													variant="outline"
+													className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20"
+												>
+													Активен
+												</Badge>
+											)}
+										</TableCell>
+
+										{/* Метки (Красивые точки) */}
+										<TableCell onClick={(e) => e.stopPropagation()}>
+											<div className="flex flex-wrap gap-1 max-w-32">
+												{labels.length === 0 ? (
+													<span className="text-muted-foreground/30 text-[10px]">
+														—
+													</span>
+												) : (
+													<TooltipProvider delayDuration={150}>
+														{labels.slice(0, 5).map((l) => (
+															<Tooltip key={l.id}>
+																<TooltipTrigger asChild>
+																	<div
+																		className={cn(
+																			"w-2.5 h-2.5 rounded-full border cursor-help",
+																			LABEL_COLORS[
+																				l.color as keyof typeof LABEL_COLORS
+																			]?.split(" ")[0]
+																		)}
+																	/>
+																</TooltipTrigger>
+																<TooltipContent className="text-xs">
+																	{l.text}
+																</TooltipContent>
+															</Tooltip>
+														))}
+														{labels.length > 5 && (
+															<span className="text-[9px] text-muted-foreground ml-1">
+																+{labels.length - 5}
+															</span>
+														)}
+													</TooltipProvider>
+												)}
+											</div>
+										</TableCell>
+
+										{/* Скидка */}
+										<TableCell>
+											<DiscountBadge user={user} />
+										</TableCell>
+
+										{/* Дата регистрации */}
+										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+											{new Date(user.createdAt).toLocaleDateString("ru-RU")}
+										</TableCell>
+
+										{/* Действия */}
+										<TableCell
+											className="text-right"
+											onClick={(e) => e.stopPropagation()}
+										>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8"
+													>
+														<DotsThreeVerticalIcon className="h-4 w-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end" className="w-52">
+													<DropdownMenuItem onClick={() => openUser(user)}>
+														<UserIcon className="w-4 h-4 mr-2" />
+														Открыть профиль
+													</DropdownMenuItem>
+
+													<DropdownMenuSeparator />
+
+													{/* Быстрые ссылки */}
+													<DropdownMenuItem
+														onClick={() => {
+															if (user.email) {
+																navigator.clipboard.writeText(user.email);
+																toast.success("Email скопирован");
+															}
+														}}
+													>
+														<CopyIcon className="w-4 h-4 mr-2 rotate-180" />
+														Скопировать email
+													</DropdownMenuItem>
+													{user.phone && (
+														<DropdownMenuItem
+															onClick={() => {
+																navigator.clipboard.writeText(user.phone ?? "");
+																toast.success("Телефон скопирован");
+															}}
+														>
+															<UploadSimpleIcon className="w-4 h-4 mr-2 rotate-180" />
+															Скопировать телефон
+														</DropdownMenuItem>
+													)}
+
+													<DropdownMenuSeparator />
+
+													{/* Блокировка */}
+													<DropdownMenuItem
+														className={
+															user.isBlocked ? "text-green-500" : "text-red-500"
+														}
+														onClick={async () => {
+															const reason = user.isBlocked
+																? undefined
+																: (window.prompt("Причина блокировки:") ?? "");
+															const r = await toggleUserBlockAction(
+																user.id,
+																!user.isBlocked,
+																reason
+															);
+															if (r.success) {
+																refreshData();
+																toast.success(
+																	user.isBlocked
+																		? "Разблокирован"
+																		: "Заблокирован"
+																);
+															} else {
+																toast.error(r.error);
+															}
+														}}
+													>
+														<ProhibitIcon className="w-4 h-4 mr-2" />
+														{user.isBlocked
+															? "Разблокировать"
+															: "Заблокировать"}
+													</DropdownMenuItem>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										</TableCell>
+									</TableRow>
+								);
+							})}
+						</TableBody>
+					</Table>
+				</div>
+
+				{users.length === 0 && !isLoading && (
 					<div className="py-16 text-center space-y-2">
 						<UsersIcon size={32} className="mx-auto text-muted-foreground/20" />
 						<p className="text-sm text-muted-foreground">
-							{users.length === 0
-								? "Нет пользователей в базе данных"
-								: "Пользователи не найдены по фильтрам"}
+							Пользователи не найдены
 						</p>
+					</div>
+				)}
+
+				{/* Pagination Footer */}
+				{totalPages > 1 && (
+					<div className="flex items-center justify-between px-4 py-3 border-t border-white/5 bg-foreground/5">
+						<span className="text-xs text-muted-foreground">
+							Страница {page} из {totalPages}
+						</span>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={page === 1}
+								onClick={() => setPage((p) => p - 1)}
+							>
+								Назад
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={page >= totalPages}
+								onClick={() => setPage((p) => p + 1)}
+							>
+								Вперед
+							</Button>
+						</div>
 					</div>
 				)}
 			</Card>
 
-			{/* Sheet — no backdrop button needed, Sheet handles it */}
+			{/* Detail panel */}
 			<UserDetailPanel
 				user={activeUser}
 				open={sheetOpen}
 				onOpenChange={(open) => {
 					setSheetOpen(open);
-					if (!open) setActiveUser(null);
+					if (!open) {
+						setTimeout(() => setActiveUser(null), 300);
+						refreshData();
+					}
 				}}
-				onUpdate={(updated) =>
-					activeUser && handleUserUpdate(activeUser.id, updated)
-				}
+				onUpdate={() => refreshData()}
+			/>
+
+			{/* Create user sheet */}
+			<CreateUserSheet
+				open={createOpen}
+				onOpenChange={setCreateOpen}
+				onCreated={() => {
+					refreshData();
+					setCreateOpen(false);
+				}}
 			/>
 		</div>
 	);

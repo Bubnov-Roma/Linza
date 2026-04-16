@@ -6,7 +6,7 @@ import {
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useEffect } from "react";
-import type { Banner } from "@/actions/banner-actions";
+import type { Banner } from "@/actions/admin-banner-actions";
 import { SimpleMarkdown } from "@/components/shared";
 import { Button } from "@/components/ui";
 import { EVENT_CONFIG } from "@/constants";

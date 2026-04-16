@@ -1,4 +1,7 @@
-import type { BookingStatus } from "@/core/domain/entities/Booking";
+import type {
+	BookingStatus,
+	PaymentMethod,
+} from "@/core/domain/entities/Booking";
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
 	PENDING_REVIEW: "Проверка техники",
@@ -102,3 +105,40 @@ export const CANCELLATION_PRESETS = [
 ] as const;
 
 export type CancellationPreset = (typeof CANCELLATION_PRESETS)[number];
+
+export const ALL_BOOKING_STATUSES = Object.keys(
+	BOOKING_STATUS_CONFIG
+) as BookingStatus[];
+
+export const EDITABLE_PERIOD_STATUSES: BookingStatus[] = ALL_BOOKING_STATUSES;
+export const EDITABLE_ITEMS_STATUSES: BookingStatus[] = ALL_BOOKING_STATUSES;
+export const EDITABLE_PRICE_STATUSES: BookingStatus[] = ALL_BOOKING_STATUSES;
+
+export const LABEL_COLORS = {
+	amber:
+		"bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400",
+	blue: "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400",
+	red: "bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400",
+	green:
+		"bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400",
+	purple:
+		"bg-purple-500/15 text-purple-600 border-purple-500/30 dark:text-purple-400",
+	gray: "bg-foreground/8 text-foreground/60 border-foreground/15",
+} as const;
+
+export const LABEL_COLOR_OPTIONS = [
+	{ value: "amber", label: "Жёлтая" },
+	{ value: "blue", label: "Синяя" },
+	{ value: "red", label: "Красная" },
+	{ value: "green", label: "Зелёная" },
+	{ value: "purple", label: "Фиолетовая" },
+	{ value: "gray", label: "Серая" },
+] as const;
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+	CASH: "Наличные",
+	CARD: "Карта / терминал",
+	TRANSFER: "Перевод",
+	BALANCE: "С баланса",
+	OTHER: "Иное",
+};

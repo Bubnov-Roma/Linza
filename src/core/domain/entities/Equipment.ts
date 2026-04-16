@@ -54,6 +54,7 @@ export interface DbEquipment extends DbEquipmentBase {
 export interface DbEquipmentWithImages extends DbEquipmentBase {
 	equipmentImageLinks: EquipmentImageLinkWithImage[];
 	relatedEquipment?: { relatedId: string }[];
+	relatedIds?: string[];
 }
 
 /** Link между Equipment и Image с полной информацией */

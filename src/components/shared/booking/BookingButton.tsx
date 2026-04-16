@@ -1,5 +1,7 @@
 "use client";
 
+import { BlockedBanner } from "@/components/shared/booking/BlockedBanner";
+import { useApplicationStatus } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 interface BookingButtonProps {
@@ -19,10 +21,16 @@ export function BookingButton({
 }: BookingButtonProps) {
 	const isDisabled = disabled || loading;
 
+	const { status } = useApplicationStatus();
+
+	const isBookingBlocked = status === "REJECTED" || status === "BLOCKED";
+
 	const label =
 		mode === "update" ? "Обновить заказ" : "Отправить заявку на бронирование";
 
-	return (
+	return isBookingBlocked ? (
+		<BlockedBanner status={status} />
+	) : (
 		<button
 			type="button"
 			onClick={onClick}

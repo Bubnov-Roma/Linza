@@ -16,11 +16,11 @@ import Image from "next/image";
 import NProgress from "nprogress";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { getRelatedEquipmentAction } from "@/actions/admin-equipment-actions";
 import {
 	checkAvailabilityAction,
 	submitBookingAction,
 } from "@/actions/booking-actions";
-import { getRelatedEquipmentAction } from "@/actions/equipment-actions";
 import { AddToCartButton } from "@/components/core/AddToCartButton";
 import { Lightbox } from "@/components/core/Lightbox";
 import { PriceSelector } from "@/components/core/PriceSelector";

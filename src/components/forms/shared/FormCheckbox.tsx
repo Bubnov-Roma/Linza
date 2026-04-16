@@ -1,18 +1,21 @@
 "use client";
 import { type FieldPath, useFormContext, useWatch } from "react-hook-form";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import type { ClientFormValues } from "@/schemas";
 
 interface FormCheckboxProps {
 	name: FieldPath<ClientFormValues>;
-	label: string;
+	label: React.ReactNode;
 	isSecondary?: boolean;
+	className?: string;
 }
 
 export const FormCheckbox = ({
 	name,
 	label,
 	isSecondary,
+	className,
 }: FormCheckboxProps) => {
 	const { register, control, formState } = useFormContext<ClientFormValues>();
 	const isChecked = useWatch({ control, name });
@@ -64,10 +67,13 @@ export const FormCheckbox = ({
 					</div>
 				</div>
 				<span
-					className={`
-          uppercase tracking-widest transition-colors
-          ${isSecondary ? "text-[10px] text-foreground/30" : "text-xs text-foreground/50 group-hover:text-foreground/80"}
-        `}
+					className={cn(
+						`tracking-widest transition-colors`,
+						isSecondary
+							? "text-[10px] text-foreground/30"
+							: "text-xs text-foreground/50 group-hover:text-foreground/80",
+						className
+					)}
 				>
 					{label}
 				</span>

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { useDebounceValue } from "usehooks-ts";
-import { searchEquipmentAction } from "@/actions/equipment-actions";
+import { searchEquipmentAction } from "@/actions/admin-equipment-actions";
 import { AddToCartButton } from "@/components/core/AddToCartButton";
 import { SearchFilters } from "@/components/core/search/SearchFilters";
 import { Skeleton } from "@/components/ui/skeleton";

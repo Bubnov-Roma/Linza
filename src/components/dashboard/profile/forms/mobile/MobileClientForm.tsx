@@ -272,10 +272,8 @@ export function MobileClientForm({
 								key={section.id}
 								value={section.id}
 								className={cn(
-									"rounded-2xl border overflow-hidden transition-colors duration-200 border-b-0",
-									isOpen
-										? "border border-foreground/10 bg-card/60 shadow-sm"
-										: "border border-foreground/5 bg-card/30"
+									"rounded-2xl overflow-hidden transition-colors duration-200 border-b-0 shadow-sm shadow-foreground/10",
+									isOpen ? "bg-muted-foreground/5 " : "bg-foreground/5"
 								)}
 							>
 								<AccordionTrigger

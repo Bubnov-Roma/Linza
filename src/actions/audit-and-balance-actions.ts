@@ -306,14 +306,16 @@ export async function refundToBalanceAction(
 	description?: string
 ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
 	try {
-		const { userId: authorId } = await requireAdmin();
+		const { userId: authorId, name: authorName } = await requireAdmin();
 
 		const [updatedUser] = await prisma.$transaction([
+			// 1. Пополняем баланс пользователя
 			prisma.user.update({
 				where: { id: userId },
 				data: { balance: { increment: amount } },
 				select: { balance: true },
 			}),
+			// 2. Создаем транзакцию баланса
 			prisma.balanceTransaction.create({
 				data: {
 					userId,
@@ -326,9 +328,28 @@ export async function refundToBalanceAction(
 					authorId,
 				},
 			}),
+			// 3. ДОБАВЛЕНО: Создаем отрицательный платеж в самом заказе для выравнивания суммы
+			prisma.bookingPayment.create({
+				data: {
+					bookingId,
+					authorId,
+					amount: -Math.abs(amount), // Минусуем сумму из заказа
+					method: "TRANSFER", // Или любой другой подходящий метод из вашего PaymentMethod (CASH, CARD и т.д.)
+					note: "Возврат переплаты на баланс клиента",
+					paidAt: new Date(),
+				},
+			}),
 		]);
 
+		// Логируем изменение в аудит заказа для истории
+		await writeAuditLog(bookingId, authorId, authorName, {
+			action: "Возврат переплаты",
+			fieldName: "payments",
+			valueAfter: `Переведено на баланс: ${amount} ₽`,
+		});
+
 		revalidatePath("/admin/users");
+		revalidatePath("/admin/bookings"); // Обязательно обновляем кэш заказов
 		return { success: true, newBalance: updatedUser.balance };
 	} catch (e) {
 		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };

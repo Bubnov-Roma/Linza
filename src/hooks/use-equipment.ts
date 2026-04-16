@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getEquipment } from "@/actions/equipment-actions";
+import { getEquipment } from "@/actions/admin-equipment-actions";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 
 export type UseEquipmentFilters = {

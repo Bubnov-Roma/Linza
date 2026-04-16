@@ -8,7 +8,7 @@ import {
 	UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import type { Banner } from "@/actions/banner-actions";
+import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerManager } from "@/components/admin/banner/BannerManager";
 import { QuickActionLink } from "@/components/shared";
 import {
@@ -22,7 +22,6 @@ import {
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_STYLES } from "@/constants";
 import type { AdminDashboardData } from "@/types";
 
-// Используем импортированный тип напрямую
 interface DashboardClientProps {
 	stats: AdminDashboardData;
 	banners?: Banner[] | undefined;
@@ -141,7 +140,7 @@ export function DashboardClient({ stats, banners }: DashboardClientProps) {
 							<QuickActionLink
 								href="/admin/equipment"
 								icon={<CameraIcon size={18} />}
-								label="Оборудование"
+								label="Техника"
 								description="Управление каталогом"
 							/>
 							<QuickActionLink
@@ -153,13 +152,13 @@ export function DashboardClient({ stats, banners }: DashboardClientProps) {
 							<QuickActionLink
 								href="/admin/users"
 								icon={<UsersIcon size={18} />}
-								label="Пользователи"
+								label="Клиенты"
 								description={`${stats.totalUsers} аккаунтов`}
 							/>
 							<QuickActionLink
 								href="/admin/bookings"
 								icon={<CalendarIcon size={18} />}
-								label="Бронирования"
+								label="Заказы"
 								badge={stats.pendingBookings}
 								description="Обработка заявок"
 							/>

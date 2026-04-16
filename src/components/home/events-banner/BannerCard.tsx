@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
-import type { Banner } from "@/actions/banner-actions";
+import type { Banner } from "@/actions/admin-banner-actions";
 import { EVENT_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 
@@ -100,9 +100,6 @@ export function BannerCard({
 							{banner.linkLabel}
 						</span>
 					)}
-					{/* <span className="text-xs text-muted-foreground/60 font-medium">
-						Нажмите, чтобы узнать больше →
-					</span> */}
 				</div>
 			</div>
 		</motion.button>

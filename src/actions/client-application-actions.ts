@@ -64,12 +64,14 @@ export async function submitClientApplicationAction(
 			update: {
 				clientType: data.clientType,
 				applicationData: data as unknown as Prisma.InputJsonValue,
+				adminOverrides: data as unknown as Prisma.InputJsonValue,
 				status: ApplicationStatus.PENDING,
 			},
 			create: {
 				userId: session.user.id,
 				clientType: data.clientType,
 				applicationData: data as unknown as Prisma.InputJsonValue,
+				adminOverrides: data as unknown as Prisma.InputJsonValue,
 				status: ApplicationStatus.PENDING,
 			},
 		});

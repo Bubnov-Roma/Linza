@@ -10,7 +10,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Banner, BannerImage } from "@/actions/banner-actions";
+import type { Banner, BannerImage } from "@/actions/admin-banner-actions";
 import { SimpleMarkdown } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { EVENT_CONFIG } from "@/constants";

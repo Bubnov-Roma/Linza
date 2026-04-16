@@ -1,8 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
-import { useState } from "react";
-import type { EquipmentSort } from "@/actions/equipment-actions";
+import type { EquipmentSort } from "@/actions/admin-equipment-actions";
 import {
 	Button,
 	Select,
@@ -22,25 +21,19 @@ const SORTABLE_COLUMNS = [
 	{ value: "updatedAt", label: "Дата обновления" },
 	{ value: "deposit", label: "Депозит" },
 	{ value: "replacementValue", label: "Стоимость замены" },
+	{ value: "isPrimary", label: "Основные" },
 ] as const;
 
 type SortableColumnValue = (typeof SORTABLE_COLUMNS)[number]["value"];
 
 interface SortBuilderProps {
+	sorts: EquipmentSort[];
 	onSortChange: (sort: EquipmentSort[]) => void;
 }
 
-export function SortBuilder({ onSortChange }: SortBuilderProps) {
-	const [sorts, setSorts] = useState<EquipmentSort[]>([]);
-
+export function SortBuilder({ sorts, onSortChange }: SortBuilderProps) {
 	const addSort = () => {
-		const newSort: EquipmentSort = {
-			column: "createdAt",
-			ascending: false,
-		};
-		const updated = [...sorts, newSort];
-		setSorts(updated);
-		onSortChange(updated);
+		onSortChange([...sorts, { column: "createdAt", ascending: false }]);
 	};
 
 	const updateSort = (
@@ -53,24 +46,19 @@ export function SortBuilder({ onSortChange }: SortBuilderProps) {
 		if (!sort) return;
 
 		if (field === "column") {
-			const colValue = value as SortableColumnValue;
-			updated[index] = { ...sort, column: colValue };
+			updated[index] = { ...sort, column: value as SortableColumnValue };
 		} else if (field === "ascending") {
 			updated[index] = { ...sort, ascending: value as boolean };
 		}
 
-		setSorts(updated);
 		onSortChange(updated);
 	};
 
 	const removeSort = (index: number) => {
-		const updated = sorts.filter((_, i) => i !== index);
-		setSorts(updated);
-		onSortChange(updated);
+		onSortChange(sorts.filter((_, i) => i !== index));
 	};
 
 	const clearSorts = () => {
-		setSorts([]);
 		onSortChange([]);
 	};
 
@@ -106,7 +94,7 @@ export function SortBuilder({ onSortChange }: SortBuilderProps) {
 							className="flex items-center gap-2"
 						>
 							<Select
-								value={sort.column}
+								value={sort.column as string}
 								onValueChange={(value) => updateSort(index, "column", value)}
 							>
 								<SelectTrigger className="h-8 flex-1 text-xs">

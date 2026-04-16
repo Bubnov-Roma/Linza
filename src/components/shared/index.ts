@@ -1,7 +1,8 @@
 export * from "./ApplicationStatusBadge";
 export * from "./AuthModal";
 export * from "./BackButton";
-export * from "./BookingButton";
+export * from "./booking/BlockedBanner";
+export * from "./booking/BookingButton";
 export * from "./ClientTime";
 export * from "./CustomInputGroup";
 export * from "./EquipmentCard";
@@ -14,6 +15,7 @@ export * from "./QuickActionLink";
 export * from "./RainbowSpinner";
 export * from "./RentalPeriod";
 export * from "./Section";
+export * from "./SectionCard";
 export * from "./SignOutButton";
 export * from "./ThemeToggle";
 export * from "./UserMenuDropdown";

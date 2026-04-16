@@ -1,5 +1,5 @@
 import { BookingStatus } from "@prisma/client";
-import { getAllBannersAdmin } from "@/actions/banner-actions";
+import { getAllBannersAdmin } from "@/actions/admin-banner-actions";
 import { DashboardClient } from "@/components/admin/DashboardClient";
 import { prisma } from "@/lib/prisma";
 import type { AdminDashboardData } from "@/types";

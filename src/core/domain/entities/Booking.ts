@@ -1,11 +1,5 @@
+import type { LABEL_COLORS } from "@/constants";
 import type { DbEquipment } from "@/core/domain/entities/Equipment";
-
-// export type Status =
-// 	| "PENDING"
-// 	| "CONFIRMED"
-// 	| "ACTIVE"
-// 	| "COMPLETED"
-// 	| "CANCELED";
 
 export type BookingStatus =
 	| "PENDING_REVIEW" // ждёт проверки менеджером
@@ -120,4 +114,103 @@ export function toDashboardBooking(row: BookingRow): DashboardBooking {
 			imageUrl: item.imageUrl ?? null,
 		})),
 	};
+}
+
+export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "BALANCE" | "OTHER";
+
+/** Статус оплаты заказа, вычисляется на лету */
+export type PaymentStatus =
+	| "UNPAID" // ничего не оплачено
+	| "PARTIAL" // оплачено частично (< totalAmount)
+	| "PAID" // оплачено полностью (= totalAmount ±1%)
+	| "OVERPAID"; // переплата (> totalAmount)
+
+export interface BookingPaymentRow {
+	id: string;
+	amount: number;
+	method: PaymentMethod;
+	note: string | null;
+	paidAt: string;
+	createdAt: string;
+	authorName: string | null;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface AdminBookingItemSnippet {
+	equipmentId: string;
+	title: string;
+	priceAtBooking: number;
+	depositAtBooking: number;
+	replacementValueAtBooking: number;
+	price4h: number | null;
+	price8h: number | null;
+	pricePerDay: number;
+}
+
+export interface AdminBookingRow {
+	id: string;
+	status: BookingStatus;
+	totalAmount: number;
+	createdAt: string;
+	startDate: string;
+	endDate: string;
+	insuranceIncluded: boolean | null;
+	totalReplacementValue: number | null;
+	cancellationReason: string | null;
+	cancelledAt: string | null;
+	clientId: string;
+	clientName: string | null;
+	clientEmail: string | null;
+	equipmentTitles: string[];
+	itemCount: number;
+	bookingItems: AdminBookingItemSnippet[];
+	paymentStatus?: PaymentStatus;
+	totalPaid?: number;
+	labelTexts?: string[];
+}
+
+export interface BookingLabel {
+	id: string;
+	text: string;
+	color: keyof typeof LABEL_COLORS;
+	dueDate?: string;
+	shift?: string;
+	createdAt: string;
+	author: string;
+}
+
+export interface BookingComment {
+	id: string;
+	text: string;
+	author: string;
+	createdAt: string;
+}
+
+export type UserSearchResult = {
+	id: string;
+	name: string | null;
+	email: string | null;
+	phone: string | null;
+};
+
+export type EquipmentSearchResult = {
+	id: string;
+	title: string;
+	pricePerDay: number;
+	price4h: number;
+	price8h: number;
+	deposit: number;
+	replacementValue: number;
+};
+export interface DraftItem {
+	equipmentId: string;
+	title: string;
+	quantity: number;
+	pricePerUnit: number;
+	depositPerUnit: number;
+	replacementValuePerUnit: number;
+	price4h: number;
+	price8h: number;
+	pricePerDay: number;
 }

@@ -3,7 +3,7 @@ export const revalidate = 0;
 
 import type { AdminBookingRow } from "@/components/admin/bookings/AdminBookingsTable";
 import AdminBookingsTable from "@/components/admin/bookings/AdminBookingsTable";
-import type { AdminBookingItemSnippet } from "@/components/admin/bookings/BookingDetailSheet";
+import type { AdminBookingItemSnippet } from "@/core/domain/entities/Booking";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminBookingsPage() {
@@ -71,7 +71,7 @@ export default async function AdminBookingsPage() {
 		<div className="space-y-6">
 			<div>
 				<h1 className="text-3xl font-black italic uppercase tracking-tight">
-					Бронирования
+					Заказы
 				</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
 					Управление заявками · {initialBookings.length} всего

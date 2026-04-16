@@ -4,11 +4,11 @@ import {
 	ArrowClockwiseIcon,
 	BellIcon,
 	CalendarIcon,
-	ChatIcon,
 	CheckIcon,
 	ClockIcon,
 	CurrencyRubIcon,
 	FileTextIcon,
+	HandCoinsIcon,
 	MagnifyingGlassIcon,
 	PackageIcon,
 	PencilIcon,
@@ -32,11 +32,15 @@ import {
 import { toast } from "sonner";
 import {
 	type AdminUpdateItemsPayload,
+	adminAddBookingCommentAction,
 	adminChangeBookingClientAction,
+	adminDeleteBookingCommentAction,
+	adminForceSetBookingStatusAction,
 	adminSaveCompleteBookingAction,
 	adminUpdateBookingDatesAction,
 	adminUpdateBookingItemsAction,
 	adminUpdateBookingPricingAction,
+	getAdminBookingCommentsAction,
 	type PriceAdjustment,
 	type PriceAdjustmentType,
 	searchEquipmentAction,
@@ -51,8 +55,9 @@ import {
 	getUserBalanceAction,
 	removeBookingLabelAction,
 } from "@/actions/audit-and-balance-actions";
-import { updateBookingStatusAction } from "@/actions/booking-actions";
 import { DocumentsPanel } from "@/components/admin/bookings/documents/DocumentsPanel";
+import { PaymentsPanel } from "@/components/admin/bookings/PaymentsPanel";
+import { LabelsBlock } from "@/components/admin/users/details-panel/LabelsBlock";
 import {
 	RentalPeriod,
 	type RentalPeriodValue,
@@ -71,137 +76,26 @@ import {
 	SheetContent,
 	SheetHeader,
 	SheetTitle,
-	Textarea,
 } from "@/components/ui";
-import { BOOKING_STATUS_CONFIG } from "@/constants";
-import type { BookingStatus } from "@/core/domain/entities/Booking";
+import {
+	ALL_BOOKING_STATUSES,
+	BOOKING_STATUS_CONFIG,
+	EDITABLE_ITEMS_STATUSES,
+	EDITABLE_PERIOD_STATUSES,
+	EDITABLE_PRICE_STATUSES,
+	LABEL_COLORS,
+} from "@/constants";
+import type {
+	AdminBookingItemSnippet,
+	AdminBookingRow,
+	BookingComment,
+	BookingLabel,
+	BookingStatus,
+	DraftItem,
+	EquipmentSearchResult,
+	UserSearchResult,
+} from "@/core/domain/entities/Booking";
 import { calculateItemPrice, cn, combineDateAndTime } from "@/lib/utils";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface AdminBookingItemSnippet {
-	equipmentId: string;
-	title: string;
-	priceAtBooking: number;
-	depositAtBooking: number;
-	replacementValueAtBooking: number;
-	price4h: number | null;
-	price8h: number | null;
-	pricePerDay: number;
-}
-
-export interface AdminBookingRow {
-	id: string;
-	status: BookingStatus;
-	totalAmount: number;
-	createdAt: string;
-	startDate: string;
-	endDate: string;
-	insuranceIncluded: boolean | null;
-	totalReplacementValue: number | null;
-	cancellationReason: string | null;
-	cancelledAt: string | null;
-	clientId: string;
-	clientName: string | null;
-	clientEmail: string | null;
-	equipmentTitles: string[];
-	itemCount: number;
-	bookingItems: AdminBookingItemSnippet[];
-}
-
-export interface BookingLabel {
-	id: string;
-	text: string;
-	color: keyof typeof LABEL_COLORS;
-	dueDate?: string;
-	shift?: string;
-	createdAt: string;
-	author: string;
-}
-
-export interface BookingComment {
-	id: string;
-	text: string;
-	author: string;
-	createdAt: string;
-}
-
-type UserSearchResult = {
-	id: string;
-	name: string | null;
-	email: string | null;
-	phone: string | null;
-};
-type EquipmentSearchResult = {
-	id: string;
-	title: string;
-	pricePerDay: number;
-	price4h: number;
-	price8h: number;
-	deposit: number;
-	replacementValue: number;
-};
-interface DraftItem {
-	equipmentId: string;
-	title: string;
-	quantity: number;
-	pricePerUnit: number;
-	depositPerUnit: number;
-	replacementValuePerUnit: number;
-	price4h: number;
-	price8h: number;
-	pricePerDay: number;
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const NEXT_STATUSES: Record<BookingStatus, BookingStatus[]> = {
-	PENDING_REVIEW: ["WAIT_PAYMENT", "READY_TO_RENT", "CANCELLED"],
-	WAIT_PAYMENT: ["READY_TO_RENT", "CANCELLED"],
-	READY_TO_RENT: ["ACTIVE", "CANCELLED"],
-	ACTIVE: ["COMPLETED"],
-	COMPLETED: [],
-	CANCELLED: [],
-	EXPIRED: ["PENDING_REVIEW", "CANCELLED"],
-};
-
-const EDITABLE_PERIOD_STATUSES: BookingStatus[] = [
-	"PENDING_REVIEW",
-	"WAIT_PAYMENT",
-	"READY_TO_RENT",
-];
-const EDITABLE_ITEMS_STATUSES: BookingStatus[] = [
-	"PENDING_REVIEW",
-	"WAIT_PAYMENT",
-	"READY_TO_RENT",
-];
-const EDITABLE_PRICE_STATUSES: BookingStatus[] = [
-	"PENDING_REVIEW",
-	"WAIT_PAYMENT",
-	"READY_TO_RENT",
-	"ACTIVE",
-];
-
-const LABEL_COLORS = {
-	amber:
-		"bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400",
-	blue: "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400",
-	red: "bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400",
-	green:
-		"bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400",
-	purple:
-		"bg-purple-500/15 text-purple-600 border-purple-500/30 dark:text-purple-400",
-	gray: "bg-foreground/8 text-foreground/60 border-foreground/15",
-} as const;
-
-const LABEL_COLOR_OPTIONS = [
-	{ value: "amber", label: "Жёлтый" },
-	{ value: "blue", label: "Синий" },
-	{ value: "red", label: "Красный" },
-	{ value: "green", label: "Зелёный" },
-	{ value: "purple", label: "Фиолетовый" },
-	{ value: "gray", label: "Серый" },
-] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1445,234 +1339,6 @@ function BalanceSection({
 	);
 }
 
-// ─── Labels & Comments (unchanged) ───────────────────────────────────────────
-
-function LabelsBlock({
-	labels,
-	onAdd,
-	onRemove,
-}: {
-	labels: BookingLabel[];
-	onAdd: (l: Omit<BookingLabel, "id" | "createdAt" | "author">) => void;
-	onRemove: (id: string) => void;
-}) {
-	const [open, setOpen] = useState(false);
-	const [text, setText] = useState("");
-	const [color, setColor] = useState<keyof typeof LABEL_COLORS>("amber");
-	const [dueDate, setDueDate] = useState("");
-	const [shift, setShift] = useState("");
-
-	const handleAdd = () => {
-		if (!text.trim()) return;
-		onAdd({
-			text: text.trim(),
-			color,
-			dueDate: dueDate || "",
-			shift: shift || "",
-		});
-		setText("");
-		setDueDate("");
-		setShift("");
-		setOpen(false);
-	};
-
-	return (
-		<div className="space-y-2">
-			{labels.length > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{labels.map((l) => (
-						<div
-							key={l.id}
-							className={cn(
-								"group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border",
-								LABEL_COLORS[l.color]
-							)}
-						>
-							<TagIcon size={9} />
-							<span>{l.text}</span>
-							{l.dueDate && (
-								<span className="opacity-60 text-[10px]">
-									·{" "}
-									{new Date(l.dueDate).toLocaleDateString("ru-RU", {
-										day: "numeric",
-										month: "short",
-									})}
-								</span>
-							)}
-							{l.shift && (
-								<span className="opacity-60 text-[10px]">
-									· смена {l.shift}
-								</span>
-							)}
-							<button
-								type="button"
-								onClick={() => onRemove(l.id)}
-								className="opacity-0 group-hover:opacity-60 hover:opacity-100! transition-opacity ml-0.5"
-							>
-								<XIcon size={10} />
-							</button>
-						</div>
-					))}
-				</div>
-			)}
-			{open ? (
-				<div className="p-3 rounded-xl bg-foreground/4 border border-foreground/8 space-y-2.5">
-					<Input
-						autoFocus
-						value={text}
-						onChange={(e) => setText(e.target.value)}
-						placeholder="Текст метки..."
-						className="h-8 text-xs"
-						onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-					/>
-					<div className="grid grid-cols-2 gap-2">
-						<div className="space-y-1">
-							<Label className="text-[10px] text-muted-foreground">Цвет</Label>
-							<Select
-								value={color}
-								onValueChange={(v) => setColor(v as typeof color)}
-							>
-								<SelectTrigger className="h-7 text-xs">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{LABEL_COLOR_OPTIONS.map((o) => (
-										<SelectItem
-											key={o.value}
-											value={o.value}
-											className="text-xs"
-										>
-											{o.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-1">
-							<Label className="text-[10px] text-muted-foreground">
-								Смена (опц.)
-							</Label>
-							<Input
-								value={shift}
-								onChange={(e) => setShift(e.target.value)}
-								placeholder="Утренняя..."
-								className="h-7 text-xs"
-							/>
-						</div>
-					</div>
-					<div className="space-y-1">
-						<Label className="text-[10px] text-muted-foreground">
-							Дата напоминания (опц.)
-						</Label>
-						<Input
-							type="date"
-							value={dueDate}
-							onChange={(e) => setDueDate(e.target.value)}
-							className="h-7 text-xs"
-						/>
-					</div>
-					<div className="flex gap-1.5">
-						<Button
-							size="sm"
-							className="h-7 text-xs flex-1"
-							onClick={handleAdd}
-							disabled={!text.trim()}
-						>
-							Добавить
-						</Button>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-7 text-xs"
-							onClick={() => setOpen(false)}
-						>
-							<XIcon size={11} />
-						</Button>
-					</div>
-				</div>
-			) : (
-				<button
-					type="button"
-					onClick={() => setOpen(true)}
-					className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-				>
-					<TagIcon size={10} /> Добавить метку
-				</button>
-			)}
-		</div>
-	);
-}
-
-function CommentsBlock({
-	comments,
-	onAdd,
-}: {
-	comments: BookingComment[];
-	onAdd: (t: string) => void;
-}) {
-	const [text, setText] = useState("");
-	const handleAdd = () => {
-		if (!text.trim()) return;
-		onAdd(text.trim());
-		setText("");
-	};
-	return (
-		<div className="space-y-3">
-			{comments.length > 0 && (
-				<div className="space-y-2">
-					{comments.map((c) => (
-						<div key={c.id} className="flex gap-2.5">
-							<div className="w-6 h-6 rounded-full bg-foreground/10 flex items-center justify-center shrink-0 mt-0.5">
-								<UserIcon size={11} className="text-muted-foreground" />
-							</div>
-							<div className="flex-1">
-								<div className="flex items-baseline gap-2 mb-0.5">
-									<span className="text-xs font-semibold">{c.author}</span>
-									<span className="text-[10px] text-muted-foreground">
-										{new Date(c.createdAt).toLocaleString("ru-RU", {
-											day: "numeric",
-											month: "short",
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
-									</span>
-								</div>
-								<p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
-									{c.text}
-								</p>
-							</div>
-						</div>
-					))}
-				</div>
-			)}
-			<div className="space-y-1.5">
-				<Textarea
-					value={text}
-					onChange={(e) => setText(e.target.value)}
-					placeholder="Комментарий для команды..."
-					rows={2}
-					className="text-xs resize-none"
-					onKeyDown={(e) => {
-						if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAdd();
-					}}
-				/>
-				<div className="flex items-center justify-between">
-					<span className="text-[10px] text-muted-foreground">Ctrl+Enter</span>
-					<Button
-						size="sm"
-						variant="outline"
-						className="h-7 text-xs"
-						onClick={handleAdd}
-						disabled={!text.trim()}
-					>
-						Отправить
-					</Button>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 function AuditBlock({ entries }: { entries: AuditLogEntry[] }) {
 	if (!entries.length)
 		return (
@@ -1739,7 +1405,7 @@ function AuditBlock({ entries }: { entries: AuditLogEntry[] }) {
 	);
 }
 
-type TabId = "info" | "comments" | "labels" | "audit" | "docs";
+type TabId = "info" | "payments" | "comments" | "labels" | "audit" | "docs";
 
 interface BookingDetailSheetProps {
 	booking: AdminBookingRow | null;
@@ -1779,10 +1445,18 @@ export function BookingDetailSheet({
 		}
 	}, [open, localBooking?.id]);
 
+	const totalDeposit = useMemo(() => {
+		return localBooking?.bookingItems.reduce(
+			(acc, item) => acc + (item.depositAtBooking || 0),
+			0
+		);
+	}, [localBooking?.bookingItems]);
+
 	const loadPersistedData = async (bookingId: string) => {
-		const [labelsResult, auditResult] = await Promise.all([
+		const [labelsResult, auditResult, commentsResult] = await Promise.all([
 			getBookingLabelsAction(bookingId),
 			getBookingAuditLogAction(bookingId),
+			getAdminBookingCommentsAction(bookingId),
 		]);
 		if (labelsResult.success && labelsResult.data) {
 			setLabels(
@@ -1800,6 +1474,16 @@ export function BookingDetailSheet({
 		if (auditResult.success && auditResult.data) {
 			setAudit(auditResult.data);
 		}
+		if (commentsResult.success && commentsResult.data) {
+			setComments(
+				commentsResult.data.map((c) => ({
+					id: c.id,
+					text: c.note,
+					author: c.author?.name || "Админ",
+					createdAt: c.createdAt.toISOString(),
+				}))
+			);
+		}
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
@@ -1816,8 +1500,6 @@ export function BookingDetailSheet({
 
 	if (!localBooking) return null;
 
-	const nextStatuses = NEXT_STATUSES[localBooking.status] ?? [];
-
 	const addAudit = (
 		entry: Omit<AuditLogEntry, "id" | "createdAt" | "authorName" | "authorId">
 	) =>
@@ -1832,12 +1514,15 @@ export function BookingDetailSheet({
 			},
 		]);
 
-	const handleStatusChange = (newStatus: BookingStatus) =>
+	const handleForceStatusChange = (newStatus: BookingStatus) =>
 		startTransition(async () => {
-			const r = await updateBookingStatusAction(localBooking.id, newStatus);
+			const r = await adminForceSetBookingStatusAction(
+				localBooking.id,
+				newStatus
+			);
 			if (r.success) {
 				addAudit({
-					action: "Статус изменён",
+					action: "Статус изменён вручную",
 					fieldName: "status",
 					valueBefore: localBooking.status,
 					valueAfter: newStatus,
@@ -1854,11 +1539,7 @@ export function BookingDetailSheet({
 
 	const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 		{ id: "info", label: "Детали", icon: ShieldIcon },
-		{
-			id: "comments",
-			label: comments.length ? `Коммент. (${comments.length})` : "Коммент.",
-			icon: ChatIcon,
-		},
+		{ id: "payments", label: "Оплата", icon: HandCoinsIcon },
 		{
 			id: "labels",
 			label: labels.length ? `Метки (${labels.length})` : "Метки",
@@ -1985,7 +1666,7 @@ export function BookingDetailSheet({
 									key={l.id}
 									className={cn(
 										"flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border",
-										LABEL_COLORS[l.color]
+										LABEL_COLORS[l.color as keyof typeof LABEL_COLORS]
 									)}
 								>
 									<TagIcon size={8} /> {l.text}
@@ -2028,30 +1709,31 @@ export function BookingDetailSheet({
 					{activeTab === "info" && (
 						<div className="divide-y divide-foreground/5">
 							{/* Status */}
-							{nextStatuses.length > 0 && (
-								<div className="px-6 py-4">
-									<SectionTitle icon={ArrowClockwiseIcon}>
-										Изменить статус
-									</SectionTitle>
-									<div className="flex flex-wrap gap-1.5">
-										{nextStatuses.map((s) => (
-											<button
-												key={s}
-												type="button"
-												disabled={isPending}
-												onClick={() => handleStatusChange(s)}
-												className={cn(
-													"text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all",
-													BOOKING_STATUS_CONFIG[s].color,
-													"hover:opacity-80 active:scale-95 disabled:opacity-40"
-												)}
-											>
-												→ {BOOKING_STATUS_CONFIG[s].label}
-											</button>
+							<div className="px-6 py-4">
+								<SectionTitle icon={ArrowClockwiseIcon}>
+									Статус заказа
+								</SectionTitle>
+								<Select
+									value={localBooking.status}
+									onValueChange={(v) =>
+										handleForceStatusChange(v as BookingStatus)
+									}
+									disabled={isPending}
+								>
+									<SelectTrigger className="h-9 text-sm">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{ALL_BOOKING_STATUSES.map((s) => (
+											<SelectItem key={s} value={s}>
+												<span className="flex items-center gap-2">
+													{BOOKING_STATUS_CONFIG[s]?.label ?? s}
+												</span>
+											</SelectItem>
 										))}
-									</div>
-								</div>
-							)}
+									</SelectContent>
+								</Select>
+							</div>
 
 							{/* 2.2 */}
 							<ClientBlock
@@ -2156,36 +1838,58 @@ export function BookingDetailSheet({
 						</div>
 					)}
 
-					{activeTab === "comments" && (
+					{activeTab === "payments" && (
 						<div className="px-6 py-4">
-							<CommentsBlock
-								comments={comments}
-								onAdd={(text) => {
-									setComments((prev) => [
-										...prev,
-										{
-											id: crypto.randomUUID(),
-											text,
-											author: "Администратор",
-											createdAt: new Date().toISOString(),
-										},
-									]);
-									toast.success("Комментарий добавлен");
-								}}
+							<PaymentsPanel
+								bookingId={localBooking.id}
+								totalAmount={localBooking.totalAmount}
+								currentStatus={localBooking.status}
+								totalDeposit={totalDeposit || 0}
+								userId={localBooking.clientId}
+								onStatusChangeNeeded={() => setActiveTab("info")}
 							/>
 						</div>
 					)}
 
 					{activeTab === "labels" && (
 						<div className="px-6 py-4 space-y-4">
-							<p className="text-xs text-muted-foreground leading-relaxed">
-								Метки видны только команде. Можно добавить напоминание к дате
-								или привязать к смене.
-							</p>
 							<LabelsBlock
 								labels={labels}
 								onAdd={handleAddLabel}
 								onRemove={handleRemoveLabel}
+								comments={comments}
+								onAddComment={async (text) => {
+									if (booking) {
+										const r = await adminAddBookingCommentAction(
+											booking.id,
+											text
+										);
+										if (r.success && r.data) {
+											setComments((p) => [
+												{
+													id: r.data.id,
+													text: r.data.note,
+													author: "Вы",
+													createdAt: r.data.createdAt.toISOString(),
+												},
+												...p,
+											]);
+											toast.success("Комментарий добавлен");
+										} else {
+											toast.error("Шеф у нас проблемы");
+										}
+									}
+								}}
+								onRemoveComment={async (id) => {
+									if (booking) {
+										const r = await adminDeleteBookingCommentAction(
+											booking.id,
+											id
+										);
+										if (r.success)
+											setComments((p) => p.filter((c) => c.id !== id));
+									}
+								}}
 							/>
 						</div>
 					)}
@@ -2227,8 +1931,8 @@ export function BookingDetailSheet({
 								variant="outline"
 								size="sm"
 								className="text-red-500 border-red-500/30 hover:bg-red-500/10 text-xs gap-1"
-								onClick={() => handleStatusChange("CANCELLED")}
-								disabled={isPending || !nextStatuses.includes("CANCELLED")}
+								onClick={() => handleForceStatusChange("CANCELLED")}
+								disabled={isPending}
 							>
 								<ProhibitIcon size={11} /> Отменить
 							</Button>

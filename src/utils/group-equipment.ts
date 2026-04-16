@@ -27,6 +27,9 @@ export function groupEquipmentRows(
 		const imageUrls = imagesData.map((img) => img.url);
 
 		if (!acc[title]) {
+			// Extract ID related equipments
+			const relatedIds = item.relatedEquipment?.map((r) => r.relatedId) ?? [];
+
 			acc[title] = {
 				...item,
 				description: item.description || "",
@@ -44,12 +47,21 @@ export function groupEquipmentRows(
 				comments: item.comments || [],
 				createdAt: new Date(item.createdAt),
 				updatedAt: new Date(item.updatedAt),
+				relatedIds: relatedIds,
 			};
 		}
 
 		const group = acc[title];
 		group.totalCount += 1;
 		group.allUnitIds = [...group.allUnitIds, item.id];
+
+		// If in the following lines of the same group there are also accompanying
+		if (
+			item.relatedEquipment &&
+			(!group.relatedIds || group.relatedIds.length === 0)
+		) {
+			group.relatedIds = item.relatedEquipment.map((r) => r.relatedId);
+		}
 
 		if (item.status === "AVAILABLE" && item.isAvailable) {
 			group.availableCount += 1;

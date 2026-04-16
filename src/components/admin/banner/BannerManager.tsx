@@ -12,12 +12,12 @@ import {
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { Banner, BannerType } from "@/actions/banner-actions";
+import type { Banner, BannerType } from "@/actions/admin-banner-actions";
 import {
 	deleteBannerAction,
 	reorderBannersAction,
 	updateBannerAction,
-} from "@/actions/banner-actions";
+} from "@/actions/admin-banner-actions";
 import { BannerFormDialog } from "@/components/admin/banner/BannerFormDialog";
 import { Button, CardContent } from "@/components/ui";
 import { TYPE_COLORS, TYPE_OPTIONS } from "@/constants";

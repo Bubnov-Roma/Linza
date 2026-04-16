@@ -38,4 +38,15 @@ export interface UserProfile {
 	permissions: Record<string, boolean>;
 	isVerified: boolean | null;
 	application?: UserApplication | null;
+	labels?: Array<{
+		id: string;
+		text: string;
+		color: string;
+		dueDate?: string;
+	}>;
+	discount?: {
+		type: string;
+		value: number;
+		promoCode?: string | null;
+	} | null;
 }

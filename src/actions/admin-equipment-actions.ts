@@ -51,7 +51,7 @@ export type FilterOperator =
 	| "is"
 	| "contains";
 
-export type EquipmentColumn = keyof Prisma.EquipmentWhereInput;
+type EquipmentColumn = keyof Prisma.EquipmentWhereInput;
 
 export type EquipmentFilter = {
 	column: EquipmentColumn;
@@ -205,6 +205,10 @@ export async function getEquipmentWithFilters(params: {
 				include: { image: { select: { id: true, url: true } } },
 				orderBy: { orderIndex: "asc" },
 			},
+			// ✅ Добавили загрузку связанных товаров, чтобы они не сбрасывались в Sheet
+			relatedEquipment: {
+				select: { relatedId: true },
+			},
 		},
 	};
 
@@ -222,11 +226,49 @@ export async function getEquipmentWithFilters(params: {
 	};
 }
 
+export async function toggleEquipmentAvailabilityAction(
+	id: string,
+	isAvailable: boolean
+) {
+	try {
+		await prisma.equipment.update({
+			where: { id },
+			data: { isAvailable },
+		});
+		revalidatePath("/admin/equipment");
+		return { success: true };
+	} catch (e) {
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : "Ошибка обновления",
+		};
+	}
+}
+
+export async function toggleEquipmentPrimaryAction(
+	id: string,
+	isPrimary: boolean
+) {
+	try {
+		await prisma.equipment.update({
+			where: { id },
+			data: { isPrimary },
+		});
+		revalidatePath("/admin/equipment");
+		return { success: true };
+	} catch (e) {
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : "Ошибка обновления",
+		};
+	}
+}
+
 export async function updateEquipment(
 	id: string,
 	updates: Partial<DbEquipment>
 ): Promise<DbEquipment> {
-	// 1. Формируем slug, если нужно
+	// 1. Формируем slug
 	const withSlug =
 		updates.title && !updates.slug
 			? { ...updates, slug: slugify(updates.title) }
@@ -323,29 +365,8 @@ export async function deleteEquipment(ids: string[]) {
 	return { success: true };
 }
 
-export async function setPrimaryEquipmentAction(id: string) {
-	const item = await prisma.equipment.findUnique({
-		where: { id },
-		select: { title: true },
-	});
-
-	if (!item) return { success: false, error: "Позиция не найдена" };
-
-	await prisma.$transaction([
-		prisma.equipment.updateMany({
-			where: { title: item.title },
-			data: { isPrimary: false },
-		}),
-		prisma.equipment.update({
-			where: { id },
-			data: { isPrimary: true },
-		}),
-	]);
-
-	revalidatePath("/admin/equipment");
-	return { success: true };
-}
-
+// TODO: есть дубль в admin-booking-actions
+// TODO! используется на клиенте в core search !!!
 export async function searchEquipmentAction(
 	query: string
 ): Promise<GroupedEquipment[]> {
@@ -476,25 +497,7 @@ export async function exportEquipment(ids?: string[]): Promise<DbEquipment[]> {
 	return data as unknown as DbEquipment[];
 }
 
-export async function getEquipmentById(
-	id: string
-): Promise<DbEquipmentWithImages | null> {
-	const data = await prisma.equipment.findUnique({
-		where: { id },
-		include: {
-			equipmentImageLinks: {
-				include: { image: { select: { id: true, url: true } } },
-				orderBy: { orderIndex: "asc" },
-			},
-			relatedEquipment: {
-				select: { relatedId: true },
-			},
-		},
-	});
-
-	return (data as unknown as DbEquipmentWithImages) || null;
-}
-
+// TODO: используется на клиенте
 // ─── CATALOG FETCH (Cached) ─────────────────────────────────────────────────
 
 const fetchEquipmentCached = cache(
@@ -539,6 +542,7 @@ const fetchEquipmentCached = cache(
 	}
 );
 
+// TODO: используется на клиенте
 export async function getEquipment(filters: {
 	categorySlug?: string;
 	subcategorySlug?: string | undefined;
@@ -551,6 +555,7 @@ export async function getEquipment(filters: {
 	);
 }
 
+// TODO: используется на клиенте
 export async function getEquipmentBySlug(
 	slug: string
 ): Promise<GroupedEquipment | null> {

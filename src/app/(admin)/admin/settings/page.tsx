@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSiteSettings } from "@/actions/settings-actions";
+import { getSiteSettings } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
 import { SettingsClient } from "@/components/admin/settings/SettingsClient";
 

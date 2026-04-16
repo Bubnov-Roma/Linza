@@ -9,14 +9,18 @@ import {
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { Banner, BannerImage, BannerType } from "@/actions/banner-actions";
+import type {
+	Banner,
+	BannerImage,
+	BannerType,
+} from "@/actions/admin-banner-actions";
 import {
 	addBannerImageAction,
 	createBannerAction,
 	deleteBannerImageAction,
 	reorderBannerImagesAction,
 	updateBannerAction,
-} from "@/actions/banner-actions";
+} from "@/actions/admin-banner-actions";
 import { ImageUploader, MarkdownEditor } from "@/components/shared";
 import {
 	Button,

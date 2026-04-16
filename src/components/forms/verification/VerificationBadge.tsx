@@ -89,9 +89,8 @@ export const VerificationBadge: React.FC<Props> = ({
 
 				<DialogContent
 					className={cn(
-						"glass items-center justify-center text-center flex-col transition-all rounded-2xl sm:max-w-106.25 backdrop-blur-xl border",
-						borderColor,
-						bgColor
+						"glass items-center justify-center text-center flex-col transition-all rounded-2xl sm:max-w-106.25 backdrop-blur-xl border bg-background/80",
+						borderColor
 					)}
 				>
 					<DialogHeader className="flex items-center justify-center text-center">

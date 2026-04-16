@@ -22,7 +22,7 @@ import {
 	getDocumentTemplatesAction,
 	getGeneratedDocumentsAction,
 	uploadDocumentTemplateAction,
-} from "@/actions/document-template-actions";
+} from "@/actions/admin-document-template-actions";
 import {
 	Button,
 	Input,

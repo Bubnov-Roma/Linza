@@ -15,6 +15,7 @@ const cspHeader = `
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-mariadb', 'bcryptjs'],
   async headers() {
     return [

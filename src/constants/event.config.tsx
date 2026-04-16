@@ -4,7 +4,7 @@ import {
 	MegaphoneIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import type { JSX } from "react";
-import type { BannerType } from "@/actions/banner-actions";
+import type { BannerType } from "@/actions/admin-banner-actions";
 
 export const EVENT_CONFIG = {
 	info: {

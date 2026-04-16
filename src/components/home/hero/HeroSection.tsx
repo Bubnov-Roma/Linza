@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Banner } from "@/actions/banner-actions";
+import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCarousel } from "@/components/home/events-banner/BannerCarousel";
 import { Button } from "@/components/ui";
 

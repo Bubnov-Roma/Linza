@@ -2,10 +2,10 @@
 
 import type { Icon } from "@phosphor-icons/react";
 import {
-	CalendarIcon,
 	CameraIcon,
 	ChatsIcon,
 	FileTextIcon,
+	FolderIcon,
 	GearIcon,
 	HeartIcon,
 	HouseLineIcon,
@@ -13,7 +13,7 @@ import {
 	PackageIcon,
 	ShoppingCartSimpleIcon,
 	SquaresFourIcon,
-	UsersIcon,
+	UserIcon,
 } from "@phosphor-icons/react/dist/ssr";
 
 export type NavItem = {
@@ -30,27 +30,27 @@ export const ADMIN_NAV: NavItem[] = [
 		icon: LayoutIcon,
 	},
 	{
-		title: "Оборудование",
+		title: "Техника",
 		href: "/admin/equipment",
 		icon: CameraIcon,
 		badge: "42",
 	},
 	{
-		title: "Бронирования",
+		title: "Категории",
+		href: "/admin/categories",
+		icon: FolderIcon,
+		badge: "18",
+	},
+	{
+		title: "Заказы",
 		href: "/admin/bookings",
 		icon: PackageIcon,
 		badge: "18",
 	},
 	{
-		title: "Сводка",
-		href: "/admin/summary",
-		icon: CalendarIcon,
-		badge: "18",
-	},
-	{
 		title: "Клиенты",
 		href: "/admin/users",
-		icon: UsersIcon,
+		icon: UserIcon,
 		badge: "156",
 	},
 	{

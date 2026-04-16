@@ -8,8 +8,9 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { ApplicationInitializer } from "@/providers/application-initializer";
 import { RootProvider } from "@/providers/root-provider";
 import "./globals.css";
-import { getCategoriesFromDb } from "@/actions/category-actions";
+import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { auth } from "@/auth";
+import CookieBanner from "@/components/shared/CookieBanner";
 import { prisma } from "@/lib/prisma";
 import type { ClientFormValues } from "@/schemas";
 import type { ClientApplication } from "@/types";
@@ -52,7 +53,7 @@ export default async function RootLayout({
 	return (
 		<html lang="ru" suppressHydrationWarning>
 			<head>
-				<meta name="apple-mobile-web-app-capable" content="yes" />
+				<meta name="mobile-web-app-capable" content="yes" />
 				<meta name="apple-mobile-web-app-title" content="Linza" />
 				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 			</head>
@@ -83,6 +84,7 @@ export default async function RootLayout({
 							</SidebarInset>
 						</>
 					)}
+					<CookieBanner />
 				</RootProvider>
 				<SpeedInsights />
 			</body>

@@ -115,7 +115,7 @@ export async function updateClientSocialsAction(
 
 export async function updateUserPasswordAction(field: string, value: string) {
 	const session = await auth();
-	if (!session?.user?.email) return { success: false, error: "Not authorized" };
+	if (!session?.user?.id) return { success: false, error: "Not authorized" };
 
 	try {
 		let dataToUpdate = {};
@@ -128,7 +128,7 @@ export async function updateUserPasswordAction(field: string, value: string) {
 		}
 
 		await prisma.user.update({
-			where: { email: session.user.email },
+			where: { id: session.user.id },
 			data: dataToUpdate,
 		});
 

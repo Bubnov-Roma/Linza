@@ -3,7 +3,6 @@
 import {
 	ArrowBigDown,
 	ArrowBigUp,
-	Ban,
 	ChevronDown,
 	Minus,
 	Package,
@@ -26,13 +25,10 @@ import {
 	RentalPeriod,
 } from "@/components/shared";
 import { Button } from "@/components/ui";
-import { SUPPORT_PHONE_DEFAULT } from "@/constants";
-import { useApplicationStatus } from "@/hooks/use-application-status";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { calculateItemPrice, cn, combineDateAndTime } from "@/lib/utils";
 import { useSiteSettingsStore } from "@/store";
 import { useCartStore } from "@/store/use-cart.store";
-import type { ApplicationStatus } from "@/types";
 import { formatPlural } from "@/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,7 +37,7 @@ export default function CheckoutPage() {
 	const requireAuth = useRequireAuth();
 	const router = useRouter();
 	const { items, addItem, removeOne, clearCart } = useCartStore();
-	const { status } = useApplicationStatus();
+	// const { status } = useApplicationStatus();
 
 	const { workStart, workEnd } = useSiteSettingsStore();
 
@@ -145,13 +141,8 @@ export default function CheckoutPage() {
 
 	const activeItems = items.filter((i) => i.quantity > 0);
 	const hasAnyBusy = busyIds.length > 0;
-	const isBookingBlocked = status === "REJECTED" || status === "BLOCKED";
 	const isCanBook =
-		!isBookingBlocked &&
-		math.totalRental > 0 &&
-		!hasAnyBusy &&
-		!!math.startFull &&
-		!!math.endFull;
+		math.totalRental > 0 && !hasAnyBusy && !!math.startFull && !!math.endFull;
 
 	// ── Submit ─────────────────────────────────────────────────────────────
 	const doCreateBooking = async (): Promise<boolean> => {
@@ -410,16 +401,13 @@ export default function CheckoutPage() {
 					</div>
 
 					{/* ── 3. Submit button ── */}
-					{isBookingBlocked ? (
-						<BlockedBanner status={status} />
-					) : (
-						<BookingButton
-							onClick={handleBookClick}
-							disabled={!isCanBook}
-							loading={isSubmitting}
-							mode="new"
-						/>
-					)}
+
+					<BookingButton
+						onClick={handleBookClick}
+						disabled={!isCanBook}
+						loading={isSubmitting}
+						mode="new"
+					/>
 
 					{/* Fine print */}
 					<p className="text-[10px] text-muted-foreground/30 text-center font-medium">
@@ -470,44 +458,6 @@ function CheckoutSkeleton() {
 						</div>
 					</div>
 				</div>
-			</div>
-		</div>
-	);
-}
-
-// ─── BlockedBanner ────────────────────────────────────────────────────────────
-function BlockedBanner({ status }: { status: ApplicationStatus }) {
-	const isBlocked = status === "BLOCKED";
-	return (
-		<div
-			className={cn(
-				"w-full rounded-2xl border px-4 py-3.5 flex items-start gap-3",
-				isBlocked
-					? "bg-red-500/8 border-red-500/20"
-					: "bg-amber-500/8 border-amber-500/20"
-			)}
-		>
-			<Ban
-				size={16}
-				className={cn(
-					"shrink-0 mt-0.5",
-					isBlocked ? "text-red-400" : "text-amber-400"
-				)}
-			/>
-			<div className="space-y-0.5 min-w-0">
-				<p
-					className={cn(
-						"text-sm font-bold leading-snug",
-						isBlocked ? "text-red-400" : "text-amber-400"
-					)}
-				>
-					{isBlocked ? "Аккаунт заблокирован" : "Бронирование недоступно"}
-				</p>
-				<p className="text-[11px] text-muted-foreground leading-snug whitespace-pre-wrap">
-					{isBlocked
-						? "Услуга аренды для данного профиля временно приостановлена. Обратитесь в поддержку."
-						: `Ваша заявка была отклонена. Для возобновления доступа свяжитесь с нами по номеру ${SUPPORT_PHONE_DEFAULT}`}
-				</p>
 			</div>
 		</div>
 	);

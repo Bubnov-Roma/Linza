@@ -18,7 +18,7 @@ import {
 	reorderSubcategoriesAction,
 	updateCategoryAction,
 	updateSubcategoryAction,
-} from "@/actions/category-actions";
+} from "@/actions/admin-category-actions";
 import { CategoryRow } from "@/components/admin/categories/CategoryRow";
 import { IconPicker } from "@/components/admin/categories/IconPicker";
 import { Button, Input, Label } from "@/components/ui";
@@ -143,7 +143,6 @@ export default function AdminCategoriesClient({
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-black uppercase italic tracking-tight flex items-center gap-2">
-						<FolderOpenIcon size={22} className="text-primary" />
 						Категории
 					</h1>
 					<p className="text-sm text-muted-foreground mt-1">

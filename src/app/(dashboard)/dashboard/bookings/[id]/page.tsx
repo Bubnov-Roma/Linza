@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getSupportInfo } from "@/actions/settings-actions";
+import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
 import { BookingDetailClient } from "@/components/dashboard/bookings/BookingDetailClient";
 import { toBookingDetailRow } from "@/core/domain/entities/Booking";

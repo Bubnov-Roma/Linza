@@ -72,3 +72,6 @@ tmp/
 temp/
 
 /generated/prisma
+
+dist/
+release.tar.gz

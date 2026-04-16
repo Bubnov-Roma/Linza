@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
 	type SiteSettingsInfo,
 	updateSiteSettingsAction,
-} from "@/actions/settings-actions";
+} from "@/actions/admin-settings-actions";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
 import {
 	Button,
@@ -195,3 +195,107 @@ export function SettingsClient({
 		</div>
 	);
 }
+
+// const PERMISSIONS = [
+// 	{ key: "bookings_approve", label: "Подтверждать брони" },
+// 	{ key: "equipment_edit", label: "Редактировать технику" },
+// 	{ key: "users_view", label: "Просматривать клиентов" },
+// 	{ key: "finance_view", label: "Просматривать финансы" },
+// ] as const;
+
+/* (user.role === "MANAGER" && (
+			<SectionCard
+				icon={<ShieldCheckIcon size={14} />}
+				title="Права менеджера"
+				className="bg-amber-500/5"
+			>
+				<div className="p-5 space-y-3">
+					{PERMISSIONS.map((perm) => (
+						<Label
+							key={perm.key}
+							className="flex items-center gap-3 cursor-pointer"
+						>
+							<Checkbox
+								checked={!!permissions[perm.key]}
+								onCheckedChange={(v) => {
+									const newPerms = { ...permissions, [perm.key]: !!v };
+									onPermissionSave(newPerms);
+								}}
+							/>
+							<span className="text-sm font-medium">{perm.label}</span>
+						</Label>
+					))}
+				</div>
+			</SectionCard>
+			); */
+import type { UserProfile } from "@/core/domain/entities/User";
+
+interface PersonalTableProps {
+	currentUserRole: string | undefined;
+	initialUsers: UserProfile[];
+}
+
+export const PersonalTable = ({
+	currentUserRole,
+	initialUsers,
+}: PersonalTableProps) => {
+	// const [_isPending, startTransition] = useTransition();
+	// const handleRoleChange = (userId: string, newRole: Role) => {
+	// 	startTransition(async () => {
+	// 		const r = await updateUserRoleAction(userId, newRole);
+	// 		if (r.success) {
+	// 			setUsers((prev) =>
+	// 				prev.map((u) =>
+	// 					u.id === userId ? { ...u, role: newRole as UserProfile["role"] } : u
+	// 				)
+	// 			);
+	// 			toast.success(`Роль → ${newRole}`);
+	// 		} else toast.error(r.error);
+	// 	});
+	// };
+
+	return (
+		<div>
+			{currentUserRole}
+			{initialUsers.map((u) => (
+				<div key={u.id}>
+					{u.name} - {u.email} - {u.role}
+				</div>
+			))}
+
+			{/* <TableCell onClick={(e) => e.stopPropagation()}>
+                      {currentUserRole === "ADMIN" ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex items-center gap-1 hover:opacity-80"
+                            >
+                              <RoleBadge role={user.role ?? "user"} />
+                              <CaretDownIcon
+                                size={10}
+                                className="text-muted-foreground"
+                              />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {(
+                              ["USER", "PARTNER", "MANAGER", "ADMIN"] as Role[]
+                            ).map((r) => (
+                              <DropdownMenuItem
+                                key={r}
+                                onClick={() => handleRoleChange(user.id, r)}
+                                className={user.role === r ? "font-bold" : ""}
+                              >
+                                {r}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <RoleBadge role={user.role ?? "user"} />
+                      )}
+                    </TableCell> */}
+		</div>
+	);
+};

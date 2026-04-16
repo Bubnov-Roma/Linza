@@ -3,7 +3,7 @@
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
-import type { Banner } from "@/actions/banner-actions";
+import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCard } from "@/components/home/events-banner/BannerCard";
 import { BannerModal } from "@/components/home/events-banner/BannerModal";
 import { cn } from "@/lib/utils";

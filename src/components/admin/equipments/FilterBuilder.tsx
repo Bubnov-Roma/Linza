@@ -1,11 +1,10 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { useState } from "react";
 import type {
 	EquipmentFilter,
 	FilterOperator,
-} from "@/actions/equipment-actions";
+} from "@/actions/admin-equipment-actions";
 import {
 	Button,
 	Input,
@@ -70,26 +69,23 @@ const COLUMN_TYPES: Record<
 };
 
 interface FilterBuilderProps {
+	filters: EquipmentFilter[];
 	onFiltersChange: (filters: EquipmentFilter[]) => void;
 	categories?: DbCategory[];
 }
 
 export function FilterBuilder({
+	filters,
 	onFiltersChange,
 	categories = [],
 }: FilterBuilderProps) {
-	const [filters, setFilters] = useState<EquipmentFilter[]>([]);
-
 	const addFilter = () => {
-		// ✅ Создаем новый фильтр с правильными типами
 		const newFilter: EquipmentFilter = {
 			column: "title",
 			operator: "ilike",
 			value: "",
 		};
-		const updated = [...filters, newFilter];
-		setFilters(updated);
-		onFiltersChange(updated);
+		onFiltersChange([...filters, newFilter]);
 	};
 
 	const updateFilter = (
@@ -106,7 +102,6 @@ export function FilterBuilder({
 			const colType = COLUMN_TYPES[colValue] ?? "text";
 			const defaultOp = OPERATORS[colType]?.[0]?.value ?? "eq";
 			updated[index] = {
-				...filter,
 				column: colValue,
 				operator: defaultOp,
 				value: "",
@@ -117,18 +112,14 @@ export function FilterBuilder({
 			updated[index] = { ...filter, value };
 		}
 
-		setFilters(updated);
 		onFiltersChange(updated);
 	};
 
 	const removeFilter = (index: number) => {
-		const updated = filters.filter((_, i) => i !== index);
-		setFilters(updated);
-		onFiltersChange(updated);
+		onFiltersChange(filters.filter((_, i) => i !== index));
 	};
 
 	const clearFilters = () => {
-		setFilters([]);
 		onFiltersChange([]);
 	};
 
@@ -151,7 +142,7 @@ export function FilterBuilder({
 			<div className="flex items-center justify-between">
 				<Button variant="outline" size="sm" onClick={addFilter}>
 					<Plus className="w-3 h-3 mr-1" />
-					Добавить фильтр
+					Добавить
 				</Button>
 				{filters.length > 0 && (
 					<Button
@@ -175,7 +166,7 @@ export function FilterBuilder({
 
 						return (
 							<div
-								key={`${filter}` + `${index}`}
+								key={`${filter.column}-${index}`}
 								className="flex items-center gap-2"
 							>
 								<Select
@@ -218,7 +209,7 @@ export function FilterBuilder({
 										onValueChange={(v) => updateFilter(index, "value", v)}
 									>
 										<SelectTrigger className="h-8 flex-1 text-xs">
-											<SelectValue placeholder="Выберите категорию..." />
+											<SelectValue placeholder="Категория..." />
 										</SelectTrigger>
 										<SelectContent>
 											{categories.map((cat) => (
@@ -234,7 +225,7 @@ export function FilterBuilder({
 										onValueChange={(v) => updateFilter(index, "value", v)}
 									>
 										<SelectTrigger className="h-8 flex-1 text-xs">
-											<SelectValue placeholder="Выберите подкатегорию..." />
+											<SelectValue placeholder="Подкатегория..." />
 										</SelectTrigger>
 										<SelectContent>
 											{getSubcategoriesForFilter(index).map((sub) => (
@@ -242,11 +233,6 @@ export function FilterBuilder({
 													{sub.name}
 												</SelectItem>
 											))}
-											{getSubcategoriesForFilter(index).length === 0 && (
-												<SelectItem value="_none" disabled>
-													Сначала выберите категорию
-												</SelectItem>
-											)}
 										</SelectContent>
 									</Select>
 								) : columnType === "boolean" ? (

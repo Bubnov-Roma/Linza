@@ -30,8 +30,10 @@ export default auth((req) => {
 		}
 	}
 
-	// 3. Redirect authorized users from the login page (only if there is no view)
+	// 3. Redirect authorized users from the login page (only if not invite page)
 	if (isLoggedIn && isAuthRoute && !req.nextUrl.searchParams.has("view")) {
+		// /auth/invite нужен залогиненному пользователю — он сам редиректит дальше
+		if (pathname === "/auth/invite") return NextResponse.next();
 		return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
 	}
 

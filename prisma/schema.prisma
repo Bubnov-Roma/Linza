@@ -87,56 +87,99 @@ enum DocumentTemplateType {
   CUSTOM                // Произвольный
 }
 
-// ─── NEXTAUTH & PROFILES ───────────────────────────────────────────────────
+enum BalanceTxType {
+  REFUND
+  CREDIT
+  DEBIT
+  MANUAL
+}
+
+enum PaymentMethod {
+  CASH        // Наличные
+  CARD        // Карта / терминал
+  TRANSFER    // Банковский перевод
+  BALANCE     // Списание с баланса клиента
+  OTHER       // Иное
+}
+
+enum PaymentType {
+  PAYMENT    // оплата аренды 
+  DEPOSIT    // залог
+  OTHER      // прочее
+}
+
+// ─── NEXTAUTH & PROFILES ───
 
 model User {
-  id                  String    @id @default(uuid())
-  name                String?
-  email               String?   @unique
-  emailVerified       DateTime?
-  image               String?
-  password String? 
+  id                      String    @id @default(uuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?    
+  role                    Role        @default(USER)
+  entityType              EntityType? @default(INDIVIDUAL)
+  companyName             String?
+  tin                     String?
+  isVerified              Boolean?    @default(false)
+  phone                   String?
+  extraPhone              String?
+  registrationStep        Int         @default(1)
+  nickname                String?
+  isBlocked               Boolean     @default(false)
+  blockedReason           String?     @db.Text
+  permissions             Json        @default("{}")
+  deletionScheduledAt     DateTime?
+  createdAt               DateTime    @default(now())
+  balance                 Float  @default(0)
+  isAdminCreated          Boolean     @default(false)
+  adminCreatedNote        String?     @db.Text
+  mergedIntoId            String?
+  mergedInto              User?       @relation("UserMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom              User[]      @relation("UserMerge")
+  inviteTokens            InviteToken[]
+  accounts                Account[]
+  sessions                Session[]
+  bookings                Booking[]
+  cartItems               CartItem[]
+  favorites               Favorite[]
+  equipmentSets           EquipmentSet[]
+  clientApplication       ClientApplication?
+  adminNotifications      AdminNotification[]
+  categoryHistory         CategoryHistory[]
+  userDiscounts           UserDiscount[]       @relation("DiscountUser")
+  createdDiscounts        UserDiscount[]       @relation("DiscountCreator")
+  faqCreated              FaqItem[]            @relation("FaqCreator")
+  faqUpdated              FaqItem[]            @relation("FaqUpdater")
+  notesReceived           UserAdminNote[]      @relation("NoteTarget")
+  notesWritten            UserAdminNote[]      @relation("NoteAuthor")
+  bannersCreated          Banner[] @relation("BannerCreator")
+  balanceTransactions     BalanceTransaction[] @relation("UserBalance")
+  balanceTxAuthored       BalanceTransaction[] @relation("TxAuthor")
+  bookingAuditLogs        BookingAuditLog[]    @relation("AuditAuthor")
+  bookingLabels           BookingLabel[]       @relation("LabelAuthor")
+  documentGenerationLogs  DocumentGenerationLog[] @relation("DocGenAuthor")
+  documentTemplates       DocumentTemplate[] @relation("TemplateCreator")
+  bookingPaymentsAuthored BookingPayment[] @relation("PaymentAuthor")
+  auditLogsReceived       UserAuditLog[] @relation("UserAuditTarget")
+  auditLogsAuthored       UserAuditLog[] @relation("UserAuditAuthor")
+  bookingAdminNotes       BookingAdminNote[] @relation("BookingNoteAuthor")
+}
 
-  role                Role        @default(USER)
-  entityType          EntityType? @default(INDIVIDUAL)
-  companyName         String?
-  tin                 String?
-  isVerified          Boolean?    @default(false)
-  phone               String?
-  extraPhone          String?
-  registrationStep    Int         @default(1)
-  nickname            String?
-  isBlocked           Boolean     @default(false)
-  blockedReason       String?     @db.Text
-  permissions         Json        @default("{}")
-  deletionScheduledAt DateTime?
-  createdAt           DateTime    @default(now())
-  balance             Float  @default(0)
+model UserAuditLog {
+  id           String   @id @default(uuid())
+  targetUserId String
+  authorId     String?
+  authorName   String?
+  action       String
+  fieldName    String?
+  valueBefore  String?  @db.Text
+  valueAfter   String?  @db.Text
+  meta         Json?
+  createdAt    DateTime @default(now())
 
-  accounts            Account[]
-  sessions            Session[]
-  bookings            Booking[]
-  cartItems           CartItem[]
-  favorites           Favorite[]
-  equipmentSets       EquipmentSet[]
-  clientApplication   ClientApplication?
-  adminNotifications  AdminNotification[]
-  categoryHistory     CategoryHistory[]
-  userDiscounts       UserDiscount[]       @relation("DiscountUser")
-  createdDiscounts    UserDiscount[]       @relation("DiscountCreator")
-  faqCreated          FaqItem[]            @relation("FaqCreator")
-  faqUpdated          FaqItem[]            @relation("FaqUpdater")
-  notesReceived       UserAdminNote[]      @relation("NoteTarget")
-  notesWritten        UserAdminNote[]      @relation("NoteAuthor")
-  bannersCreated      Banner[] @relation("BannerCreator")
-  balanceTransactions BalanceTransaction[] @relation("UserBalance")
-  balanceTxAuthored   BalanceTransaction[] @relation("TxAuthor")
-  bookingAuditLogs    BookingAuditLog[]    @relation("AuditAuthor")
-  bookingLabels       BookingLabel[]       @relation("LabelAuthor")
-
-  documentGenerationLogs DocumentGenerationLog[] @relation("DocGenAuthor")
-
-  documentTemplates DocumentTemplate[] @relation("TemplateCreator")
+  targetUser   User  @relation("UserAuditTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  author       User? @relation("UserAuditAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
 
 model Account {
@@ -155,6 +198,16 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
+}
+model InviteToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique @default(uuid())
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -179,6 +232,7 @@ model ClientApplication {
   userId          String            @unique
   clientType      String
   applicationData Json              @default("{}")
+  adminOverrides  Json              @default("{}")
   status          ApplicationStatus @default(DRAFT)
   rejectionReason String?
   createdAt       DateTime          @default(now())
@@ -209,9 +263,10 @@ model Booking {
 
   balanceTransactions   BalanceTransaction[]
   generatedDocuments    DocumentGenerationLog[]
+  payments              BookingPayment[]
+
+  bookingAdminNotes BookingAdminNote[]
 }
-
-
 
 model BookingItem {
   id                        String   @id @default(uuid())
@@ -254,13 +309,6 @@ model BookingLabel {
   author         User?   @relation("LabelAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
 
-enum BalanceTxType {
-  REFUND
-  CREDIT
-  DEBIT
-  MANUAL
-}
-
 model BalanceTransaction {
   id          String        @id @default(uuid())
   userId      String
@@ -274,6 +322,32 @@ model BalanceTransaction {
   user        User          @relation("UserBalance", fields: [userId], references: [id], onDelete: Cascade)
   booking     Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   author      User?         @relation("TxAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+}
+model BookingAdminNote {
+  id        String   @id @default(uuid())
+  bookingId String
+  authorId  String?
+  note      String   @db.Text
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author  User?   @relation("BookingNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+}
+// ─── BOOKING PAYMENTS ────────────────────────────────────────────────────────
+
+model BookingPayment {
+  id          String        @id @default(uuid())
+  bookingId   String
+  authorId    String?
+  amount      Float                           // Сумма платежа (всегда > 0)
+  method      PaymentMethod @default(CASH)    // Способ оплаты
+  note        String?       @db.Text          // Произвольный комментарий
+  paidAt      DateTime      @default(now())   // Фактическая дата/время оплаты
+  createdAt   DateTime      @default(now()) 
+  type        PaymentType   @default(PAYMENT) // Тип платежа
+
+  booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author      User?         @relation("PaymentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
 
 model Equipment {

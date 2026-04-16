@@ -1,6 +1,6 @@
-import { getBannersFromDb } from "@/actions/banner-actions";
-import { getCategoriesFromDb } from "@/actions/category-actions";
-import { getEquipment } from "@/actions/equipment-actions";
+import { getBannersFromDb } from "@/actions/admin-banner-actions";
+import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getEquipment } from "@/actions/admin-equipment-actions";
 import { auth } from "@/auth";
 import { CategoriesGrid } from "@/components/core/CategoriesGrid";
 import { EventsBanner } from "@/components/home/events-banner/EventsBanner";

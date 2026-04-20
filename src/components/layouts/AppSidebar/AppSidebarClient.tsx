@@ -10,7 +10,11 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	getPendingApplicationsCountAction,
+	getPendingCount,
+} from "@/actions/client-booking-actions";
 import { Logo } from "@/components/icons/Logo";
 import { CategoryNavItem } from "@/components/layouts/AppSidebar/CategoryNavItem";
 import { menuBtnClass } from "@/components/layouts/AppSidebar/menuBtnClass";
@@ -35,9 +39,24 @@ import { cn } from "@/lib/utils";
 interface Props {
 	isAdmin: boolean;
 	categories: DbCategory[];
+	initialPendingBookings?: number;
+	initialPendingApplications?: number;
 }
 
-export function AppSidebarClient({ isAdmin, categories }: Props) {
+export function AppSidebarClient({
+	isAdmin,
+	categories,
+	initialPendingBookings = 0,
+	initialPendingApplications = 0,
+}: Props) {
+	const [pendingBookings, setPendingBookings] = useState(
+		initialPendingBookings
+	);
+	const [pendingApps, setPendingApps] = useState(initialPendingApplications);
+	const prevBookingsRef = useRef(initialPendingBookings);
+	const prevAppsRef = useRef(initialPendingApplications);
+	const isFirstRunRef = useRef(true);
+
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const currentCategory = searchParams.get("category");
@@ -49,6 +68,65 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 	const isCollapsed = state === "collapsed" && !isMobile;
 
 	const [showAdminNav, setShowAdminNav] = useState(true);
+
+	const playSound = useCallback(() => {
+		try {
+			const ctx = new (
+				window.AudioContext ||
+				(window as unknown as { webkitAudioContext: typeof AudioContext })
+					.webkitAudioContext
+			)();
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+			osc.frequency.value = 880;
+			osc.type = "sine";
+			gain.gain.setValueAtTime(0.3, ctx.currentTime);
+			gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+			osc.start(ctx.currentTime);
+			osc.stop(ctx.currentTime + 0.4);
+		} catch {
+			/* AudioContext недоступен */
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!isAdmin) return;
+
+		async function poll() {
+			const [bCount, appResult] = await Promise.all([
+				getPendingCount(),
+				getPendingApplicationsCountAction(),
+			]);
+			const aCount = appResult.count;
+
+			if (isFirstRunRef.current) {
+				prevBookingsRef.current = bCount;
+				prevAppsRef.current = aCount;
+				setPendingBookings(bCount);
+				setPendingApps(aCount);
+				isFirstRunRef.current = false;
+				return;
+			}
+
+			if (bCount > prevBookingsRef.current) {
+				playSound();
+			}
+			if (aCount > prevAppsRef.current) {
+				playSound();
+			}
+
+			prevBookingsRef.current = bCount;
+			prevAppsRef.current = aCount;
+			setPendingBookings(bCount);
+			setPendingApps(aCount);
+		}
+
+		poll(); // сразу
+		const id = setInterval(poll, 15_000);
+		return () => clearInterval(id);
+	}, [isAdmin, playSound]);
 
 	return (
 		<>
@@ -195,6 +273,15 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 									item.href === "/admin"
 										? pathname === "/admin"
 										: pathname.startsWith(item.href);
+								const getNavBadge = (href: string): string | undefined => {
+									if (href === "/admin/bookings")
+										return pendingBookings > 0
+											? String(pendingBookings)
+											: undefined;
+									if (href === "/admin/users")
+										return pendingApps > 0 ? String(pendingApps) : undefined;
+									return undefined;
+								};
 								return (
 									<SidebarMenuItem key={item.title}>
 										<SidebarMenuButton
@@ -217,12 +304,12 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 														{item.title}
 													</span>
 												)}
-												{item.badge && !isCollapsed && (
-													<span className="ml-auto flex h-5 min-w-3 items-center justify-center rounded-full text-[10px] font-bold bg-primary-foreground/3 text-primary-accent/60 border border-primary-foreground/30 px-2 shadow-xs">
-														{item.badge}
+												{getNavBadge(item.href) && !isCollapsed && (
+													<span className="ml-auto flex h-5 min-w-3 items-center justify-center rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 px-2 shadow-xs">
+														{getNavBadge(item.href)}
 													</span>
 												)}
-												{item.badge && isCollapsed && (
+												{getNavBadge(item.href) && isCollapsed && (
 													<span className="absolute top-2 right-2 h-2 w-2 p-0 rounded-full bg-primary" />
 												)}
 											</Link>

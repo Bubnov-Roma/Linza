@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
 	checkAvailabilityAction,
 	submitBookingAction,
-} from "@/actions/booking-actions";
+} from "@/actions/client-booking-actions";
 import { BookingSuccessScreen } from "@/components/dashboard/bookings/BookingSuccessScreen";
 import {
 	BookingButton,
@@ -112,7 +112,7 @@ export default function CheckoutPage() {
 		async function check() {
 			const ids = items
 				.filter((i) => i.quantity > 0)
-				.map((i) => i.equipment.id);
+				.flatMap((i) => i.allUnitIds ?? [i.equipment.id]);
 			if (!math.startFull || !math.endFull || !ids.length) {
 				setBusyIds([]);
 				return;
@@ -152,7 +152,11 @@ export default function CheckoutPage() {
 			const result = await submitBookingAction({
 				items: activeItems.map((i) => ({
 					id: i.equipment.id,
+					allUnitIds: i.equipment.allUnitIds ?? [i.equipment.id],
+					quantity: i.quantity,
 					priceToPay: calculateItemPrice(i.equipment, math.hours),
+					deposit: i.equipment.deposit,
+					replacementValue: i.equipment.replacementValue,
 				})),
 				startDate: math.startFull.toISOString(),
 				endDate: math.endFull.toISOString(),
@@ -302,7 +306,11 @@ export default function CheckoutPage() {
 						{itemsExpanded && (
 							<div className="border-t border-foreground/8 animate-in slide-in-from-top-2 duration-200">
 								{activeItems.map((item) => {
-									const isBusy = busyIds.includes(item.equipment.id);
+									const isBusy = (
+										item.equipment.allUnitIds ?? [item.equipment.id]
+									).every((uid) => busyIds.includes(uid));
+									// Позиция "занята" только если ВСЕ её единицы заняты
+									// (если хотя бы одна свободна — можно бронировать)
 									const price = calculateItemPrice(item.equipment, math.hours);
 									return (
 										<div

@@ -9,6 +9,7 @@ import {
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 
 export interface CartItem {
+	allUnitIds: string[];
 	equipment: GroupedEquipment;
 	quantity: number;
 	insurance: boolean;
@@ -85,7 +86,12 @@ export const useCartStore = create<CartStore>()(
 				} else {
 					newItems = [
 						...state.items,
-						{ equipment: updatedEquipment, quantity: 1, insurance: true },
+						{
+							equipment: updatedEquipment,
+							quantity: 1,
+							insurance: true,
+							allUnitIds: [],
+						},
 					];
 				}
 
@@ -189,6 +195,7 @@ export const useCartStore = create<CartStore>()(
 						equipment,
 						quantity: Math.min(quantity, equipment.availableCount),
 						insurance: true,
+						allUnitIds: [],
 					});
 				}
 

@@ -49,13 +49,22 @@ export async function submitClientApplicationAction(
 		if (!session?.user?.id)
 			return { success: false, message: "Не авторизован" };
 
+		const personalData = data.applicationData.personalData;
+		console.log("personalData", personalData);
+		const fullName = personalData.name;
+		const phone = personalData.phone;
+
 		await prisma.user.upsert({
 			where: { id: session.user.id },
-			update: {},
+			update: {
+				name: (fullName || session.user.name) ?? "",
+				phone: (phone || session.user.phone) ?? "",
+			},
 			create: {
 				id: session.user.id,
 				email: session.user.email ?? null,
-				name: session.user.name ?? null,
+				name: (fullName || session.user.name) ?? null,
+				phone: phone || null,
 			},
 		});
 

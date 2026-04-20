@@ -16,13 +16,13 @@ const buttonVariants = cva(
 				secondary:
 					"bg-secondary text-secondary-foreground hover:bg-secondary/50",
 				ghost:
-					"hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 transition-colors duration-500",
+					"hover:bg-primary-foreground/20 hover:text-foreground dark:hover:bg-primary-accent/80 transition-colors duration-500",
 				link: "text-primary underline-offset-4 hover:underline",
 				social:
 					"bg-muted-foreground/5 backdrop-blur-lg border border-foreground/5 text-foreground hover:bg-white/10 hover:shadow-xl hover:border-foreground/10",
 				glass: cn(
-					"relative overflow-hidden bg-white/5 backdrop-blur-lg text-foreground transition-all duration-500",
-					"hover:bg-white/10 hover:border-primary/30",
+					"relative overflow-hidden bg-secondary/80 backdrop-blur-lg text-foreground transition-all duration-500",
+					"hover:border-primary/30",
 					// glow layer under btn
 					"before:content-[''] before:absolute before:inset-0 before:-z-10 before:bg-[var(--brand-glow)] before:opacity-0 before:blur-xl before:transition-opacity hover:before:opacity-30",
 					// glow layer above btn
@@ -32,7 +32,7 @@ const buttonVariants = cva(
 				),
 				brand:
 					"bg-muted-foreground/10 text-foreground/80 hover:bg-primary hover:text-primary-foreground transition-all duration-200 group/auth",
-				tab: "rounded-2xl text-muted-foreground hover:text-foreground transition-all duration-200 font-semibold",
+				tab: "rounded-2xl text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all duration-200",
 			},
 			isActive: {
 				true: "",

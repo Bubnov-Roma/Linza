@@ -20,7 +20,7 @@ import { getRelatedEquipmentAction } from "@/actions/admin-equipment-actions";
 import {
 	checkAvailabilityAction,
 	submitBookingAction,
-} from "@/actions/booking-actions";
+} from "@/actions/client-booking-actions";
 import { AddToCartButton } from "@/components/core/AddToCartButton";
 import { Lightbox } from "@/components/core/Lightbox";
 import { PriceSelector } from "@/components/core/PriceSelector";
@@ -401,7 +401,11 @@ export default function EquipmentDetails({
 				items: [
 					{
 						id: equipment.id,
+						allUnitIds: equipment.allUnitIds ?? [equipment.id],
+						quantity,
 						priceToPay: calculateItemPrice(equipment, math.hours),
+						deposit: equipment.deposit,
+						replacementValue: equipment.replacementValue,
 					},
 				],
 				startDate: math.startFull.toISOString(),

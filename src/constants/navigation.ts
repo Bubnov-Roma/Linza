@@ -30,6 +30,18 @@ export const ADMIN_NAV: NavItem[] = [
 		icon: LayoutIcon,
 	},
 	{
+		title: "Клиенты",
+		href: "/admin/users",
+		icon: UserIcon,
+		badge: "156",
+	},
+	{
+		title: "Заказы",
+		href: "/admin/bookings",
+		icon: PackageIcon,
+		badge: "18",
+	},
+	{
 		title: "Техника",
 		href: "/admin/equipment",
 		icon: CameraIcon,
@@ -40,18 +52,6 @@ export const ADMIN_NAV: NavItem[] = [
 		href: "/admin/categories",
 		icon: FolderIcon,
 		badge: "18",
-	},
-	{
-		title: "Заказы",
-		href: "/admin/bookings",
-		icon: PackageIcon,
-		badge: "18",
-	},
-	{
-		title: "Клиенты",
-		href: "/admin/users",
-		icon: UserIcon,
-		badge: "156",
 	},
 	{
 		title: "Отзывы",

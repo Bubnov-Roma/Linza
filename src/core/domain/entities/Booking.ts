@@ -140,6 +140,7 @@ export interface BookingPaymentRow {
 export interface AdminBookingItemSnippet {
 	equipmentId: string;
 	title: string;
+	inventoryNumber?: string | null;
 	priceAtBooking: number;
 	depositAtBooking: number;
 	replacementValueAtBooking: number;

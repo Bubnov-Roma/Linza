@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { decrypt, encrypt } from "@/lib/crypto";
+import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 import { cleanUndefined } from "@/utils";
 
@@ -1350,46 +1351,6 @@ export type FetchUsersParams = {
 	offset?: number;
 };
 
-function extractEnrichedUserData(
-	overrides: Record<string, unknown> | null | undefined,
-	baseUser: { name: string | null; phone: string | null }
-) {
-	if (!overrides)
-		return { fullName: baseUser.name, phone: baseUser.phone, labels: [] };
-
-	const getObj = (obj: unknown, key: string) =>
-		typeof obj === "object" && obj !== null
-			? (obj as Record<string, unknown>)[key]
-			: undefined;
-
-	const pd = getObj(overrides, "personalData");
-	const contacts = getObj(overrides, "contacts");
-	const addit = getObj(overrides, "additional");
-
-	const ln = overrides.lastName ?? getObj(pd, "lastName");
-	const fn = overrides.firstName ?? getObj(pd, "firstName");
-	const mn = overrides.middleName ?? getObj(pd, "middleName");
-
-	let fullName = baseUser.name;
-	if (ln || fn || mn) {
-		fullName = [ln, fn, mn]
-			.filter((part) => typeof part === "string" && part.trim() !== "")
-			.join(" ");
-	}
-
-	const ph = getObj(contacts, "phone") ?? getObj(pd, "phone");
-	const phone = typeof ph === "string" ? ph : baseUser.phone;
-
-	const labels = (getObj(addit, "labels") ?? overrides.labels ?? []) as {
-		id: string;
-		text: string;
-		color: string;
-		dueDate?: string;
-	}[];
-
-	return { fullName, phone, labels };
-}
-
 export async function getPaginatedUsersAction(params: FetchUsersParams) {
 	try {
 		await requireAdmin();
@@ -1467,6 +1428,7 @@ export async function getPaginatedUsersAction(params: FetchUsersParams) {
 							createdAt: true,
 							updatedAt: true,
 							rejectionReason: true,
+							applicationData: true,
 							adminOverrides: true,
 						},
 					},
@@ -1482,12 +1444,19 @@ export async function getPaginatedUsersAction(params: FetchUsersParams) {
 		]);
 
 		const enriched = users.map((u) => {
+			const appData = u.clientApplication?.applicationData as Record<
+				string,
+				unknown
+			> | null;
 			const overrides = u.clientApplication?.adminOverrides as Record<
 				string,
 				unknown
 			> | null;
 
-			const { fullName, phone, labels } = extractEnrichedUserData(overrides, {
+			const hasOverrides = overrides && Object.keys(overrides).length > 0;
+			const activeData = hasOverrides ? overrides : appData;
+
+			const { fullName, phone, labels } = extractEnrichedUserData(activeData, {
 				name: u.name,
 				phone: u.phone,
 			});
@@ -1539,16 +1508,26 @@ export async function exportAdminUsersAction(ids?: string[]) {
 				deletionScheduledAt: null,
 			},
 			include: {
-				clientApplication: { select: { status: true, adminOverrides: true } },
+				clientApplication: {
+					select: { status: true, adminOverrides: true, applicationData: true },
+				},
 			},
 		});
 
 		return users.map((u) => {
+			const appData = u.clientApplication?.applicationData as Record<
+				string,
+				unknown
+			> | null;
 			const overrides = u.clientApplication?.adminOverrides as Record<
 				string,
 				unknown
 			> | null;
-			const { fullName, phone } = extractEnrichedUserData(overrides, {
+
+			const hasOverrides = overrides && Object.keys(overrides).length > 0;
+			const activeData = hasOverrides ? overrides : appData;
+
+			const { fullName, phone, labels } = extractEnrichedUserData(activeData, {
 				name: u.name,
 				phone: u.phone,
 			});
@@ -1562,6 +1541,7 @@ export async function exportAdminUsersAction(ids?: string[]) {
 				isBlocked: u.isBlocked ? "Да" : "Нет",
 				isAdminCreated: u.isAdminCreated ? "Да" : "Нет",
 				createdAt: u.createdAt.toISOString(),
+				labels: labels,
 			};
 		});
 	} catch {

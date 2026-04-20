@@ -23,7 +23,7 @@ export function EmptyState({
 				{description}
 			</p>
 			<Button
-				variant="outline"
+				variant="brand"
 				className="rounded-xl"
 				onClick={
 					action.onClick ?? (() => action.href && router.push(action.href))

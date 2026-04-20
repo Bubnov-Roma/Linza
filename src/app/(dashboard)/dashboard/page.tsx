@@ -1,10 +1,7 @@
 import {
 	BoxArrowDownIcon,
 	BoxArrowUpIcon,
-	CalendarIcon,
-	HeartIcon,
 	PackageIcon,
-	UserIcon,
 	XSquareIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { ApplicationStatus, BookingStatus } from "@prisma/client";
@@ -14,7 +11,6 @@ import { auth } from "@/auth";
 import { BookingPreviewList } from "@/components/dashboard/bookings/BookingPreviewList";
 import { VerificationBanner } from "@/components/forms/verification/VerificationBanner";
 import { ClientTime } from "@/components/shared";
-import { QuickActionLink } from "@/components/shared/QuickActionLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import type { DashboardBooking } from "@/core/domain/entities/Booking";
 import { prisma } from "@/lib/prisma";
@@ -36,7 +32,7 @@ export default async function DashboardPage() {
 	] = await Promise.all([
 		prisma.clientApplication.findUnique({
 			where: { userId: user.id },
-			select: { status: true },
+			select: { status: true, applicationData: true },
 		}),
 		prisma.booking.findMany({
 			where: { userId: user.id },
@@ -216,7 +212,7 @@ export default async function DashboardPage() {
 							</div>
 						)}
 					</Card>
-					<Card>
+					{/* <Card>
 						<CardHeader className="pb-2">
 							<CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
 								Быстрый доступ
@@ -242,7 +238,7 @@ export default async function DashboardPage() {
 								description="Понравившаяся техника"
 							/>
 						</div>
-					</Card>
+					</Card> */}
 				</div>
 			</div>
 		</div>

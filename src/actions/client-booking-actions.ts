@@ -9,8 +9,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function submitBookingAction(formData: {
 	items: {
-		id: string;
-		priceToPay: number;
+		id: string; // id isPrimary-записи (используется как fallback)
+		allUnitIds: string[]; // все id сиблингов для раскрытия quantity → N items
+		quantity: number; // сколько единиц этой позиции
+		priceToPay: number; // цена за одну единицу
 		deposit?: number;
 		replacementValue?: number;
 	}[];
@@ -23,6 +25,53 @@ export async function submitBookingAction(formData: {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
+		const bookingItemRows: Array<{
+			equipmentId: string;
+			priceAtBooking: number;
+			depositAtBooking: number;
+			replacementValueAtBooking: number;
+		}> = [];
+
+		for (const item of formData.items) {
+			if (item.quantity <= 0) continue;
+
+			// Получаем свежие доступные единицы с тем же title из БД
+			// Используем allUnitIds как список кандидатов, фильтруем только доступные
+			const availableUnits = await prisma.equipment.findMany({
+				where: {
+					id: { in: item.allUnitIds },
+					isAvailable: true,
+					status: "AVAILABLE",
+				},
+				select: { id: true },
+				take: item.quantity,
+			});
+
+			// Если доступных меньше чем запрошено — добавляем isPrimary как fallback
+			const unitIds = availableUnits.map((u) => u.id);
+
+			// Дополнить до нужного количества если не хватает (fallback на isPrimary)
+			while (unitIds.length < item.quantity) {
+				unitIds.push(item.id);
+			}
+
+			for (const equipmentId of unitIds) {
+				bookingItemRows.push({
+					equipmentId,
+					priceAtBooking: item.priceToPay,
+					depositAtBooking: item.deposit ?? 0,
+					replacementValueAtBooking: item.replacementValue ?? 0,
+				});
+			}
+		}
+
+		if (bookingItemRows.length === 0) {
+			// Защита от пустого заказа
+			return {
+				success: false,
+				error: "Нет доступной техники для бронирования",
+			};
+		}
 
 		// Prisma позволяет создать запись и все связанные элементы (items) за одну транзакцию!
 		const booking = await prisma.booking.create({
@@ -35,12 +84,7 @@ export async function submitBookingAction(formData: {
 				totalReplacementValue: formData.totalReplacementValue,
 				status: BookingStatus.PENDING_REVIEW,
 				bookingItems: {
-					create: formData.items.map((item) => ({
-						equipmentId: item.id,
-						priceAtBooking: item.priceToPay,
-						depositAtBooking: item.deposit ?? 0,
-						replacementValueAtBooking: item.replacementValue ?? 0,
-					})),
+					create: bookingItemRows,
 				},
 			},
 		});
@@ -180,7 +224,14 @@ export async function checkAvailabilityAction(
 			where: {
 				equipmentId: { in: equipmentIds },
 				booking: {
-					status: { not: BookingStatus.CANCELLED },
+					status: {
+						notIn: [
+							BookingStatus.CANCELLED,
+							BookingStatus.PENDING_REVIEW,
+							BookingStatus.COMPLETED,
+							BookingStatus.EXPIRED,
+						],
+					},
 					startDate: { lte: new Date(endDate) },
 					endDate: { gte: new Date(startDate) },
 					...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
@@ -330,5 +381,22 @@ export async function updateBookingStatusAction(
 	} catch (error: unknown) {
 		if (error instanceof Error) return { success: false, error: error.message };
 		return { success: false, error: "Ошибка обновления статуса" };
+	}
+}
+
+export async function getPendingCount() {
+	return prisma.booking.count({ where: { status: "PENDING_REVIEW" } });
+}
+
+export async function getPendingApplicationsCountAction(): Promise<{
+	count: number;
+}> {
+	try {
+		const count = await prisma.clientApplication.count({
+			where: { status: "PENDING" },
+		});
+		return { count };
+	} catch {
+		return { count: 0 };
 	}
 }

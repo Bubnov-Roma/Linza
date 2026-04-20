@@ -1,15 +1,23 @@
 "use server";
 
-import { BookingStatus, type Prisma } from "@prisma/client";
+import {
+	BookingStatus,
+	type EquipmentStatus,
+	type Prisma,
+} from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/actions/audit-and-balance-actions";
 import { auth } from "@/auth";
-import { PAYMENT_METHOD_LABELS } from "@/constants";
+import {
+	BOOKING_TO_EQUIPMENT_STATUS,
+	PAYMENT_METHOD_LABELS,
+} from "@/constants";
 import type {
 	BookingPaymentRow,
 	PaymentMethod,
 	PaymentStatus,
 } from "@/core/domain/entities/Booking";
+import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -161,6 +169,21 @@ export async function adminForceSetBookingStatusAction(
 			where: { id: bookingId },
 			data: updateData,
 		});
+
+		const equipmentStatus = BOOKING_TO_EQUIPMENT_STATUS[newStatus];
+		if (equipmentStatus) {
+			const bookingItems = await prisma.bookingItem.findMany({
+				where: { bookingId },
+				select: { equipmentId: true },
+			});
+			const equipmentIds = [...new Set(bookingItems.map((i) => i.equipmentId))];
+			if (equipmentIds.length > 0) {
+				await prisma.equipment.updateMany({
+					where: { id: { in: equipmentIds } },
+					data: { status: equipmentStatus as EquipmentStatus },
+				});
+			}
+		}
 
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Статус изменён вручную",
@@ -876,9 +899,21 @@ export async function getPaginatedAdminBookingsAction(
 		const rawBookings = await prisma.booking.findMany({
 			where,
 			include: {
-				user: { select: { id: true, name: true, email: true } },
+				user: {
+					select: {
+						id: true,
+						name: true,
+						email: true,
+						phone: true,
+						clientApplication: { select: { adminOverrides: true } },
+					},
+				},
 				bookingItems: {
-					include: { equipment: { select: { title: true } } },
+					include: {
+						equipment: {
+							select: { title: true, inventoryNumber: true, isPrimary: true },
+						},
+					},
 				},
 				payments: { select: { amount: true, type: true } },
 				labels: { select: { text: true } },
@@ -897,6 +932,16 @@ export async function getPaginatedAdminBookingsAction(
 					b.totalAmount
 				);
 
+				const overrides = b.user?.clientApplication?.adminOverrides as Record<
+					string,
+					unknown
+				> | null;
+
+				const { fullName } = extractEnrichedUserData(overrides, {
+					name: b.user?.name ?? null,
+					phone: b.user?.phone ?? null,
+				});
+
 				return {
 					id: b.id,
 					status: b.status,
@@ -909,13 +954,16 @@ export async function getPaginatedAdminBookingsAction(
 					cancellationReason: b.cancellationReason,
 					cancelledAt: b.cancelledAt?.toISOString() ?? null,
 					clientId: b.userId,
-					clientName: b.user?.name ?? null,
+					clientName: fullName,
 					clientEmail: b.user?.email ?? null,
-					equipmentTitles: b.bookingItems.map((i) => i.equipment.title),
+					equipmentTitles: [
+						...new Set(b.bookingItems.map((i) => i.equipment.title)),
+					],
 					itemCount: b.bookingItems.length,
 					bookingItems: b.bookingItems.map((i) => ({
 						equipmentId: i.equipmentId,
 						title: i.equipment.title,
+						inventoryNumber: i.equipment.inventoryNumber ?? null,
 						priceAtBooking: i.priceAtBooking,
 						depositAtBooking: i.depositAtBooking ?? 0,
 						replacementValueAtBooking: i.replacementValueAtBooking ?? 0,
@@ -1008,5 +1056,19 @@ export async function adminClearBookingPaymentsAction(bookingId: string) {
 		return { success: true };
 	} catch (e) {
 		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
+	}
+}
+
+export async function getPendingReviewCountAction(): Promise<{
+	count: number;
+}> {
+	try {
+		await requireAdmin();
+		const count = await prisma.booking.count({
+			where: { status: BookingStatus.PENDING_REVIEW },
+		});
+		return { count };
+	} catch {
+		return { count: 0 };
 	}
 }

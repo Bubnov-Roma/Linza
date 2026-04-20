@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
 import type {
+	Comment,
 	DbEquipment,
 	DbEquipmentWithImages,
 	GroupedEquipment,
@@ -127,6 +128,22 @@ function buildPrismaWhere(
 
 // ─── ACTIONS ────────────────────────────────────────────────────────────────
 
+async function generateInventoryNumber(): Promise<string> {
+	const last = await prisma.equipment.findFirst({
+		where: { inventoryNumber: { startsWith: "INV-" } },
+		orderBy: { inventoryNumber: "desc" },
+		select: { inventoryNumber: true },
+	});
+
+	let next = 1;
+	if (last?.inventoryNumber) {
+		const match = last.inventoryNumber.match(/INV-(\d+)$/);
+		if (match?.[1]) next = parseInt(match[1], 10) + 1;
+	}
+
+	return `INV-${String(next).padStart(4, "0")}`;
+}
+
 export async function createEquipmentAction(
 	data: CreateEquipmentData
 ): Promise<{ success: boolean; id?: string; error?: string }> {
@@ -144,7 +161,8 @@ export async function createEquipmentAction(
 				slug: slugify(data.title),
 				categoryId: data.category,
 				subcategoryId: data.subcategory ?? null,
-				inventoryNumber: data.inventoryNumber ?? null,
+				inventoryNumber:
+					data.inventoryNumber?.trim() || (await generateInventoryNumber()),
 				pricePerDay: data.pricePerDay,
 				price4h: data.price4h ?? 0,
 				price8h: data.price8h ?? 0,
@@ -190,7 +208,10 @@ export async function getEquipmentWithFilters(params: {
 	sort?: EquipmentSort[];
 	limit?: number;
 	offset?: number;
-}): Promise<{ data: DbEquipmentWithImages[]; count: number }> {
+}): Promise<{
+	data: (DbEquipmentWithImages & { siblingCount?: number })[];
+	count: number;
+}> {
 	const where = buildPrismaWhere(params.filters, params.search);
 
 	const orderBy = params.sort?.length
@@ -205,9 +226,22 @@ export async function getEquipmentWithFilters(params: {
 				include: { image: { select: { id: true, url: true } } },
 				orderBy: { orderIndex: "asc" },
 			},
-			// ✅ Добавили загрузку связанных товаров, чтобы они не сбрасывались в Sheet
 			relatedEquipment: {
 				select: { relatedId: true },
+			},
+			bookingItems: {
+				where: {
+					booking: {
+						status: {
+							in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
+						},
+					},
+				},
+				select: {
+					booking: { select: { status: true, startDate: true, endDate: true } },
+				},
+				take: 1, // только ближайший активный заказ
+				orderBy: { booking: { startDate: "asc" } },
 			},
 		},
 	};
@@ -220,8 +254,33 @@ export async function getEquipmentWithFilters(params: {
 		prisma.equipment.count({ where }),
 	]);
 
+	const uniqueTitles = [...new Set(data.map((d) => d.title))];
+
+	let countsMap = new Map<string, number>();
+	if (uniqueTitles.length > 0) {
+		const titleCounts = await prisma.equipment.groupBy({
+			by: ["title"],
+			where: { title: { in: uniqueTitles } },
+			_count: { id: true },
+		});
+		countsMap = new Map(titleCounts.map((tc) => [tc.title, tc._count.id]));
+	}
+
+	const enrichedData = data.map((item) => ({
+		...item,
+		siblingCount: countsMap.get(item.title) ?? 1,
+		activeBookingStatus:
+			(
+				item as unknown as {
+					bookingItems: Array<{ booking: { status: string } }>;
+				}
+			).bookingItems?.[0]?.booking?.status ?? null,
+	}));
+
 	return {
-		data: data as unknown as DbEquipmentWithImages[],
+		data: enrichedData as unknown as (DbEquipmentWithImages & {
+			siblingCount?: number;
+		})[],
 		count,
 	};
 }
@@ -250,10 +309,58 @@ export async function toggleEquipmentPrimaryAction(
 	isPrimary: boolean
 ) {
 	try {
-		await prisma.equipment.update({
-			where: { id },
-			data: { isPrimary },
-		});
+		if (isPrimary) {
+			const item = await prisma.equipment.findUnique({
+				where: { id },
+				select: { title: true },
+			});
+			if (!item) return { success: false, error: "Не найдено" };
+
+			// 1. Атомарно переключаем isPrimary в группе
+			await prisma.$transaction([
+				prisma.equipment.updateMany({
+					where: { title: item.title, id: { not: id } },
+					data: { isPrimary: false },
+				}),
+				prisma.equipment.update({
+					where: { id },
+					data: { isPrimary: true },
+				}),
+			]);
+
+			// 2. Синхронизируем избранное пользователей
+			const siblings = await prisma.equipment.findMany({
+				where: { title: item.title, id: { not: id } },
+				select: { id: true },
+			});
+			const siblingIds = siblings.map((s) => s.id);
+
+			if (siblingIds.length > 0) {
+				const siblingFavs = await prisma.favorite.findMany({
+					where: { equipmentId: { in: siblingIds } },
+				});
+
+				for (const fav of siblingFavs) {
+					const alreadyHasNew = await prisma.favorite.findFirst({
+						where: { userId: fav.userId, equipmentId: id },
+					});
+					if (!alreadyHasNew) {
+						await prisma.favorite.update({
+							where: { id: fav.id },
+							data: { equipmentId: id },
+						});
+					} else {
+						await prisma.favorite.delete({ where: { id: fav.id } });
+					}
+				}
+			}
+		} else {
+			await prisma.equipment.update({
+				where: { id },
+				data: { isPrimary: false },
+			});
+		}
+
 		revalidatePath("/admin/equipment");
 		return { success: true };
 	} catch (e) {
@@ -394,28 +501,10 @@ export async function duplicateEquipment(id: string): Promise<DbEquipment> {
 		where: { id },
 		include: { equipmentImageLinks: true },
 	});
-
 	if (!original) throw new Error("Equipment not found");
 
-	const baseNumber = original.inventoryNumber || "COPY";
-	const existing = await prisma.equipment.findMany({
-		where: { inventoryNumber: { startsWith: baseNumber } },
-		select: { inventoryNumber: true },
-		orderBy: { inventoryNumber: "desc" },
-	});
-
-	let nextIdx = 1;
-	if (existing.length > 0) {
-		const numbers = existing.map((e) => {
-			const m = e.inventoryNumber?.match(/-(\d+)$/);
-			if (m?.[1]) {
-				return parseInt(m[1], 10);
-			}
-			return 0;
-		});
-		nextIdx = Math.max(...numbers, 0) + 1;
-	}
-	const newInventoryNumber = `${baseNumber}-${nextIdx}`;
+	// Генерируем уникальный инвентарный номер автоматически
+	const newInventoryNumber = await generateInventoryNumber();
 
 	const {
 		id: _,
@@ -425,6 +514,8 @@ export async function duplicateEquipment(id: string): Promise<DbEquipment> {
 		specifications,
 		comments,
 		videoUrls,
+		inventoryNumber: _inv,
+		isPrimary: _p,
 		...data
 	} = original;
 
@@ -432,6 +523,7 @@ export async function duplicateEquipment(id: string): Promise<DbEquipment> {
 		data: {
 			...data,
 			inventoryNumber: newInventoryNumber,
+			isPrimary: false,
 			slug: slugify(`${data.title}-${newInventoryNumber}`),
 			specifications: specifications
 				? (specifications as Prisma.InputJsonValue)
@@ -439,9 +531,7 @@ export async function duplicateEquipment(id: string): Promise<DbEquipment> {
 			comments: comments
 				? (comments as Prisma.InputJsonValue)
 				: Prisma.JsonNull,
-			videoUrls: videoUrls
-				? (videoUrls as Prisma.InputJsonValue)
-				: Prisma.JsonNull,
+			videoUrls: videoUrls ? (videoUrls as Prisma.InputJsonValue) : [],
 			equipmentImageLinks: {
 				create: equipmentImageLinks.map((link) => ({
 					imageId: link.imageId,
@@ -495,6 +585,20 @@ export async function exportEquipment(ids?: string[]): Promise<DbEquipment[]> {
 		where: ids && ids.length > 0 ? { id: { in: ids } } : {},
 	});
 	return data as unknown as DbEquipment[];
+}
+
+export async function checkInventoryNumberUniqueAction(
+	inventoryNumber: string,
+	excludeId?: string
+): Promise<{ isUnique: boolean }> {
+	const found = await prisma.equipment.findFirst({
+		where: {
+			inventoryNumber,
+			...(excludeId ? { id: { not: excludeId } } : {}),
+		},
+		select: { id: true },
+	});
+	return { isUnique: !found };
 }
 
 // TODO: используется на клиенте
@@ -559,36 +663,122 @@ export async function getEquipment(filters: {
 export async function getEquipmentBySlug(
 	slug: string
 ): Promise<GroupedEquipment | null> {
-	const data = await prisma.equipment.findMany({
-		where: { slug },
+	// 1. Ищем isPrimary запись с этим slug
+	let primaryItem = await prisma.equipment.findFirst({
+		where: { slug, isPrimary: true },
 		include: {
 			equipmentImageLinks: {
-				include: { image: true },
+				include: { image: { select: { id: true, url: true } } },
 				orderBy: { orderIndex: "asc" },
 			},
-			relatedEquipment: {
-				select: { relatedId: true },
+			relatedEquipment: { select: { relatedId: true } },
+		},
+	});
+
+	// Fallback 1: slug найден, но isPrimary не установлен →
+	// ищем isPrimary среди записей с тем же title
+	if (!primaryItem) {
+		const anyBySlug = await prisma.equipment.findFirst({
+			where: { slug },
+			select: { title: true },
+		});
+
+		if (anyBySlug) {
+			// Ищем isPrimary в той же группе по title
+			primaryItem = await prisma.equipment.findFirst({
+				where: { title: anyBySlug.title, isPrimary: true },
+				include: {
+					equipmentImageLinks: {
+						include: { image: { select: { id: true, url: true } } },
+						orderBy: { orderIndex: "asc" },
+					},
+					relatedEquipment: { select: { relatedId: true } },
+				},
+			});
+		}
+	}
+
+	// Fallback 2: совсем нет isPrimary — берём любую запись с этим slug
+	if (!primaryItem) {
+		primaryItem = await prisma.equipment.findFirst({
+			where: { slug },
+			include: {
+				equipmentImageLinks: {
+					include: { image: { select: { id: true, url: true } } },
+					orderBy: { orderIndex: "asc" },
+				},
+				relatedEquipment: { select: { relatedId: true } },
+			},
+		});
+	}
+
+	if (!primaryItem) return null;
+
+	// 2. Загружаем всех "братьев" по title для подсчёта totalCount/availableCount
+	const siblings = await prisma.equipment.findMany({
+		where: { title: primaryItem.title },
+		include: {
+			equipmentImageLinks: {
+				include: { image: { select: { id: true, url: true } } },
+				orderBy: { orderIndex: "asc" },
 			},
 		},
 	});
 
-	if (!data.length) return null;
+	// 3. Группируем братьев — получаем корректные счётчики
+	const grouped = groupEquipmentRows(siblings as unknown as RawEquipmentRow[]);
+	const groupedItem = grouped[0];
+	if (!groupedItem) return null;
 
-	const dataWithRelated = data.map((item) => ({
-		...item,
-		relatedIds: item.relatedEquipment?.map((r) => r.relatedId) ?? [],
-	}));
+	const relatedIds =
+		primaryItem.relatedEquipment?.map((r) => r.relatedId) ?? [];
 
-	const grouped = groupEquipmentRows(
-		dataWithRelated as unknown as RawEquipmentRow[]
-	);
-
-	const result = grouped[0];
-	if (!result) return null;
-
+	// 4. Скалярные поля — ВСЕГДА от isPrimary; агрегированные — от grouped
 	return {
-		...result,
-		relatedIds: dataWithRelated[0]?.relatedIds ?? [],
+		...groupedItem,
+		id: primaryItem.id,
+		title: primaryItem.title,
+		slug: primaryItem.slug,
+		description: primaryItem.description,
+		categoryId: primaryItem.categoryId,
+		subcategoryId: primaryItem.subcategoryId,
+		inventoryNumber: primaryItem.inventoryNumber,
+		pricePerDay: primaryItem.pricePerDay,
+		price4h: primaryItem.price4h,
+		price8h: primaryItem.price8h,
+		deposit: primaryItem.deposit,
+		replacementValue: primaryItem.replacementValue,
+		specifications: (primaryItem.specifications ?? {}) as Record<
+			string,
+			unknown
+		>,
+		videoUrls: (primaryItem.videoUrls ?? []) as string[],
+		comments: (primaryItem.comments as unknown as Comment[]) ?? [],
+		status:
+			primaryItem.status as import("@/core/domain/entities/Equipment").EquipmentStatus,
+		isAvailable: primaryItem.isAvailable,
+		isPrimary: primaryItem.isPrimary,
+		ownershipType:
+			primaryItem.ownershipType as import("@/core/domain/entities/Equipment").OwnershipType,
+		partnerName: primaryItem.partnerName,
+		defects: primaryItem.defects,
+		kit: primaryItem.kitDescription ?? null,
+		kitDescription: primaryItem.kitDescription,
+		imageUrl:
+			primaryItem.equipmentImageLinks?.[0]?.image?.url ?? groupedItem.imageUrl,
+		images: primaryItem.equipmentImageLinks.length
+			? primaryItem.equipmentImageLinks.map((l) => l.image.url)
+			: groupedItem.images,
+		imagesData: primaryItem.equipmentImageLinks.length
+			? primaryItem.equipmentImageLinks.map((l) => ({
+					id: l.image.id,
+					url: l.image.url,
+				}))
+			: groupedItem.imagesData,
+		equipmentImageLinks: primaryItem.equipmentImageLinks,
+		relatedIds,
+		createdAt: primaryItem.createdAt,
+		updatedAt: primaryItem.updatedAt,
 	};
 }
 

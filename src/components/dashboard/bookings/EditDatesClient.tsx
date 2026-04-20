@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import {
 	checkAvailabilityAction,
 	updateBookingDatesAction,
-} from "@/actions/booking-actions";
+} from "@/actions/client-booking-actions";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
 import {
 	BookingButton,

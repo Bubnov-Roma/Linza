@@ -12,9 +12,21 @@ export async function getEquipmentForCartAction(
 ): Promise<GroupedEquipment[]> {
 	if (!ids || ids.length === 0) return [];
 
+	// Шаг 1: находим запрошенные позиции чтобы получить их titles
+	const requestedItems = await prisma.equipment.findMany({
+		where: { id: { in: ids } },
+		select: { id: true, title: true },
+	});
+
+	if (requestedItems.length === 0) return [];
+
+	// Шаг 2: загружаем ВСЕХ сиблингов по title (все экземпляры каждой позиции)
+	// Это критично для корректного allUnitIds и availableCount
+	const titles = [...new Set(requestedItems.map((r) => r.title))];
+
 	const data = await prisma.equipment.findMany({
 		where: {
-			id: { in: ids },
+			title: { in: titles },
 			isAvailable: true,
 			status: "AVAILABLE",
 		},
@@ -26,10 +38,10 @@ export async function getEquipmentForCartAction(
 		},
 	});
 
-	// Группируем так же, как и для каталога
+	// Шаг 3: группируем — теперь allUnitIds содержит все доступные id группы
 	const grouped = groupEquipmentRows(data as unknown as RawEquipmentRow[]);
 
-	// Восстанавливаем порядок ID, который пришел с клиента
+	// Шаг 4: возвращаем только запрошенные позиции (по id isPrimary)
 	const byId = Object.fromEntries(grouped.map((g) => [g.id, g]));
 	return ids
 		.map((id) => byId[id])

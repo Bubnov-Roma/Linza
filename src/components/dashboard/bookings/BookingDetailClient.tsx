@@ -64,13 +64,9 @@ export function BookingDetailClient({
 		differenceInHours(new Date(booking.endDate), new Date(booking.startDate))
 	);
 
-	const editable = ![
-		"PENDING_REVIEW",
-		"ACTIVE",
-		"COMPLETED",
-		"CANCELLED",
-		"EXPIRED",
-	].includes(status);
+	const editable = !["ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED"].includes(
+		status
+	);
 
 	// Определяем индекс текущего шага
 	const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === status);
@@ -357,9 +353,6 @@ export function BookingDetailClient({
 													<div className="flex-1 min-w-0">
 														<p className="text-sm font-bold truncate leading-none mb-1">
 															{item.equipment?.title}
-														</p>
-														<p className="text-[10px] uppercase text-muted-foreground font-bold tracking-tighter">
-															{item.equipment?.categoryId}
 														</p>
 													</div>
 													<p className="text-sm font-mono font-bold">

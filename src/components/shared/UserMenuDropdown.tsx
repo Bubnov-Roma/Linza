@@ -1,7 +1,7 @@
 "use client";
 
 import {
-	ArrowUpRightFromSquare,
+	// ArrowUpRightFromSquare,
 	Heart,
 	LayoutDashboard,
 	Package,
@@ -11,14 +11,13 @@ import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/layouts/ThemeToggle";
 import { SignOutButton } from "@/components/shared/SignOutButton";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/use-auth";
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Separator } from "@/components/ui/separator";
+// import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 interface UserMenuDropdownProps {
 	children: React.ReactNode;
@@ -33,74 +32,95 @@ export function UserMenuDropdown({
 	side = "top",
 	sideOffset = 8,
 }: UserMenuDropdownProps) {
-	const { profile } = useAuth();
+	// const { profile } = useAuth();
 	const router = useRouter();
 
-	const isAdmin = profile?.role === "ADMIN" || profile?.role === "MANAGER";
+	// const isAdmin = profile?.role === "ADMIN" || profile?.role === "MANAGER";
+
+	const MenuItem = ({
+		icon: Icon,
+		label,
+		onClick,
+		destructive,
+	}: {
+		icon: React.ComponentType<{ className?: string }>;
+		label: string;
+		onClick: () => void;
+		destructive?: boolean;
+	}) => (
+		<button
+			type="button"
+			onClick={onClick}
+			className={cn(
+				"w-full flex items-center p-3 cursor-pointer rounded-xl transition-colors outline-none",
+				destructive
+					? "text-destructive hover:bg-destructive/10"
+					: "text-foreground hover:bg-foreground/5"
+			)}
+		>
+			<Icon
+				className={cn(
+					"mr-3 h-5 w-5",
+					destructive ? "text-destructive" : "text-muted-foreground"
+				)}
+			/>
+			<span className="font-medium text-sm">{label}</span>
+		</button>
+	);
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+		<HoverCard openDelay={100} closeDelay={250}>
+			<HoverCardTrigger asChild>{children}</HoverCardTrigger>
 
-			<DropdownMenuContent
-				className="w-72 rounded-2xl bg-background/90 backdrop-blur-xl border-foreground/10 shadow-2xl p-2"
+			<HoverCardContent
+				className="w-72 rounded-2xl bg-background/30 backdrop-blur-xl border-foreground/10 shadow-2xl shadow-muted-foreground/40 p-2 z-50 ml-4"
 				align={align}
 				side={side}
 				sideOffset={sideOffset}
 			>
-				<DropdownMenuGroup>
-					<DropdownMenuItem
+				<div className="flex flex-col">
+					<MenuItem
+						icon={LayoutDashboard}
+						label="Личный кабинет"
 						onClick={() => router.push("/dashboard")}
-						className="p-3 cursor-pointer rounded-xl"
-					>
-						<LayoutDashboard className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Личный кабинет</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
+					/>
+					<MenuItem
+						icon={Package}
+						label="Бронирования"
 						onClick={() => router.push("/dashboard/bookings")}
-						className="p-3 cursor-pointer rounded-xl"
-					>
-						<Package className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Бронирования</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
+					/>
+					<MenuItem
+						icon={Heart}
+						label="Избранное"
 						onClick={() => router.push("/favorites")}
-						className="p-3 cursor-pointer rounded-xl"
-					>
-						<Heart className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Избранное</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
+					/>
+					<MenuItem
+						icon={UserIcon}
+						label="Профиль"
 						onClick={() => router.push("/dashboard/profile")}
-						className="p-3 cursor-pointer rounded-xl"
-					>
-						<UserIcon className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Профиль</span>
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
+					/>
+				</div>
 
 				<div className="px-2 py-2 mt-1 bg-foreground/5 rounded-xl">
 					<ThemeToggle className="w-full" />
 				</div>
 
-				{isAdmin && (
+				{/* {isAdmin && (
 					<>
-						<DropdownMenuSeparator className="my-2" />
-						<DropdownMenuItem
+						<Separator className="my-2 bg-foreground/10" />
+						<MenuItem
+							icon={ArrowUpRightFromSquare}
+							label="Открыть сайт"
 							onClick={() => window.open("/?client=true", "_blank")}
-							className="p-3 cursor-pointer rounded-xl text-muted-foreground"
-						>
-							<ArrowUpRightFromSquare className="mr-3 h-5 w-5" />
-							<span className="font-medium">Открыть сайт</span>
-						</DropdownMenuItem>
+						/>
 					</>
-				)}
+				)} */}
 
-				<DropdownMenuSeparator className="my-2" />
+				<Separator className="my-2 bg-foreground/10" />
 				<div className="px-1 pb-1">
 					<SignOutButton className="w-full h-10 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20" />
 				</div>
-			</DropdownMenuContent>
-		</DropdownMenu>
+			</HoverCardContent>
+		</HoverCard>
 	);
 }

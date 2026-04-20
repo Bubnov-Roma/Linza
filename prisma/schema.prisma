@@ -111,32 +111,32 @@ enum PaymentType {
 // ─── NEXTAUTH & PROFILES ───
 
 model User {
-  id                      String    @id @default(uuid())
+  id                      String                  @id @default(uuid())
   name                    String?
-  email                   String?   @unique
+  email                   String?                 @unique
   emailVerified           DateTime?
   image                   String?
   password                String?    
-  role                    Role        @default(USER)
-  entityType              EntityType? @default(INDIVIDUAL)
+  role                    Role                    @default(USER)
+  entityType              EntityType?             @default(INDIVIDUAL)
   companyName             String?
   tin                     String?
-  isVerified              Boolean?    @default(false)
+  isVerified              Boolean?                @default(false)
   phone                   String?
   extraPhone              String?
-  registrationStep        Int         @default(1)
+  registrationStep        Int                     @default(1)
   nickname                String?
-  isBlocked               Boolean     @default(false)
-  blockedReason           String?     @db.Text
-  permissions             Json        @default("{}")
+  isBlocked               Boolean                 @default(false)
+  blockedReason           String?                 @db.Text
+  permissions             Json                    @default("{}")
   deletionScheduledAt     DateTime?
-  createdAt               DateTime    @default(now())
-  balance                 Float  @default(0)
-  isAdminCreated          Boolean     @default(false)
-  adminCreatedNote        String?     @db.Text
+  createdAt               DateTime                @default(now())
+  balance                 Float                   @default(0)
+  isAdminCreated          Boolean                 @default(false)
+  adminCreatedNote        String?                 @db.Text
   mergedIntoId            String?
-  mergedInto              User?       @relation("UserMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
-  mergedFrom              User[]      @relation("UserMerge")
+  mergedInto              User?                   @relation("UserMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom              User[]                  @relation("UserMerge")
   inviteTokens            InviteToken[]
   accounts                Account[]
   sessions                Session[]
@@ -147,23 +147,23 @@ model User {
   clientApplication       ClientApplication?
   adminNotifications      AdminNotification[]
   categoryHistory         CategoryHistory[]
-  userDiscounts           UserDiscount[]       @relation("DiscountUser")
-  createdDiscounts        UserDiscount[]       @relation("DiscountCreator")
-  faqCreated              FaqItem[]            @relation("FaqCreator")
-  faqUpdated              FaqItem[]            @relation("FaqUpdater")
-  notesReceived           UserAdminNote[]      @relation("NoteTarget")
-  notesWritten            UserAdminNote[]      @relation("NoteAuthor")
-  bannersCreated          Banner[] @relation("BannerCreator")
-  balanceTransactions     BalanceTransaction[] @relation("UserBalance")
-  balanceTxAuthored       BalanceTransaction[] @relation("TxAuthor")
-  bookingAuditLogs        BookingAuditLog[]    @relation("AuditAuthor")
-  bookingLabels           BookingLabel[]       @relation("LabelAuthor")
+  userDiscounts           UserDiscount[]          @relation("DiscountUser")
+  createdDiscounts        UserDiscount[]          @relation("DiscountCreator")
+  faqCreated              FaqItem[]               @relation("FaqCreator")
+  faqUpdated              FaqItem[]               @relation("FaqUpdater")
+  notesReceived           UserAdminNote[]         @relation("NoteTarget")
+  notesWritten            UserAdminNote[]         @relation("NoteAuthor")
+  bannersCreated          Banner[]                @relation("BannerCreator")
+  balanceTransactions     BalanceTransaction[]    @relation("UserBalance")
+  balanceTxAuthored       BalanceTransaction[]    @relation("TxAuthor")
+  bookingAuditLogs        BookingAuditLog[]       @relation("AuditAuthor")
+  bookingLabels           BookingLabel[]          @relation("LabelAuthor")
   documentGenerationLogs  DocumentGenerationLog[] @relation("DocGenAuthor")
-  documentTemplates       DocumentTemplate[] @relation("TemplateCreator")
-  bookingPaymentsAuthored BookingPayment[] @relation("PaymentAuthor")
-  auditLogsReceived       UserAuditLog[] @relation("UserAuditTarget")
-  auditLogsAuthored       UserAuditLog[] @relation("UserAuditAuthor")
-  bookingAdminNotes       BookingAdminNote[] @relation("BookingNoteAuthor")
+  documentTemplates       DocumentTemplate[]      @relation("TemplateCreator")
+  bookingPaymentsAuthored BookingPayment[]        @relation("PaymentAuthor")
+  auditLogsReceived       UserAuditLog[]          @relation("UserAuditTarget")
+  auditLogsAuthored       UserAuditLog[]          @relation("UserAuditAuthor")
+  bookingAdminNotes       BookingAdminNote[]      @relation("BookingNoteAuthor")
 }
 
 model UserAuditLog {
@@ -196,7 +196,7 @@ model Account {
   id_token          String? 
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
 }
 model InviteToken {
@@ -265,19 +265,18 @@ model Booking {
   generatedDocuments    DocumentGenerationLog[]
   payments              BookingPayment[]
 
-  bookingAdminNotes BookingAdminNote[]
+  bookingAdminNotes     BookingAdminNote[]
 }
 
 model BookingItem {
-  id                        String   @id @default(uuid())
+  id                        String     @id @default(uuid())
   bookingId                 String
   equipmentId               String
   priceAtBooking            Float
-  depositAtBooking          Float?   @default(0)
-  replacementValueAtBooking Float?   @default(0)
-
-  booking                   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  equipment                 Equipment @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  depositAtBooking          Float?     @default(0)
+  replacementValueAtBooking Float?     @default(0)
+  booking                   Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  equipment                 Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
 }
 
 model BookingAuditLog {
@@ -323,6 +322,7 @@ model BalanceTransaction {
   booking     Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   author      User?         @relation("TxAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
+
 model BookingAdminNote {
   id        String   @id @default(uuid())
   bookingId String

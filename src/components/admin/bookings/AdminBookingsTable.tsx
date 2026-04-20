@@ -60,7 +60,9 @@ import type {
 	AdminBookingRow,
 	BookingStatus,
 } from "@/core/domain/entities/Booking";
+import { useAdminBookingPolling } from "@/hooks/use-admin-booking-polling";
 import { cn } from "@/lib/utils";
+import { useAdminTablesStore } from "@/store/admin-tables.store";
 import { formatPlural } from "@/utils";
 
 export type { AdminBookingRow };
@@ -265,13 +267,6 @@ function InlinePaymentChanger({
 // ─── Elements ─────────────────────────────────────────────────────────────────
 
 function EquipmentCell({ booking }: { booking: AdminBookingRow }) {
-	if (booking.itemCount <= 1) {
-		return (
-			<p className="text-sm truncate max-w-36 text-muted-foreground">
-				{booking.equipmentTitles[0] ?? "—"}
-			</p>
-		);
-	}
 	return (
 		<HoverCard openDelay={10} closeDelay={100}>
 			<HoverCardTrigger asChild>
@@ -283,30 +278,43 @@ function EquipmentCell({ booking }: { booking: AdminBookingRow }) {
 					<p className="text-sm truncate max-w-36 text-muted-foreground group-hover:text-foreground transition-colors">
 						{booking.equipmentTitles[0] ?? "—"}
 					</p>
-					<p className="text-[10px] text-muted-foreground underline underline-offset-2">
-						+{booking.itemCount - 1} поз. — смотреть все
-					</p>
+					{booking.itemCount > 1 && (
+						<p className="text-[10px] text-muted-foreground underline underline-offset-2">
+							+{booking.itemCount - 1} поз.
+						</p>
+					)}
 				</button>
 			</HoverCardTrigger>
 			<HoverCardContent
-				className="w-72 p-3 space-y-1 bg-background/50 backdrop-blur-2xl rounded-2xl shadow-lg shadow-muted-foreground"
+				className="w-84 p-3 space-y-1 bg-background/50 backdrop-blur-2xl rounded-2xl shadow-lg"
 				align="start"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-2">
-					Техника в заказе - {formatPlural(booking.itemCount, "equipment")}
+					Техника в заказе · {formatPlural(booking.itemCount, "equipment")}
 				</p>
-				{booking.equipmentTitles.map((title, i) => (
+				{booking.bookingItems.map((item, i) => (
 					<div
-						key={`${title}-${i}`}
-						className="flex items-center gap-2 py-1 border-b border-foreground/5 last:border-0"
+						key={`${item.equipmentId}-${i}`}
+						className="flex items-center gap-2 py-1.5 border-b border-foreground/5 last:border-0"
 					>
 						<span className="text-[10px] text-muted-foreground/40 font-mono w-4 shrink-0">
 							{i + 1}.
 						</span>
-						<span className="text-xs text-foreground/80 leading-tight">
-							{title}
+						<div className="flex-1 min-w-0">
+							<p className="text-xs text-foreground/80 leading-tight truncate">
+								{item.title}
+							</p>
+							{item.inventoryNumber && (
+								<p className="text-[10px] text-muted-foreground/50 font-mono mt-0.5">
+									№ {item.inventoryNumber}
+								</p>
+							)}
+						</div>
+						<span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap shrink-0">
+							{item.priceAtBooking.toLocaleString("ru-RU")} ₽
 						</span>
+						{/* <span>{triggerText}</span> */}
 					</div>
 				))}
 			</HoverCardContent>
@@ -344,23 +352,34 @@ export default function AdminBookingsTable({
 }) {
 	const queryClient = useQueryClient();
 
-	// ── Filter State
-	const [search, setSearch] = useState("");
-	const [debouncedSearch] = useDebounceValue(search, 300);
-	const [statusFilter, setStatusFilter] = useState<"all" | BookingStatus>(
-		"all"
-	);
-	const [paymentFilter, setPaymentFilter] = useState<"all" | PaymentStatus>(
-		"all"
-	);
-	const [dateFrom, setDateFrom] = useState("");
-	const [dateTo, setDateTo] = useState("");
-	const [showFilters, setShowFilters] = useState(false);
+	const { bookings: tableState, setBookings } = useAdminTablesStore();
 
-	// ── Pagination & Sort State
-	const [page, setPage] = useState(1);
-	const [sortField, setSortField] = useState<SortField>("createdAt");
-	const [sortDir, setSortDir] = useState<SortDir>("desc");
+	const search = tableState.search;
+	const statusFilter = tableState.statusFilter as "all" | BookingStatus;
+	const paymentFilter = tableState.paymentFilter as "all" | PaymentStatus;
+	const dateFrom = tableState.dateFrom;
+	const dateTo = tableState.dateTo;
+	const showFilters = tableState.showFilters;
+	const page = tableState.page;
+	const sortField = tableState.sortField;
+	const sortDir = tableState.sortDir;
+
+	// Сеттеры:
+	const setSearch = (v: string) => setBookings({ search: v });
+	const setStatusFilter = (v: "all" | BookingStatus) =>
+		setBookings({ statusFilter: v });
+	const setPaymentFilter = (v: "all" | PaymentStatus) =>
+		setBookings({ paymentFilter: v });
+	const setDateFrom = (v: string) => setBookings({ dateFrom: v });
+	const setDateTo = (v: string) => setBookings({ dateTo: v });
+	const setShowFilters = (v: boolean) => setBookings({ showFilters: v });
+	const setPage = (fn: (p: number) => number) =>
+		setBookings({ page: fn(page) });
+	const setSortField = (v: SortField) => setBookings({ sortField: v });
+	const setSortDir = (fn: (d: SortDir) => SortDir) =>
+		setBookings({ sortDir: fn(sortDir) });
+
+	const [debouncedSearch] = useDebounceValue(search, 300);
 
 	// ── UI State
 	const [activeBooking, setActiveBooking] = useState<AdminBookingRow | null>(
@@ -371,7 +390,7 @@ export default function AdminBookingsTable({
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <Сброс страницы при изменении фильтров>
 	useEffect(() => {
-		setPage(1);
+		return setPage(() => 1);
 	}, [
 		debouncedSearch,
 		statusFilter,
@@ -421,6 +440,20 @@ export default function AdminBookingsTable({
 		queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
 	}, [queryClient]);
 
+	useAdminBookingPolling({
+		enabled: true,
+		onNewBooking: (count) => {
+			toast.info(
+				`Новый заказ! +${count} заявк${count === 1 ? "а" : "и"} на проверке`,
+				{
+					duration: 8000,
+					icon: "📦",
+				}
+			);
+			refreshData();
+		},
+	});
+
 	const openBooking = (booking: AdminBookingRow) => {
 		setActiveBooking(booking);
 		setSheetOpen(true);
@@ -431,7 +464,7 @@ export default function AdminBookingsTable({
 			setSortDir((d) => (d === "asc" ? "desc" : "asc"));
 		} else {
 			setSortField(field);
-			setSortDir("desc");
+			setSortDir(() => "desc");
 		}
 	};
 
@@ -577,7 +610,7 @@ export default function AdminBookingsTable({
 									"h-9 gap-2",
 									showFilters && "border-primary text-primary"
 								)}
-								onClick={() => setShowFilters((v) => !v)}
+								onClick={() => setShowFilters(!showFilters)}
 							>
 								<FunnelIcon size={13} />
 								Ещё
@@ -705,7 +738,7 @@ export default function AdminBookingsTable({
 				</div>
 
 				<div className="overflow-x-auto">
-					<Table className="w-full backdrop-blur-2xl bg-muted-foreground/5 rounded-xl overflow-hidden">
+					<Table className="w-full backdrop-blur-2xl rounded-xl overflow-hidden">
 						<TableHeader
 							className={cn(
 								"bg-muted-foreground/20 rounded-2xl",
@@ -795,7 +828,17 @@ export default function AdminBookingsTable({
 											"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
 											activeBooking?.id === booking.id &&
 												sheetOpen &&
-												"bg-foreground/5"
+												"bg-foreground/7",
+											booking.status === "PENDING_REVIEW" &&
+												"bg-amber-500/7 border-l-2 border-l-amber-500/40",
+											booking.status === "WAIT_PAYMENT" &&
+												"bg-blue-500/7 border-l-2 border-l-blue-500/40",
+											booking.status === "READY_TO_RENT" &&
+												"bg-green-500/7 border-l-2 border-l-green-500/40",
+											booking.status === "ACTIVE" &&
+												"bg-emerald-500/7 border-l-2 border-l-emerald-500/40",
+											booking.status === "CANCELLED" && "opacity-60",
+											booking.status === "EXPIRED" && "opacity-50"
 										)}
 										onClick={() => openBooking(booking)}
 									>

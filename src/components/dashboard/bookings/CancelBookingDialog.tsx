@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { cancelBookingAction } from "@/actions/booking-actions";
+import { cancelBookingAction } from "@/actions/client-booking-actions";
 import {
 	AlertDialog,
 	AlertDialogCancel,

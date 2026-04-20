@@ -21,7 +21,7 @@ async function getAdminDashboardData(): Promise<AdminDashboardData> {
 		prisma.booking.count({ where: { status: BookingStatus.PENDING_REVIEW } }),
 		prisma.booking.findMany({
 			orderBy: { createdAt: "desc" },
-			take: 6,
+			take: 10,
 			include: {
 				user: { select: { name: true, email: true } },
 				bookingItems: { include: { equipment: { select: { title: true } } } },

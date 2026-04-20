@@ -21,13 +21,14 @@ import {
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { useDebounceValue } from "usehooks-ts";
+import { useDebounceCallback, useDebounceValue } from "usehooks-ts";
 import {
 	createCategoryAction,
 	createSubcategoryAction,
 } from "@/actions/admin-category-actions";
 import {
 	type CreateEquipmentData,
+	checkInventoryNumberUniqueAction,
 	createEquipmentAction,
 	getRelatedEquipmentAction,
 	searchEquipmentAction,
@@ -842,6 +843,24 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 		return "";
 	});
 
+	const [inventoryError, setInventoryError] = useState<string | null>(null);
+	const [isChecking, setIsChecking] = useState(false);
+
+	const debouncedCheck = useDebounceCallback(async (value: string) => {
+		if (!value || value.length < 2) return;
+
+		setIsChecking(true);
+		try {
+			const { isUnique } = await checkInventoryNumberUniqueAction(
+				value,
+				formData.id
+			);
+			setInventoryError(isUnique ? null : "Этот номер уже используется");
+		} finally {
+			setIsChecking(false);
+		}
+	}, 500);
+
 	const handleSpecChange = (v: string) => {
 		markDirty();
 		setSpecText(v);
@@ -1103,11 +1122,33 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 							{/* INV NUMBER */}
 							<div className="space-y-1.5">
 								<Label>Инвентарный номер</Label>
-								<Input
-									value={formData.inventoryNumber ?? ""}
-									placeholder="Уникальный инв. №"
-									onChange={(e) => set({ inventoryNumber: e.target.value })}
-								/>
+								<div className="relative">
+									<Input
+										value={formData.inventoryNumber ?? ""}
+										placeholder="Уникальный инв. №"
+										className={
+											inventoryError ? "border-red-500 pr-10" : "pr-10"
+										}
+										onChange={(e) => {
+											const val = e.target.value;
+											set({ inventoryNumber: val });
+											setInventoryError(null);
+											debouncedCheck(val);
+										}}
+									/>
+									{/* Индикатор загрузки внутри инпута справа */}
+									{isChecking && (
+										<div className="absolute right-3 top-1/2 -translate-y-1/2">
+											<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+										</div>
+									)}
+								</div>
+
+								{inventoryError && (
+									<p className="text-xs font-medium text-red-500 animate-in fade-in slide-in-from-top-1">
+										{inventoryError}
+									</p>
+								)}
 							</div>
 
 							{/* CATEGORY / SUBCATEGORY */}
@@ -1171,7 +1212,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 							</div>
 
 							{/* STATUS / AVAILABILITY / OWNERSHIP */}
-							<div className="grid grid-cols-3 gap-4">
+							<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 								<div className="space-y-1.5">
 									<Label>Статус состояния</Label>
 									<Select
@@ -1212,7 +1253,12 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									<Select
 										value={formData.ownershipType}
 										onValueChange={(v) =>
-											set({ ownershipType: v as unknown as OwnershipType })
+											set({
+												ownershipType: v as unknown as OwnershipType,
+												// Если меняем на Свое (INTERNAL), очищаем имя партнера
+												partnerName:
+													v === "INTERNAL" ? "" : formData.partnerName,
+											})
 										}
 									>
 										<SelectTrigger className="glass-input">
@@ -1223,6 +1269,16 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 											<SelectItem value="INTERNAL">Нет</SelectItem>
 										</SelectContent>
 									</Select>
+								</div>
+								<div className="space-y-1.5">
+									<Label>Владелец (Субаренда)</Label>
+									<Input
+										value={formData.partnerName ?? ""}
+										onChange={(e) => set({ partnerName: e.target.value })}
+										placeholder="Имя субарендатора"
+										disabled={formData.ownershipType !== "SUBLEASE"}
+										className="disabled:opacity-50 transition-opacity h-9"
+									/>
 								</div>
 							</div>
 
@@ -1384,13 +1440,6 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 				<SheetFooter className="bg-muted-foreground/10 border-t border-white/10 px-6 py-4 shrink-0">
 					<div className="flex gap-2 w-full">
 						<Button
-							variant="outline"
-							className="flex-1"
-							onClick={() => handleOpenChange(false)}
-						>
-							Отмена
-						</Button>
-						<Button
 							onClick={handleSave}
 							className="flex-1"
 							disabled={isPending}
@@ -1401,6 +1450,13 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 								<Save className="w-4 h-4 mr-2" />
 							)}
 							{mode === "create" ? "Создать" : "Сохранить"}
+						</Button>
+						<Button
+							variant="outline"
+							className="flex-1"
+							onClick={() => handleOpenChange(false)}
+						>
+							Отмена
 						</Button>
 					</div>
 				</SheetFooter>

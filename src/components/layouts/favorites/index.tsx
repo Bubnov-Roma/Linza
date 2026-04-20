@@ -124,6 +124,9 @@ export default function ClientFavoritesPage() {
 		{ id: "sets" as Tab, label: "Сеты", icon: Layers, count: sets.length },
 	];
 
+	const isEmptyFavs = favorites.length === 0;
+	const isEmptySets = sets.length === 0;
+	const isEmptyFavsAndSets = isEmptySets && isEmptyFavs;
 	return (
 		<>
 			<div className="max-w-5xl mx-auto px-4 py-6 md:py-10 space-y-6 md:space-y-8">
@@ -137,7 +140,7 @@ export default function ClientFavoritesPage() {
 							Сохранённая техника и готовые сеты
 						</p>
 					</div>
-					{activeTab === "sets" && (
+					{activeTab === "sets" && !isEmptyFavs && (
 						<Button
 							onClick={() => setCreatingSet(true)}
 							className="rounded-xl gap-2 shrink-0"
@@ -190,12 +193,15 @@ export default function ClientFavoritesPage() {
 							exit={{ opacity: 0, y: -8 }}
 							transition={{ duration: 0.18 }}
 						>
-							{favorites.length === 0 ? (
+							{isEmptyFavs ? (
 								<EmptyState
 									icon={Heart}
 									title="Пусто"
-									description="Добавляйте позиции в избранное прямо из каталога"
-									action={{ label: "Перейти в каталог", href: "/equipment" }}
+									description="Сохраняйте любимую технику в избранное чтобы всегда иметь под рукой"
+									action={{
+										label: "Добавить избранное",
+										href: "/equipment",
+									}}
 								/>
 							) : (
 								<div className="grid grid-cols sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 md:gap-4">
@@ -225,17 +231,29 @@ export default function ClientFavoritesPage() {
 							exit={{ opacity: 0, y: -8 }}
 							transition={{ duration: 0.18 }}
 						>
-							{sets.length === 0 ? (
+							{isEmptySets && !isEmptyFavsAndSets && (
 								<EmptyState
 									icon={Layers}
 									title="Нет сетов"
-									description="Создавайте наборы техники для любимых сценариев съёмок"
+									description="Собирайте сеты из избранного под разные сценарии съемок"
 									action={{
 										label: "Создать сет",
 										onClick: () => setCreatingSet(true),
 									}}
 								/>
-							) : (
+							)}
+							{isEmptyFavsAndSets && (
+								<EmptyState
+									icon={Layers}
+									title="Нет сетов"
+									description="Добаьте любимые позиции в избранное чтобы собрать из них сет"
+									action={{
+										label: "Найти избранное",
+										href: "/equipment",
+									}}
+								/>
+							)}
+							{
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									{sets.map((set) => (
 										<SetCard
@@ -259,7 +277,7 @@ export default function ClientFavoritesPage() {
 										/>
 									))}
 								</div>
-							)}
+							}
 						</motion.div>
 					)}
 				</AnimatePresence>

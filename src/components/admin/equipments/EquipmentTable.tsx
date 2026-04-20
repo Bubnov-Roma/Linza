@@ -78,6 +78,7 @@ import type {
 	DbEquipmentWithImages,
 } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
+import { useAdminTablesStore } from "@/store/admin-tables.store";
 import { useUnsavedChanges } from "@/store/unsaved-changes.store";
 import { formatPlural } from "@/utils";
 import { EquipmentSheet } from "./EquipmentSheet";
@@ -93,6 +94,16 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 	MAINTENANCE: { label: "Обслуживание", color: "text-orange-400" },
 	BROKEN: { label: "Неисправно", color: "text-red-400" },
 	ARCHIVED: { label: "Архив", color: "text-zinc-500" },
+};
+
+const BOOKING_STATUS_EQUIPMENT_LABELS: Record<
+	string,
+	{ label: string; color: string }
+> = {
+	PENDING_REVIEW: { label: "Проверка", color: "text-amber-400" },
+	WAIT_PAYMENT: { label: "Ожидает оплаты", color: "text-blue-400" },
+	READY_TO_RENT: { label: "К выдаче", color: "text-green-400" },
+	ACTIVE: { label: "В аренде", color: "text-emerald-400" },
 };
 
 function SortIcon({
@@ -276,31 +287,45 @@ function AvailabilityToggle({
 
 export default function EquipmentTable() {
 	const queryClient = useQueryClient();
+
+	const { equipment: eqState, setEquipment } = useAdminTablesStore();
+
+	const filters = eqState.filters as EquipmentFilter[];
+	const sorts = eqState.sorts as EquipmentSort[];
+	const search = eqState.search;
+	const page = eqState.page;
+	const viewMode = eqState.viewMode;
+
+	const setFilters = (
+		v: EquipmentFilter[] | ((prev: EquipmentFilter[]) => EquipmentFilter[])
+	) =>
+		setEquipment({
+			filters: typeof v === "function" ? v(filters) : v,
+			page: 1,
+		});
+	const setSorts = (
+		v: EquipmentSort[] | ((prev: EquipmentSort[]) => EquipmentSort[])
+	) => setEquipment({ sorts: typeof v === "function" ? v(sorts) : v, page: 1 });
+	const setSearchTerm = (v: string) => setEquipment({ search: v, page: 1 });
+	const setPage = (fn: number | ((p: number) => number)) =>
+		setEquipment({ page: typeof fn === "function" ? fn(page) : fn });
+	const setViewMode = (v: "compact" | "extended") =>
+		setEquipment({ viewMode: v });
+
 	const markClean = useUnsavedChanges((s) => s.markClean);
 	const [duplicateId, setDuplicateId] = useState<string | null>(null);
 	const [categories, setCategories] = useState<DbCategory[]>([]);
 	const [showCreateSheet, setShowCreateSheet] = useState(false);
-	const [filters, setFilters] = useState<EquipmentFilter[]>([]);
-	const [sorts, setSorts] = useState<EquipmentSort[]>([]);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [activeEquipment, setActiveEquipment] =
 		useState<DbEquipmentWithImages | null>(null);
-	const [searchTerm, setSearchTerm] = useState("");
 
-	const [debouncedSearch] = useDebounceValue(searchTerm, 300);
-	const [viewMode, setViewMode] = useState<"compact" | "extended">("compact");
+	const [debouncedSearch] = useDebounceValue(search, 300);
 	const [isPending, startTransition] = useTransition();
-
-	const [page, setPage] = useState(1);
 
 	useEffect(() => {
 		getCategoriesFromDb().then(setCategories);
 	}, []);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
-	useEffect(() => {
-		setPage(1);
-	}, [debouncedSearch, filters, sorts]);
 
 	const getCategoryName = (id: string) =>
 		categories.find((c) => c.id === id)?.name ?? id;
@@ -355,9 +380,6 @@ export default function EquipmentTable() {
 			return [{ column, ascending: true }];
 		});
 	};
-
-	const countSiblings = (title: string) =>
-		items.filter((item) => item.title === title).length;
 
 	const toggleSelect = (id: string) => {
 		const newSelected = new Set(selectedIds);
@@ -489,7 +511,7 @@ export default function EquipmentTable() {
 								<InputGroupInput
 									placeholder="Название или инв. номер..."
 									className="pl-9 border-white/5 h-9"
-									value={searchTerm}
+									value={search}
 									onChange={(e) => setSearchTerm(e.target.value)}
 								/>
 							</InputGroup>
@@ -765,7 +787,7 @@ export default function EquipmentTable() {
 					</div>
 
 					<div className="overflow-x-auto">
-						<Table className="w-full backdrop-blur-2xl bg-muted-foreground/5 rounded-xl overflow-hidden">
+						<Table className="w-full backdrop-blur-2xl rounded-xl overflow-hidden">
 							<TableHeader
 								className={cn(
 									"bg-muted-foreground/20 rounded-2xl",
@@ -793,7 +815,8 @@ export default function EquipmentTable() {
 										onClick={() => handleHeaderSort("title")}
 									>
 										<span className="flex items-center gap-1">
-											Наименование <SortIcon column="title" sorts={sorts} />
+											Наименование
+											<SortIcon column="title" sorts={sorts} />
 										</span>
 									</TableHead>
 									<TableHead
@@ -819,6 +842,14 @@ export default function EquipmentTable() {
 									>
 										<span className="flex items-center gap-1">
 											Доступность <SortIcon column="status" sorts={sorts} />
+										</span>
+									</TableHead>
+									<TableHead
+										className="min-w-28 cursor-pointer select-none hover:text-foreground transition-colors"
+										onClick={() => handleHeaderSort("status")}
+									>
+										<span className="flex items-center gap-1">
+											Аренда <SortIcon column="status" sorts={sorts} />
 										</span>
 									</TableHead>
 
@@ -855,7 +886,12 @@ export default function EquipmentTable() {
 											<TableRowSkeleton key={i} />
 										))
 									: items.map((item) => {
-											const siblings = countSiblings(item.title);
+											const siblings =
+												(
+													item as DbEquipmentWithImages & {
+														siblingCount?: number;
+													}
+												).siblingCount ?? 1;
 											const hasSiblings = siblings > 1;
 											const categoryName = getCategoryName(item.categoryId);
 											const subcategoryName = getSubcategoryName(
@@ -866,7 +902,7 @@ export default function EquipmentTable() {
 												<TableRow
 													key={item.id}
 													className={cn(
-														"group hover:bg-muted-foreground/10 border-white/5 transition-colors cursor-pointer",
+														"group hover:bg-foreground/3 border-foreground/5 transition-colors cursor-pointer",
 														selectedIds.has(item.id) && "bg-primary/10"
 													)}
 													onClick={() => {
@@ -909,7 +945,7 @@ export default function EquipmentTable() {
 																{hasSiblings && (
 																	<Badge
 																		variant="secondary"
-																		className="h-4 py-0 px-1.5 text-[10px] shrink-0"
+																		className="h-4 py-0 px-1.5 text-[10px] shrink-0 text-muted-foreground"
 																	>
 																		×{siblings}
 																	</Badge>
@@ -952,6 +988,34 @@ export default function EquipmentTable() {
 															status={item.status}
 															onRefresh={refreshData}
 														/>
+													</TableCell>
+													<TableCell>
+														{(() => {
+															const activeStatus = (
+																item as unknown as {
+																	activeBookingStatus: string | null;
+																}
+															).activeBookingStatus;
+															if (!activeStatus)
+																return (
+																	<span className="text-xs text-muted-foreground/40">
+																		—
+																	</span>
+																);
+															const cfg =
+																BOOKING_STATUS_EQUIPMENT_LABELS[activeStatus];
+															if (!cfg) return null;
+															return (
+																<span
+																	className={cn(
+																		"text-xs font-medium",
+																		cfg.color
+																	)}
+																>
+																	{cfg.label}
+																</span>
+															);
+														})()}
 													</TableCell>
 
 													{viewMode === "extended" && (
@@ -1078,7 +1142,13 @@ export default function EquipmentTable() {
 					}}
 					onSuccess={() => refreshData()}
 					onCategoriesChange={() => getCategoriesFromDb().then(setCategories)}
-					hasSiblings={countSiblings(activeEquipment.title) > 1}
+					hasSiblings={
+						((
+							activeEquipment as DbEquipmentWithImages & {
+								siblingCount?: number;
+							}
+						).siblingCount ?? 1) > 1
+					}
 				/>
 			)}
 

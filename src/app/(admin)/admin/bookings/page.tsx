@@ -4,13 +4,21 @@ export const revalidate = 0;
 import type { AdminBookingRow } from "@/components/admin/bookings/AdminBookingsTable";
 import AdminBookingsTable from "@/components/admin/bookings/AdminBookingsTable";
 import type { AdminBookingItemSnippet } from "@/core/domain/entities/Booking";
+import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminBookingsPage() {
 	const rawBookings = await prisma.booking.findMany({
 		orderBy: { createdAt: "desc" },
 		include: {
-			user: { select: { name: true, email: true } },
+			user: {
+				select: {
+					name: true,
+					email: true,
+					phone: true,
+					clientApplication: { select: { adminOverrides: true } },
+				},
+			},
 			bookingItems: {
 				select: {
 					equipmentId: true,
@@ -35,6 +43,15 @@ export default async function AdminBookingsPage() {
 			.map((item) => item.equipment?.title ?? "Без названия")
 			.filter(Boolean);
 
+		const overrides = row.user?.clientApplication?.adminOverrides as Record<
+			string,
+			unknown
+		> | null;
+
+		const { fullName } = extractEnrichedUserData(overrides, {
+			name: row.user.name,
+			phone: row.user.phone,
+		});
 		const bookingItems: AdminBookingItemSnippet[] = row.bookingItems.map(
 			(item) => ({
 				equipmentId: item.equipmentId,
@@ -59,7 +76,7 @@ export default async function AdminBookingsPage() {
 			totalReplacementValue: row.totalReplacementValue,
 			cancellationReason: row.cancellationReason,
 			cancelledAt: row.cancelledAt?.toISOString() ?? null,
-			clientName: row.user.name,
+			clientName: fullName,
 			clientEmail: row.user.email,
 			equipmentTitles: equipmentTitles,
 			itemCount: row.bookingItems.length,

@@ -21,13 +21,16 @@ export function extractImages(item: DbEquipmentWithImages): SupabaseImage[] {
 export function groupEquipmentRows(
 	rows: (DbEquipmentWithImages | RawEquipmentRow)[]
 ): GroupedEquipment[] {
-	const map = rows.reduce<Record<string, GroupedEquipment>>((acc, item) => {
+	const sorted = [...rows].sort((a, b) =>
+		a.isPrimary === b.isPrimary ? 0 : a.isPrimary ? -1 : 1
+	);
+
+	const map = sorted.reduce<Record<string, GroupedEquipment>>((acc, item) => {
 		const title = item.title;
 		const imagesData = extractImages(item);
 		const imageUrls = imagesData.map((img) => img.url);
 
 		if (!acc[title]) {
-			// Extract ID related equipments
 			const relatedIds = item.relatedEquipment?.map((r) => r.relatedId) ?? [];
 
 			acc[title] = {
@@ -55,7 +58,6 @@ export function groupEquipmentRows(
 		group.totalCount += 1;
 		group.allUnitIds = [...group.allUnitIds, item.id];
 
-		// If in the following lines of the same group there are also accompanying
 		if (
 			item.relatedEquipment &&
 			(!group.relatedIds || group.relatedIds.length === 0)
@@ -67,6 +69,8 @@ export function groupEquipmentRows(
 			group.availableCount += 1;
 		}
 
+		// Изображения обновляем только если у текущего представителя их нет
+		// (представитель уже isPrimary благодаря сортировке — не перезаписываем)
 		if (
 			imageUrls.length > 0 &&
 			(!group.imageUrl || group.imageUrl.includes("placeholder"))

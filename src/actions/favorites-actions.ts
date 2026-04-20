@@ -18,6 +18,7 @@ export async function toggleFavoriteAction(
 		const session = await auth();
 		if (!session?.user?.id) return { isFavorite: false, error: "Unauthorized" };
 
+		// Проверяем прямое совпадение
 		const existing = await prisma.favorite.findFirst({
 			where: { userId: session.user.id, equipmentId },
 		});
@@ -26,6 +27,36 @@ export async function toggleFavoriteAction(
 			await prisma.favorite.delete({ where: { id: existing.id } });
 			revalidatePath("/favorites");
 			return { isFavorite: false };
+		}
+
+		// Защита от дублей: ищем сиблингов с тем же title в избранном пользователя
+		const equipment = await prisma.equipment.findUnique({
+			where: { id: equipmentId },
+			select: { title: true },
+		});
+
+		if (equipment) {
+			// Все id техники с таким же title
+			const siblings = await prisma.equipment.findMany({
+				where: { title: equipment.title },
+				select: { id: true },
+			});
+			const siblingIds = siblings.map((s) => s.id);
+
+			// Если уже есть избранное с любым из сиблингов — удаляем, добавляем новое
+			const existingSibling = await prisma.favorite.findFirst({
+				where: { userId: session.user.id, equipmentId: { in: siblingIds } },
+			});
+
+			if (existingSibling) {
+				// Переключаем на новый isPrimary (заменяем, не дублируем)
+				await prisma.favorite.update({
+					where: { id: existingSibling.id },
+					data: { equipmentId },
+				});
+				revalidatePath("/favorites");
+				return { isFavorite: true };
+			}
 		}
 
 		await prisma.favorite.create({
@@ -110,7 +141,7 @@ export async function saveSetAction(
 	}
 }
 
-// ── Для хука use-favorite.ts ──
+// ── Для хука use-favorite.ts ──  возвращаем id + все id сиблингов каждого избранного:
 export async function getUserFavoriteIdsAction(): Promise<string[]> {
 	try {
 		const session = await auth();
@@ -118,9 +149,31 @@ export async function getUserFavoriteIdsAction(): Promise<string[]> {
 
 		const favs = await prisma.favorite.findMany({
 			where: { userId: session.user.id },
-			select: { equipmentId: true },
+			select: {
+				equipmentId: true,
+				equipment: { select: { title: true } },
+			},
 		});
-		return favs.map((f) => f.equipmentId);
+
+		if (favs.length === 0) return [];
+
+		// Собираем уникальные titles
+		const titles = [...new Set(favs.map((f) => f.equipment.title))];
+
+		// Получаем все id техники с этими titles (все сиблинги)
+		const allSiblings = await prisma.equipment.findMany({
+			where: { title: { in: titles } },
+			select: { id: true },
+		});
+
+		// Возвращаем объединение: оригинальные ids + все сиблинги
+		// Это позволяет сердечку гореть у любой карточки из группы
+		return [
+			...new Set([
+				...favs.map((f) => f.equipmentId),
+				...allSiblings.map((e) => e.id),
+			]),
+		];
 	} catch {
 		return [];
 	}

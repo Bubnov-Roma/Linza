@@ -18,7 +18,7 @@ import {
 } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDebounceValue } from "usehooks-ts";
 import {
@@ -60,6 +60,7 @@ import {
 import { LABEL_COLORS, VERIFICATION_CONFIG } from "@/constants";
 import type { UserProfile } from "@/core/domain/entities/User";
 import { cn } from "@/lib/utils";
+import { useAdminTablesStore } from "@/store/admin-tables.store";
 
 const PAGE_SIZE = 25;
 
@@ -143,47 +144,48 @@ export default function UsersTable({
 }) {
 	const queryClient = useQueryClient();
 
-	// ── Search & filters
-	const [search, setSearch] = useState("");
-	const [debouncedSearch] = useDebounceValue(search, 300);
-	const [appFilter, setAppFilter] = useState("all");
-	const [blockFilter, setBlockFilter] = useState<"all" | "active" | "blocked">(
-		"all"
-	);
-	const [discountFilter, setDiscountFilter] = useState<
-		"all" | "has_discount" | "no_discount"
-	>("all");
-	const [showFilters, setShowFilters] = useState(false);
-	const [regFrom, setRegFrom] = useState("");
-	const [regTo, setRegTo] = useState("");
+	const { users: usersState, setUsers } = useAdminTablesStore();
 
-	// ── Sort & Pagination
-	const [page, setPage] = useState(1);
-	const [sortField, setSortField] = useState<SortField>("createdAt");
-	const [sortDir, setSortDir] = useState<SortDir>("desc");
+	const search = usersState.search;
+	const appFilter = usersState.roleFilter;
+	const blockFilter = usersState.statusFilter as "all" | "active" | "blocked";
+	const discountFilter =
+		(
+			usersState as unknown as {
+				discountFilter: "all" | "has_discount" | "no_discount";
+			}
+		).discountFilter ?? "all";
+	const regFrom = (usersState as unknown as { regFrom: string }).regFrom ?? "";
+	const regTo = (usersState as unknown as { regTo: string }).regTo ?? "";
+	const page = usersState.page;
+	const sortField = usersState.sortField as SortField;
+	const sortDir = usersState.sortDir as SortDir;
+	const showFilters =
+		(usersState as unknown as { showFilters: boolean }).showFilters ?? false;
 
-	// ── Selection & Sheets
+	const setSearch = (v: string) => setUsers({ search: v, page: 1 });
+	const setAppFilter = (v: string) => setUsers({ roleFilter: v, page: 1 });
+	const setBlockFilter = (v: "all" | "active" | "blocked") =>
+		setUsers({ statusFilter: v, page: 1 });
+	const setDiscountFilter = (v: "all" | "has_discount" | "no_discount") =>
+		setUsers({ discountFilter: v, page: 1 });
+	const setShowFilters = (v: boolean) => setUsers({ showFilters: v });
+	const setRegFrom = (v: string) => setUsers({ regFrom: v, page: 1 });
+	const setRegTo = (v: string) => setUsers({ regTo: v, page: 1 });
+	const setPage = (fn: number | ((p: number) => number)) =>
+		setUsers({ page: typeof fn === "function" ? fn(page) : fn });
+	const setSortField = (v: SortField) => setUsers({ sortField: v, page: 1 });
+	const setSortDir = (fn: SortDir | ((d: SortDir) => SortDir)) =>
+		setUsers({ sortDir: typeof fn === "function" ? fn(sortDir) : fn });
+
+	// Локальные
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [activeUser, setActiveUser] = useState<UserProfile | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
-
-	// ── CSV import
 	const csvInputRef = useRef<HTMLInputElement>(null);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <Reset page on filter changes>
-	useEffect(() => {
-		setPage(1);
-	}, [
-		debouncedSearch,
-		appFilter,
-		blockFilter,
-		discountFilter,
-		regFrom,
-		regTo,
-		sortField,
-		sortDir,
-	]);
+	const [debouncedSearch] = useDebounceValue(search, 300);
 
 	// ── Fetch Data
 	const queryKey = [
@@ -217,7 +219,7 @@ export default function UsersTable({
 		placeholderData: (prev) => prev,
 	});
 
-	const users = (queryData?.data as UserProfile[]) ?? initialUsers;
+	const users = (queryData?.data as unknown as UserProfile[]) ?? initialUsers;
 	const totalCount = queryData?.count ?? initialCount;
 	const isLoading = isFetching && !queryData;
 	const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
@@ -243,7 +245,7 @@ export default function UsersTable({
 	// ── CSV Export
 	const handleExport = async () => {
 		try {
-			const dataToExport = await exportAdminUsersAction(
+			const exportedUsers = await exportAdminUsersAction(
 				selectedIds.size > 0 ? Array.from(selectedIds) : undefined
 			);
 
@@ -257,7 +259,7 @@ export default function UsersTable({
 					"Заблокирован",
 					"Дата регистрации",
 				],
-				...dataToExport.map((u) => [
+				...exportedUsers.map((u) => [
 					u.id,
 					u.name,
 					u.email,
@@ -400,7 +402,7 @@ export default function UsersTable({
 									"h-9 gap-2",
 									showFilters && "border-primary text-primary"
 								)}
-								onClick={() => setShowFilters((v) => !v)}
+								onClick={() => setShowFilters(!usersState.showFilters)}
 							>
 								<FunnelIcon size={13} />
 								Ещё
@@ -561,7 +563,7 @@ export default function UsersTable({
 			</div>
 
 			{/* Table */}
-			<Card className="overflow-hidden relative">
+			<Card className="overflow-hidden relative rounded-xl">
 				{/* NpLoader */}
 				<div
 					className={cn(
@@ -573,10 +575,10 @@ export default function UsersTable({
 				</div>
 
 				<div className="overflow-x-auto">
-					<Table className="w-full backdrop-blur-2xl bg-muted-foreground/5 rounded-lg overflow-hidden">
+					<Table className="w-full backdrop-blur-md rounded-lg overflow-hidden">
 						<TableHeader
 							className={cn(
-								"bg-muted-foreground/20",
+								"bg-muted-foreground/20 rounded-2xl",
 								isFetching &&
 									!isLoading &&
 									"opacity-80 transition-opacity duration-200"
@@ -650,7 +652,21 @@ export default function UsersTable({
 											selectedIds.has(user.id) && "bg-primary/10",
 											activeUser?.id === user.id &&
 												sheetOpen &&
-												"bg-foreground/5"
+												"bg-foreground/7",
+											user.application?.status === "NO_APPLICATION" &&
+												"bg-amber-500/7 border-l-2 border-l-amber-500/40",
+											user.application?.status === "DRAFT" &&
+												"bg-gray-500/7 border-l-2 border-l-gray-500/40",
+											user.application?.status === "PENDING" &&
+												"bg-neutral-500/7 border-l-2 border-l-neutral-500/40",
+											user.application?.status === "REVIEWING" &&
+												"bg-sky-500/7 border-l-2 border-l-sky-500/40",
+											user.application?.status === "CLARIFICATION" &&
+												"bg-lime-500/7 border-l-2 border-l-lime-500/40",
+											user.application?.status === "STANDARD" &&
+												"bg-emerald-500/7 border-l-2 border-l-emerald-500/40",
+											user.application?.status === "REJECTED" &&
+												"bg-red-500/7 border-l-2 border-l-red-500/40"
 										)}
 										onClick={() => openUser(user)}
 									>

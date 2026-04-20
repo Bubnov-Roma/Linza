@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import {
 	checkAvailabilityAction,
 	updateBookingItemsAction,
-} from "@/actions/booking-actions";
+} from "@/actions/client-booking-actions";
 import { BookingButton, ClientTime } from "@/components/shared";
 import {
 	BOOKING_STATUS_LABELS,

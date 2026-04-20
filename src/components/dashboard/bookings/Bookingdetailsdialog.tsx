@@ -137,9 +137,9 @@ export function BookingDetailDialog({
 								</div>
 							</div>
 							<div className="space-y-2 relative">
-								{booking.bookingItems.map((item) => (
+								{booking.bookingItems.map((item, i) => (
 									<div
-										key={`${item}`}
+										key={`${item.equipment}` + `${i}`}
 										className="flex items-center gap-3 p-3 hover:bg-muted-foreground/15 transition-colors"
 									>
 										{/* Item thumbnail */}

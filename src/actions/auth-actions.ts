@@ -33,8 +33,28 @@ setInterval(
 );
 // -------------------------------------------------------------------------------
 
-export async function sendOtpCode(email: string) {
+export async function sendOtpCode(email: string, turnstileToken?: string) {
 	try {
+		// 1. Проверка Cloudflare Turnstile
+		if (!turnstileToken) {
+			return { error: "Не пройдена проверка безопасности" };
+		}
+
+		const verifyRes = await fetch(
+			"https://challenges.cloudflare.com/turnstile/v0/siteverify",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${turnstileToken}`,
+			}
+		);
+
+		const verifyData = await verifyRes.json();
+		if (!verifyData.success) {
+			return {
+				error: "Подозрение на бота. Обновите страницу и попробуйте снова.",
+			};
+		}
 		// --- Rate limiting ---
 		const headersList = await headers();
 		const ip =
@@ -44,7 +64,9 @@ export async function sendOtpCode(email: string) {
 
 		// 5 запросов в 10 минут на IP
 		if (!allow(`ip:${ip}`, 5, 10 * 60_000)) {
-			return { error: "Слишком много запросов с вашего IP. Попробуйте позже." };
+			return {
+				error: "Слишком много запросов с вашего IP. Попробуйте позже.",
+			};
 		}
 		// 3 запроса в 10 минут на email
 		if (!allow(`email:${email}`, 3, 10 * 60_000)) {
@@ -63,7 +85,9 @@ export async function sendOtpCode(email: string) {
 		const code = Math.floor(100000 + Math.random() * 900000).toString();
 		const expires = new Date(Date.now() + 10 * 60 * 1000);
 
-		await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+		await prisma.verificationToken.deleteMany({
+			where: { identifier: email },
+		});
 		await prisma.verificationToken.create({
 			data: { identifier: email, token: code, expires },
 		});

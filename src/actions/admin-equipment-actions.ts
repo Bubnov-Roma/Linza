@@ -266,16 +266,58 @@ export async function getEquipmentWithFilters(params: {
 		countsMap = new Map(titleCounts.map((tc) => [tc.title, tc._count.id]));
 	}
 
-	const enrichedData = data.map((item) => ({
-		...item,
-		siblingCount: countsMap.get(item.title) ?? 1,
-		activeBookingStatus:
-			(
-				item as unknown as {
-					bookingItems: Array<{ booking: { status: string } }>;
-				}
-			).bookingItems?.[0]?.booking?.status ?? null,
-	}));
+	const titlesMap = new Map<string, string>(); // title → imageUrl
+	// Сначала собираем из текущей страницы
+	for (const item of data) {
+		const url = (
+			item as unknown as {
+				equipmentImageLinks?: Array<{ image?: { url?: string } }>;
+			}
+		).equipmentImageLinks?.[0]?.image?.url;
+		if (url && !titlesMap.has(item.title)) {
+			titlesMap.set(item.title, url);
+		}
+	}
+
+	// Titles у которых нет картинки в текущей странице — дозапрашиваем из БД
+	const titlesWithoutImage = uniqueTitles.filter((t) => !titlesMap.has(t));
+	if (titlesWithoutImage.length > 0) {
+		const imageRows = await prisma.equipmentImageLink.findMany({
+			where: {
+				equipment: { title: { in: titlesWithoutImage } },
+				orderIndex: 0,
+			},
+			select: {
+				image: { select: { url: true } },
+				equipment: { select: { title: true } },
+			},
+			orderBy: { orderIndex: "asc" },
+		});
+		for (const row of imageRows) {
+			if (!titlesMap.has(row.equipment.title) && row.image?.url) {
+				titlesMap.set(row.equipment.title, row.image.url);
+			}
+		}
+	}
+
+	const enrichedData = data.map((item) => {
+		const hasImage = (
+			item as unknown as {
+				equipmentImageLinks?: Array<{ image?: { url?: string } }>;
+			}
+		).equipmentImageLinks?.[0]?.image?.url;
+		return {
+			...item,
+			siblingCount: countsMap.get(item.title) ?? 1,
+			imageUrlFallback: hasImage ? undefined : titlesMap.get(item.title),
+			activeBookingStatus:
+				(
+					item as unknown as {
+						bookingItems: Array<{ booking: { status: string } }>;
+					}
+				).bookingItems?.[0]?.booking?.status ?? null,
+		};
+	});
 
 	return {
 		data: enrichedData as unknown as (DbEquipmentWithImages & {
@@ -578,6 +620,48 @@ export async function syncEquipmentByTitle(
 
 	revalidatePath("/admin/equipment");
 	return { updated: siblings.length };
+}
+
+export async function syncEquipmentImagesAction(
+	sourceId: string
+): Promise<{ updated: number }> {
+	// Берём картинки источника
+	const source = await prisma.equipment.findUnique({
+		where: { id: sourceId },
+		include: {
+			equipmentImageLinks: { orderBy: { orderIndex: "asc" } },
+		},
+	});
+	if (!source) throw new Error("Source not found");
+
+	const siblings = await prisma.equipment.findMany({
+		where: { title: source.title, id: { not: sourceId } },
+		select: { id: true },
+	});
+
+	if (siblings.length === 0) return { updated: 0 };
+
+	// Для каждого сиблинга без собственных картинок — копируем ссылки
+	let updated = 0;
+	for (const sibling of siblings) {
+		const existingLinks = await prisma.equipmentImageLink.count({
+			where: { equipmentId: sibling.id },
+		});
+		if (existingLinks === 0 && source.equipmentImageLinks.length > 0) {
+			await prisma.equipmentImageLink.createMany({
+				data: source.equipmentImageLinks.map((link) => ({
+					equipmentId: sibling.id,
+					imageId: link.imageId,
+					orderIndex: link.orderIndex,
+				})),
+				skipDuplicates: true,
+			});
+			updated++;
+		}
+	}
+
+	revalidatePath("/admin/equipment");
+	return { updated };
 }
 
 export async function exportEquipment(ids?: string[]): Promise<DbEquipment[]> {

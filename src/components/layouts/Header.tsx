@@ -27,7 +27,9 @@ export function Header({ categories }: HeaderProps) {
 	const { state: searchState } = useSearchState();
 	const { addToHistory } = useSearchHistory();
 
-	const cartCount = useCartStore((s) => s.items.length);
+	const cartCount = useCartStore((s) =>
+		s.items.reduce((sum, i) => sum + i.quantity, 0)
+	);
 
 	const { state: sidebarState, toggleSidebar, isMobile } = useSidebar();
 	const isCollapsed = sidebarState === "collapsed" && !isMobile;
@@ -140,7 +142,7 @@ export function Header({ categories }: HeaderProps) {
 			</div>
 
 			{/* ── Desktop: корзина ── */}
-			<div className="md:flex items-center gap-2">
+			<div className="hidden md:flex items-center gap-2">
 				<Link
 					href="/checkout"
 					data-cart-icon

@@ -141,6 +141,7 @@ export interface AdminBookingItemSnippet {
 	equipmentId: string;
 	title: string;
 	inventoryNumber?: string | null;
+	imageUrl?: string | null;
 	priceAtBooking: number;
 	depositAtBooking: number;
 	replacementValueAtBooking: number;

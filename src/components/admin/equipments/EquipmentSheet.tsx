@@ -1,23 +1,22 @@
 "use client";
 
 import {
+	ArrowsClockwiseIcon,
+	CircleNotchIcon,
 	DotsNineIcon,
+	// EyeIcon,
+	FolderPlusIcon,
+	InfoIcon,
+	LinkIcon,
 	MagnifyingGlassIcon,
+	NoteIcon,
+	// PencilIcon,
 	PlusIcon,
 	StarIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
-import {
-	Eye,
-	Info,
-	Link as LinkIcon,
-	Loader2,
-	Pencil,
-	Plus,
-	Save,
-	X,
-} from "lucide-react";
+import { X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -36,6 +35,10 @@ import {
 	updateEquipment,
 } from "@/actions/admin-equipment-actions";
 import { ImageCell } from "@/components/admin/equipments/ImageCell";
+import {
+	CommentsBlock,
+	type UserComment,
+} from "@/components/admin/users/details-panel/CommentsBlock";
 import { MarkdownEditor } from "@/components/shared";
 import {
 	Button,
@@ -131,6 +134,7 @@ interface RelatedEquipmentPickerProps {
 	value: string[]; // массив ID
 	onChange: (ids: string[]) => void;
 	excludeId?: string; // ID текущей позиции (чтобы не добавить саму себя)
+	isPending: boolean;
 }
 
 // ─── RelatedEquipmentPicker ──────────────────────────────────────────────────────────────
@@ -139,6 +143,7 @@ export function RelatedEquipmentPicker({
 	value,
 	onChange,
 	excludeId,
+	isPending = false,
 }: RelatedEquipmentPickerProps) {
 	const [query, setQuery] = useState("");
 	const [debouncedQuery] = useDebounceValue(query, 250);
@@ -257,6 +262,10 @@ export function RelatedEquipmentPicker({
 		dragIndex.current = null;
 		dragOverIndex.current = null;
 	}, [selectedItems, onChange]);
+
+	if (isPending) {
+		return <CircleNotchIcon className="w-14 h-14 animate-spin m-auto" />;
+	}
 
 	return (
 		<div className="space-y-4">
@@ -389,150 +398,150 @@ export function RelatedEquipmentPicker({
 
 // ─── SpecsEditor ──────────────────────────────────────────────────────────────
 
-function SpecsEditor({
-	value,
-	onChange,
-}: {
-	value: string;
-	onChange: (v: string) => void;
-}) {
-	const [mode, setMode] = useState<"text" | "json" | "preview">(() => {
-		try {
-			const p = JSON.parse(value);
-			const keys = Object.keys(p);
-			if (keys.length === 1 && keys[0] === "description") return "text";
-			if (keys.length > 0) return "json";
-		} catch {}
-		return "text";
-	});
-	const [hasJsonError, setHasJsonError] = useState(false);
-	const [textValue, setTextValue] = useState(() => {
-		try {
-			const p = JSON.parse(value);
-			return typeof p.description === "string" ? p.description : "";
-		} catch {
-			return typeof value === "string" && !value.startsWith("{") ? value : "";
-		}
-	});
-	const [jsonValue, setJsonValue] = useState(() => {
-		try {
-			const p = JSON.parse(value);
-			if (Object.keys(p).length === 1 && p.description) return '{\n  "": ""\n}';
-			return JSON.stringify(p, null, 2);
-		} catch {
-			return '{\n  "": ""\n}';
-		}
-	});
+// function SpecsEditor({
+// 	value,
+// 	onChange,
+// }: {
+// 	value: string;
+// 	onChange: (v: string) => void;
+// }) {
+// 	const [mode, setMode] = useState<"text" | "json" | "preview">(() => {
+// 		try {
+// 			const p = JSON.parse(value);
+// 			const keys = Object.keys(p);
+// 			if (keys.length === 1 && keys[0] === "description") return "text";
+// 			if (keys.length > 0) return "json";
+// 		} catch {}
+// 		return "text";
+// 	});
+// 	const [hasJsonError, setHasJsonError] = useState(false);
+// 	const [textValue, setTextValue] = useState(() => {
+// 		try {
+// 			const p = JSON.parse(value);
+// 			return typeof p.description === "string" ? p.description : "";
+// 		} catch {
+// 			return typeof value === "string" && !value.startsWith("{") ? value : "";
+// 		}
+// 	});
+// 	const [jsonValue, setJsonValue] = useState(() => {
+// 		try {
+// 			const p = JSON.parse(value);
+// 			if (Object.keys(p).length === 1 && p.description) return '{\n  "": ""\n}';
+// 			return JSON.stringify(p, null, 2);
+// 		} catch {
+// 			return '{\n  "": ""\n}';
+// 		}
+// 	});
 
-	const handleTextChange = (t: string) => {
-		setTextValue(t);
-		onChange(JSON.stringify({ description: t }, null, 2));
-	};
-	const handleJsonChange = (t: string) => {
-		setJsonValue(t);
-		try {
-			JSON.parse(t);
-			setHasJsonError(false);
-			onChange(t);
-		} catch {
-			setHasJsonError(true);
-		}
-	};
+// 	const handleTextChange = (t: string) => {
+// 		setTextValue(t);
+// 		onChange(JSON.stringify({ description: t }, null, 2));
+// 	};
+// 	const handleJsonChange = (t: string) => {
+// 		setJsonValue(t);
+// 		try {
+// 			JSON.parse(t);
+// 			setHasJsonError(false);
+// 			onChange(t);
+// 		} catch {
+// 			setHasJsonError(true);
+// 		}
+// 	};
 
-	let previewEntries: [string, string][] = [];
-	try {
-		previewEntries = Object.entries(
-			JSON.parse(mode === "json" ? jsonValue : value)
-		).map(([k, v]) => [k, String(v)]);
-	} catch {}
+// 	let previewEntries: [string, string][] = [];
+// 	try {
+// 		previewEntries = Object.entries(
+// 			JSON.parse(mode === "json" ? jsonValue : value)
+// 		).map(([k, v]) => [k, String(v)]);
+// 	} catch {}
 
-	return (
-		<div className="space-y-1.5">
-			<div className="flex items-center justify-between">
-				<Label className="flex items-center gap-2">
-					Характеристики
-					{hasJsonError && mode === "json" && (
-						<span className="text-[10px] text-amber-400 font-normal">
-							невалидный JSON
-						</span>
-					)}
-				</Label>
-				<div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-muted/10 p-0.5">
-					{(["text", "json", "preview"] as const).map((m) => (
-						<button
-							key={m}
-							type="button"
-							onClick={() => setMode(m)}
-							className={cn(
-								"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors",
-								mode === m
-									? "bg-primary/10 text-foreground"
-									: "text-muted-foreground hover:text-foreground"
-							)}
-						>
-							{m === "text" ? (
-								<Pencil size={9} />
-							) : m === "json" ? (
-								<span className="font-mono text-[9px] font-bold">{"{}"}</span>
-							) : (
-								<Eye size={9} />
-							)}
-							{m === "text" ? "Текст" : m === "json" ? "JSON" : "Preview"}
-						</button>
-					))}
-				</div>
-			</div>
-			{mode === "text" && (
-				<Textarea
-					rows={7}
-					value={textValue}
-					onChange={(e) => handleTextChange(e.target.value)}
-					className="text-xs resize-none"
-					placeholder={
-						"Произвольный текст с описанием характеристик...\n\nНапример:\nСенсор — Full Frame BSI CMOS\nРазрешение — 33 МП"
-					}
-				/>
-			)}
-			{mode === "json" && (
-				<Textarea
-					rows={7}
-					value={jsonValue}
-					onChange={(e) => handleJsonChange(e.target.value)}
-					className={cn(
-						"font-mono text-xs resize-none",
-						hasJsonError &&
-							"border-amber-400/50 focus-visible:ring-amber-400/30"
-					)}
-					placeholder={
-						'{\n  "Сенсор": "Full Frame",\n  "Разрешение": "33MP"\n}'
-					}
-				/>
-			)}
-			{mode === "preview" && (
-				<div className="min-h-42 rounded-md border border-white/10 bg-muted/10 p-3">
-					{previewEntries.length > 0 ? (
-						<dl className="divide-y divide-white/5">
-							{previewEntries.map(([k, v]) => (
-								<div key={k} className="flex gap-3 py-1.5">
-									<dt className="text-xs text-muted-foreground w-36 shrink-0 truncate">
-										{k}
-									</dt>
-									<dd className="text-xs font-medium flex-1 whitespace-pre-wrap">
-										{v}
-									</dd>
-								</div>
-							))}
-						</dl>
-					) : (
-						<span className="text-muted-foreground text-xs italic">
-							Нет данных
-						</span>
-					)}
-				</div>
-			)}
-		</div>
-	);
-}
+// 	return (
+// 		<div className="space-y-1.5">
+// 			<div className="flex items-center justify-between">
+// 				<Label className="flex items-center gap-2">
+// 					Характеристики
+// 					{hasJsonError && mode === "json" && (
+// 						<span className="text-[10px] text-amber-400 font-normal">
+// 							невалидный JSON
+// 						</span>
+// 					)}
+// 				</Label>
+// 				<div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-muted/10 p-0.5">
+// 					{(["text", "json", "preview"] as const).map((m) => (
+// 						<button
+// 							key={m}
+// 							type="button"
+// 							onClick={() => setMode(m)}
+// 							className={cn(
+// 								"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors",
+// 								mode === m
+// 									? "bg-primary/10 text-foreground"
+// 									: "text-muted-foreground hover:text-foreground"
+// 							)}
+// 						>
+// 							{m === "text" ? (
+// 								<PencilIcon size={9} />
+// 							) : m === "json" ? (
+// 								<span className="font-mono text-[9px] font-bold">{"{}"}</span>
+// 							) : (
+// 								<EyeIcon size={9} />
+// 							)}
+// 							{m === "text" ? "Текст" : m === "json" ? "JSON" : "Preview"}
+// 						</button>
+// 					))}
+// 				</div>
+// 			</div>
+// 			{mode === "text" && (
+// 				<Textarea
+// 					rows={7}
+// 					value={textValue}
+// 					onChange={(e) => handleTextChange(e.target.value)}
+// 					className="text-xs resize-none"
+// 					placeholder={
+// 						"Произвольный текст с описанием характеристик...\n\nНапример:\nСенсор — Full Frame BSI CMOS\nРазрешение — 33 МП"
+// 					}
+// 				/>
+// 			)}
+// 			{mode === "json" && (
+// 				<Textarea
+// 					rows={7}
+// 					value={jsonValue}
+// 					onChange={(e) => handleJsonChange(e.target.value)}
+// 					className={cn(
+// 						"font-mono text-xs resize-none",
+// 						hasJsonError &&
+// 							"border-amber-400/50 focus-visible:ring-amber-400/30"
+// 					)}
+// 					placeholder={
+// 						'{\n  "Сенсор": "Full Frame",\n  "Разрешение": "33MP"\n}'
+// 					}
+// 				/>
+// 			)}
+// 			{mode === "preview" && (
+// 				<div className="min-h-42 rounded-md border border-white/10 bg-muted/10 p-3">
+// 					{previewEntries.length > 0 ? (
+// 						<dl className="divide-y divide-white/5">
+// 							{previewEntries.map(([k, v]) => (
+// 								<div key={k} className="flex gap-3 py-1.5">
+// 									<dt className="text-xs text-muted-foreground w-36 shrink-0 truncate">
+// 										{k}
+// 									</dt>
+// 									<dd className="text-xs font-medium flex-1 whitespace-pre-wrap">
+// 										{v}
+// 									</dd>
+// 								</div>
+// 							))}
+// 						</dl>
+// 					) : (
+// 						<span className="text-muted-foreground text-xs italic">
+// 							Нет данных
+// 						</span>
+// 					)}
+// 				</div>
+// 			)}
+// 		</div>
+// 	);
+// }
 
 // ─── InlineCategoryCreator ────────────────────────────────────────────────────
 
@@ -579,9 +588,9 @@ function InlineCreator({
 				disabled={pending || !value.trim()}
 			>
 				{pending ? (
-					<Loader2 size={12} className="animate-spin" />
+					<CircleNotchIcon size={12} className="animate-spin" />
 				) : (
-					<Save size={12} />
+					<FolderPlusIcon size={12} />
 				)}
 			</Button>
 			<Button
@@ -700,7 +709,7 @@ function CategorySubcategorySelector({
 						onClick={() => setShowNewCategory(true)}
 						className="flex w-full justify-start text-muted-foreground items-center gap-1 text-sm transition-colors mt-1"
 					>
-						<Plus size={11} />
+						<PlusIcon size={11} />
 						Добавить новую категорию
 					</Button>
 				)}
@@ -747,7 +756,7 @@ function CategorySubcategorySelector({
 							onClick={() => setShowNewSubcategory(true)}
 							className="flex w-full justify-start text-muted-foreground items-center gap-1 text-sm  mt-1"
 						>
-							<Plus size={11} />
+							<PlusIcon size={11} />
 							Добавить новую подкатегорию
 						</Button>
 					))}
@@ -797,8 +806,9 @@ function buildInitialForm(
 }
 
 const TABS = [
-	{ id: "info", label: "Основное", icon: Info },
+	{ id: "info", label: "Основное", icon: InfoIcon },
 	{ id: "related", label: "Сопутствующие", icon: LinkIcon },
+	{ id: "notes", label: "Заметки", icon: NoteIcon },
 ] as const;
 
 export function EquipmentSheet(props: EquipmentSheetProps) {
@@ -814,7 +824,8 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 	const hasSiblings = props.hasSiblings ?? false;
 	const { markClean, isDirty, markDirty } = useUnsavedChanges();
 
-	const [tab, setTab] = useState<"info" | "related">("info");
+	const [tab, setTab] = useState<"info" | "related" | "notes">("info");
+
 	const [isPending, setIsPending] = useState(false);
 	const [syncFields, setSyncFields] = useState<string[]>([]);
 	const [showSync, setShowSync] = useState(false);
@@ -824,23 +835,11 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 	const [specText, setSpecText] = useState(() =>
 		safeSpecsToText(equipment?.specifications)
 	);
-	const [commentsText, setCommentsText] = useState(() => {
+
+	const [comments, setComments] = useState<UserComment[]>(() => {
 		const c = equipment?.comments;
-		if (!c || typeof c === "string") return (c as unknown as string) ?? "";
-		if (Array.isArray(c)) {
-			type OldComment = { text?: string; author?: string; createdAt?: string };
-			return (c as OldComment[])
-				.map((cm) => {
-					if (!cm.text) return "";
-					const date = cm.createdAt
-						? new Date(cm.createdAt).toLocaleDateString("ru")
-						: "";
-					return `**${cm.author || "Аноним"}** (${date})\n\n${cm.text}`;
-				})
-				.filter(Boolean)
-				.join("\n\n---\n\n");
-		}
-		return "";
+		if (!c || !Array.isArray(c)) return [];
+		return (c as UserComment[]).filter((cm) => cm?.id && cm?.text);
 	});
 
 	const [inventoryError, setInventoryError] = useState<string | null>(null);
@@ -861,20 +860,20 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 		}
 	}, 500);
 
-	const handleSpecChange = (v: string) => {
-		markDirty();
-		setSpecText(v);
-	};
-	const handleCommentsChange = (v: string) => {
-		markDirty();
-		setCommentsText(v);
-	};
+	// const handleSpecChange = (v: string) => {
+	// 	markDirty();
+	// 	setSpecText(v);
+	// };
 
 	useEffect(() => {
 		markClean();
 		if (open) {
 			setFormData(buildInitialForm(equipment));
 			setSpecText(safeSpecsToText(equipment?.specifications));
+			const c = equipment?.comments;
+			setComments(
+				Array.isArray(c) ? (c as UserComment[]).filter((cm) => cm?.id) : []
+			);
 			setSyncFields([]);
 			setShowSync(false);
 			setTab("info");
@@ -901,16 +900,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 		setIsPending(true);
 		try {
 			const specs = safeParseSpecs(specText);
-			const commentsPayload = commentsText
-				? [
-						{
-							id: crypto.randomUUID(),
-							text: commentsText,
-							author: "admin",
-							createdAt: new Date().toISOString(),
-						},
-					]
-				: [];
+			const commentsPayload = comments;
 
 			if (mode === "create") {
 				const payload: CreateEquipmentData = {
@@ -1061,8 +1051,17 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/5"
 							)}
 						>
-							<Icon size={14} className={cn(tab === id && "text-primary")} />{" "}
+							<Icon
+								size={14}
+								weight={tab === id ? "fill" : "regular"}
+								className={cn(tab === id && "fill-muted-foreground")}
+							/>{" "}
 							{label}
+							{id === "notes" && comments.length > 0 && (
+								<span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-secondary text-foreground text-[10px] font-bold shadow-xs shadow-muted-foreground/60">
+									{comments.length}
+								</span>
+							)}
 						</button>
 					))}
 				</div>
@@ -1079,6 +1078,35 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 										equipmentSlug={equipment.slug}
 										initialImages={initialImages}
 									/>
+									{mode === "edit" && hasSiblings && (
+										<Button
+											variant="outline"
+											size="sm"
+											type="button"
+											className="text-xs gap-1.5"
+											onClick={async () => {
+												if (!equipment?.id) return;
+												const { syncEquipmentImagesAction } = await import(
+													"@/actions/admin-equipment-actions"
+												);
+												const result = await syncEquipmentImagesAction(
+													equipment.id
+												);
+												if (result.updated > 0) {
+													toast.success(
+														`Картинки скопированы в ${result.updated} экземпляр(ов)`
+													);
+												} else {
+													toast.info(
+														"У остальных экземпляров уже есть свои картинки"
+													);
+												}
+											}}
+										>
+											<ArrowsClockwiseIcon size={12} />
+											Скопировать картинки в копии
+										</Button>
+									)}
 								</div>
 							) : (
 								<div className="rounded-lg border border-white/10 bg-muted/10 p-3 text-xs text-muted-foreground">
@@ -1139,7 +1167,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									{/* Индикатор загрузки внутри инпута справа */}
 									{isChecking && (
 										<div className="absolute right-3 top-1/2 -translate-y-1/2">
-											<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+											<CircleNotchIcon className="h-4 w-4 animate-spin text-muted-foreground" />
 										</div>
 									)}
 								</div>
@@ -1165,12 +1193,11 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 
 							{/* DESCRIPTION / SPECS */}
 							{(!isEdit || isPrimary) && (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 									<MarkdownEditor
 										label="Описание"
 										value={formData.description ?? ""}
 										onChange={(v) => {
-											handleCommentsChange(v);
 											set({ description: v });
 										}}
 										placeholder={
@@ -1178,12 +1205,26 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 										}
 										rows={7}
 									/>
-									<SpecsEditor
+									{/* <SpecsEditor
 										value={specText}
 										onChange={(v) => {
 											handleSpecChange(v);
 											setSpecText(v);
 										}}
+									/> */}
+									<MarkdownEditor
+										label="Комплектация"
+										value={formData.kitDescription ?? ""}
+										onChange={(v) => set({ kitDescription: v })}
+										placeholder={"- Камера\n- Зарядное устройство\n- Кейс"}
+										rows={5}
+									/>
+									<MarkdownEditor
+										label="Состояние"
+										value={formData.defects ?? ""}
+										onChange={(v) => set({ defects: v })}
+										placeholder="Укажите дефекты если имеются"
+										rows={5}
 									/>
 								</div>
 							)}
@@ -1285,13 +1326,6 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 							{/* KIT / DEFECTS */}
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<MarkdownEditor
-									label="Комплектация"
-									value={formData.kitDescription ?? ""}
-									onChange={(v) => set({ kitDescription: v })}
-									placeholder={"- Камера\n- Зарядное устройство\n- Кейс"}
-									rows={5}
-								/>
-								<MarkdownEditor
 									label="Состояние / Дефекты"
 									value={formData.defects ?? ""}
 									onChange={(v) => set({ defects: v })}
@@ -1326,15 +1360,35 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 							</div>
 
 							{/* COMMENTS */}
-							<MarkdownEditor
-								label="Комментарии для сотрудников"
-								value={commentsText}
-								onChange={setCommentsText}
-								placeholder={
-									"Внутренние заметки в **markdown**...\n\n## Важно\n- ..."
-								}
-								rows={5}
-							/>
+							<div className="space-y-1.5">
+								<Label className="flex items-center gap-2">
+									Комментарии для сотрудников
+									{comments.length > 0 && (
+										<span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+											{comments.length}
+										</span>
+									)}
+								</Label>
+								<CommentsBlock
+									comments={comments}
+									onAdd={(text) => {
+										const newComment: UserComment = {
+											id: crypto.randomUUID(),
+											text,
+											author: "admin",
+											createdAt: new Date().toISOString(),
+										};
+										const updated = [...comments, newComment];
+										setComments(updated);
+										markDirty();
+									}}
+									onRemove={(id) => {
+										const updated = comments.filter((c) => c.id !== id);
+										setComments(updated);
+										markDirty();
+									}}
+								/>
+							</div>
 
 							{/* VIDEO URLS */}
 							{(!isEdit || isPrimary) && (
@@ -1427,11 +1481,38 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									рекомендация «Вместе с этим арендуют».
 								</p>
 							</div>
-
 							<RelatedEquipmentPicker
+								isPending={isPending}
 								value={formData.relatedIds}
 								onChange={(ids) => set({ relatedIds: ids })}
 								{...(mode === "edit" ? { excludeId: equipment.id } : {})}
+							/>
+						</div>
+					)}
+
+					{tab === "notes" && (
+						<div className="p-4 space-y-1.5">
+							<p className="text-xs text-muted-foreground mb-3">
+								Внутренние комментарии — видны только сотрудникам
+							</p>
+							<CommentsBlock
+								comments={comments}
+								onAdd={(text) => {
+									const newComment: UserComment = {
+										id: crypto.randomUUID(),
+										text,
+										author: "admin",
+										createdAt: new Date().toISOString(),
+									};
+									const updated = [...comments, newComment];
+									setComments(updated);
+									markDirty();
+								}}
+								onRemove={(id) => {
+									const updated = comments.filter((c) => c.id !== id);
+									setComments(updated);
+									markDirty();
+								}}
 							/>
 						</div>
 					)}
@@ -1444,10 +1525,8 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 							className="flex-1"
 							disabled={isPending}
 						>
-							{isPending ? (
-								<Loader2 className="w-4 h-4 animate-spin mr-2" />
-							) : (
-								<Save className="w-4 h-4 mr-2" />
+							{isPending && (
+								<CircleNotchIcon className="w-4 h-4 animate-spin mr-2" />
 							)}
 							{mode === "create" ? "Создать" : "Сохранить"}
 						</Button>

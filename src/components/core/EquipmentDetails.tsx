@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	BriefcaseMetalIcon,
 	HeartIcon,
 	InfoIcon,
 	LightningIcon,
@@ -167,6 +168,7 @@ function VideoReviews({ urls }: { urls: string[] }) {
 const INFO_TABS = [
 	{ id: "description", label: "Описание", icon: InfoIcon },
 	{ id: "specs", label: "Характеристики", icon: LightningIcon },
+	{ id: "kit", label: "Комплктация", icon: BriefcaseMetalIcon },
 	{ id: "reviews", label: "Обзоры", icon: VideoIcon },
 ] as const;
 
@@ -290,7 +292,7 @@ export default function EquipmentDetails({
 	equipment: EquipmentFormState;
 }) {
 	const requireAuth = useRequireAuth();
-	const { items: cartItems } = useCartStore();
+	const { items: cartItems, clearCart } = useCartStore();
 
 	const { workStart, workEnd } = useSiteSettingsStore();
 
@@ -366,7 +368,7 @@ export default function EquipmentDetails({
 			NProgress.start();
 			try {
 				const r = await checkAvailabilityAction(
-					[equipment.id],
+					equipment.allUnitIds?.length ? equipment.allUnitIds : [equipment.id],
 					math.startFull,
 					math.endFull
 				);
@@ -382,9 +384,19 @@ export default function EquipmentDetails({
 		return () => {
 			cancelled = true;
 		};
-	}, [math.startFull, math.endFull, equipment.id, isQuickBookOpen]);
+	}, [
+		math.startFull,
+		math.endFull,
+		equipment.id,
+		isQuickBookOpen,
+		equipment.allUnitIds,
+	]);
 
-	const hasConflict = busyIds.length > 0;
+	const availableUnitIds = (
+		equipment.allUnitIds?.length ? equipment.allUnitIds : [equipment.id]
+	).filter((id) => !busyIds.includes(id));
+
+	const hasConflict = availableUnitIds.length < quantity;
 	const canBook =
 		!hasConflict && math.totalRental > 0 && !!math.startFull && !!math.endFull;
 
@@ -415,6 +427,7 @@ export default function EquipmentDetails({
 				totalReplacementValue: math.totalRV,
 			});
 			if (result.success && result.bookingId) {
+				clearCart();
 				setIsQuickBookOpen(false);
 				setBookingId(result.bookingId);
 			} else {
@@ -449,6 +462,7 @@ export default function EquipmentDetails({
 	const visibleTabs = INFO_TABS.filter((tab) => {
 		if (tab.id === "description") return !!equipment.description;
 		if (tab.id === "specs") return specEntries.length > 0 || !!specDesc;
+		if (tab.id === "kit") return !!equipment.kit;
 		if (tab.id === "reviews") return equipment.videoUrls.length > 0;
 		return true;
 	});
@@ -648,6 +662,11 @@ export default function EquipmentDetails({
 											<MD>{specDesc}</MD>
 										</div>
 									))}
+								{activeInfoTab === "kit" && (
+									<div className="max-w-3xl text-sm leading-relaxed">
+										<MD>{equipment.kit}</MD>
+									</div>
+								)}
 								{activeInfoTab === "reviews" &&
 									equipment.videoUrls.length > 0 && (
 										<VideoReviews

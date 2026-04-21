@@ -142,15 +142,3 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 	BALANCE: "С баланса",
 	OTHER: "Иное",
 };
-
-export const BOOKING_TO_EQUIPMENT_STATUS: Partial<
-	Record<BookingStatus, string>
-> = {
-	ACTIVE: "RENTED",
-	READY_TO_RENT: "RESERVED",
-	WAIT_PAYMENT: "RESERVED",
-	PENDING_REVIEW: "RESERVED",
-	COMPLETED: "AVAILABLE",
-	CANCELLED: "AVAILABLE",
-	EXPIRED: "AVAILABLE",
-};

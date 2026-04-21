@@ -4,6 +4,7 @@ import { getEquipmentBySlug } from "@/actions/admin-equipment-actions";
 import EquipmentDetails, {
 	type EquipmentFormState,
 } from "@/components/core/EquipmentDetails";
+import { ProductSchema } from "@/components/seo/ProductSchema";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -31,6 +32,22 @@ export default async function EquipmentDetailsPage({
 
 	return (
 		<div className="min-h-screen bg-background text-foreground pb-20">
+			<ProductSchema
+				name={equipment.title}
+				description={
+					equipment.description ?? "аренда фото-видео техники в Самаре"
+				}
+				image={`https://s3.beget.com/linza-bucket/equipment/${equipment.slug}/main.webp`}
+				sku={equipment.id}
+				price={equipment.pricePerDay}
+				priceCurrency="RUB"
+				url={`https://linzarental.ru/catalog/item/${equipment.slug}`}
+				availability={
+					equipment.isAvailable
+						? "https://schema.org/InStock"
+						: "https://schema.org/OutOfStock"
+				}
+			/>
 			<div className="container mx-auto px-6 py-4">
 				<Breadcrumb>
 					<BreadcrumbList>

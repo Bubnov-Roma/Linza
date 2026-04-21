@@ -1,17 +1,10 @@
 "use server";
 
-import {
-	BookingStatus,
-	type EquipmentStatus,
-	type Prisma,
-} from "@prisma/client";
+import { BookingStatus, type Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/actions/audit-and-balance-actions";
 import { auth } from "@/auth";
-import {
-	BOOKING_TO_EQUIPMENT_STATUS,
-	PAYMENT_METHOD_LABELS,
-} from "@/constants";
+import { PAYMENT_METHOD_LABELS } from "@/constants";
 import type {
 	BookingPaymentRow,
 	PaymentMethod,
@@ -169,21 +162,6 @@ export async function adminForceSetBookingStatusAction(
 			where: { id: bookingId },
 			data: updateData,
 		});
-
-		const equipmentStatus = BOOKING_TO_EQUIPMENT_STATUS[newStatus];
-		if (equipmentStatus) {
-			const bookingItems = await prisma.bookingItem.findMany({
-				where: { bookingId },
-				select: { equipmentId: true },
-			});
-			const equipmentIds = [...new Set(bookingItems.map((i) => i.equipmentId))];
-			if (equipmentIds.length > 0) {
-				await prisma.equipment.updateMany({
-					where: { id: { in: equipmentIds } },
-					data: { status: equipmentStatus as EquipmentStatus },
-				});
-			}
-		}
 
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Статус изменён вручную",
@@ -911,7 +889,16 @@ export async function getPaginatedAdminBookingsAction(
 				bookingItems: {
 					include: {
 						equipment: {
-							select: { title: true, inventoryNumber: true, isPrimary: true },
+							select: {
+								title: true,
+								inventoryNumber: true,
+								isPrimary: true,
+								equipmentImageLinks: {
+									select: { image: { select: { url: true } } },
+									orderBy: { orderIndex: "asc" },
+									take: 1,
+								},
+							},
 						},
 					},
 				},
@@ -964,6 +951,7 @@ export async function getPaginatedAdminBookingsAction(
 						equipmentId: i.equipmentId,
 						title: i.equipment.title,
 						inventoryNumber: i.equipment.inventoryNumber ?? null,
+						imageUrl: i.equipment.equipmentImageLinks?.[0]?.image?.url ?? null,
 						priceAtBooking: i.priceAtBooking,
 						depositAtBooking: i.depositAtBooking ?? 0,
 						replacementValueAtBooking: i.replacementValueAtBooking ?? 0,

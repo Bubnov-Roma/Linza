@@ -46,6 +46,7 @@ export default async function DashboardPage() {
 								title: true,
 								equipmentImageLinks: {
 									include: { image: { select: { url: true } } },
+									orderBy: { orderIndex: "asc" },
 									take: 1,
 								},
 							},
@@ -86,14 +87,31 @@ export default async function DashboardPage() {
 
 	const totalSpent = spendingData._sum.totalAmount ?? 0;
 
+	const titlesWithoutImage = bookingsRaw
+		.flatMap((b) => b.bookingItems)
+		.filter((item) => !item.equipment.equipmentImageLinks[0]?.image?.url)
+		.map((item) => item.equipment.title);
+
+	// Если есть такие — подтягиваем картинки из других экземпляров
+	let fallbackImages = new Map<string, string>();
+	if (titlesWithoutImage.length > 0) {
+		const { getEquipmentImagesByTitles } = await import(
+			"@/actions/client-equipment-actions"
+		);
+		fallbackImages = await getEquipmentImagesByTitles([
+			...new Set(titlesWithoutImage),
+		]);
+	}
+
 	const bookings: DashboardBooking[] = bookingsRaw.map((booking) => ({
 		...booking,
 		bookingItems: booking.bookingItems.map((item) => ({
 			priceAtBooking: item.priceAtBooking,
-			equipment: {
-				title: item.equipment.title,
-			},
-			imageUrl: item.equipment.equipmentImageLinks[0]?.image?.url ?? null,
+			equipment: { title: item.equipment.title },
+			imageUrl:
+				item.equipment.equipmentImageLinks[0]?.image?.url ??
+				fallbackImages.get(item.equipment.title) ??
+				null,
 		})),
 	}));
 

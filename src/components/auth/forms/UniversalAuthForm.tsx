@@ -67,35 +67,39 @@ export function UniversalAuthForm() {
 			isLoading={isLoading}
 		>
 			<form onSubmit={handleSubmit} className="space-y-4" noValidate>
-				<ValidatedInput
-					label="Email"
-					type="email"
-					placeholder="введите ваш email"
-					value={email}
-					onChange={(e) => {
-						setEmail(e.target.value);
-						setError("");
-					}}
-					error={error}
-					icon={<Mail className="h-4 w-4" />}
-					required
-				/>
 				{/* Виджет Turnstile. Вставляем перед кнопкой отправки */}
-				{process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== undefined && (
-					<div className="my-4 flex justify-center">
+				{process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== undefined &&
+				turnstileToken === "" ? (
+					<div className="my-6 flex justify-center">
 						<Turnstile
 							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
 							onSuccess={(token) => setTurnstileToken(token)}
 						/>
 					</div>
+				) : (
+					<>
+						<ValidatedInput
+							label="Email"
+							type="email"
+							placeholder="введите ваш email"
+							value={email}
+							onChange={(e) => {
+								setEmail(e.target.value);
+								setError("");
+							}}
+							error={error}
+							icon={<Mail className="h-4 w-4" />}
+							required
+						/>
+						<Button
+							type="submit"
+							disabled={!email || isLoading || !turnstileToken}
+							className="w-full h-12 font-bold shadow-xl shadow-primary/20"
+						>
+							{isLoading ? "Отправка..." : "Получить код"}
+						</Button>
+					</>
 				)}
-				<Button
-					type="submit"
-					disabled={!email || isLoading}
-					className="w-full h-12 font-bold shadow-xl shadow-primary/20"
-				>
-					{isLoading ? "Отправка..." : "Получить код"}
-				</Button>
 			</form>
 
 			<div className="relative flex justify-center text-xs uppercase my-6">

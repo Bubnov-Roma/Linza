@@ -919,7 +919,12 @@ export default function EquipmentTable() {
 														<div className="relative w-10 h-10 rounded overflow-hidden border border-white/10 bg-zinc-400/15 shrink-0">
 															<Image
 																src={
-																	item.equipmentImageLinks?.[0]?.image?.url ||
+																	item.equipmentImageLinks?.[0]?.image?.url ??
+																	(
+																		item as unknown as {
+																			imageUrlFallback?: string;
+																		}
+																	).imageUrlFallback ??
 																	"/placeholder-equipment.png"
 																}
 																alt="placeholder"

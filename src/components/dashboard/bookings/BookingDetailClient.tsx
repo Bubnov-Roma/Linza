@@ -15,6 +15,7 @@ import {
 	Table,
 	X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { CancelBookingDialog } from "@/components/dashboard/bookings/CancelBookingDialog";
@@ -343,6 +344,44 @@ export function BookingDetailClient({
 								>
 									<div className="border-t border-foreground/5">
 										{booking.bookingItems.map((item) => {
+											const imageUrl = (
+												item as unknown as { imageUrl?: string | null }
+											).imageUrl;
+											return (
+												<div
+													key={item.id}
+													className="flex items-center gap-3 px-5 py-3.5 border-b border-foreground/5 last:border-0"
+												>
+													<div className="w-10 h-10 rounded-lg overflow-hidden bg-foreground/5 shrink-0">
+														{imageUrl ? (
+															<Image
+																src={imageUrl}
+																alt={item.equipment?.title ?? ""}
+																width={40}
+																height={40}
+																className="w-full h-full object-cover"
+															/>
+														) : (
+															<div className="w-full h-full flex items-center justify-center">
+																<Package
+																	size={14}
+																	className="text-muted-foreground/30"
+																/>
+															</div>
+														)}
+													</div>
+													<div className="flex-1 min-w-0">
+														<p className="text-sm font-bold truncate leading-none mb-1">
+															{item.equipment?.title}
+														</p>
+													</div>
+													<p className="text-sm font-mono font-bold">
+														{item.priceAtBooking.toLocaleString()} ₽
+													</p>
+												</div>
+											);
+										})}
+										{/* {booking.bookingItems.map((item) => {
 											return (
 												<div
 													key={item.id}
@@ -360,7 +399,7 @@ export function BookingDetailClient({
 													</p>
 												</div>
 											);
-										})}
+										})} */}
 										<div className="px-6 py-6 bg-foreground/3 border-t border-foreground/5 space-y-4">
 											<div className="flex justify-between items-center text-sm">
 												<span className="text-muted-foreground">Итого</span>

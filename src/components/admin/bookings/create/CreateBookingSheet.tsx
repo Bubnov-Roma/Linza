@@ -8,6 +8,7 @@ import {
 	PlusIcon,
 	TrashIcon,
 	UserIcon,
+	WarningCircleIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, useTransition } from "react";
@@ -19,6 +20,7 @@ import {
 	searchEquipmentAction,
 	searchUsersAction,
 } from "@/actions/admin-booking-actions";
+import { checkAvailabilityAction } from "@/actions/client-booking-actions";
 import {
 	getDefaultRentalPeriod,
 	RentalPeriod,
@@ -181,6 +183,7 @@ export function CreateBookingSheet({
 	const [eqSearchOpen, setEqSearchOpen] = useState(false);
 	const [isSearchingEq, startEqSearch] = useTransition();
 	const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+	const [adminBusyIds, setAdminBusyIds] = useState<string[]>([]);
 
 	// ── Period ─────────────────────────────────────────────────────────────────
 	const [period, setPeriod] = useState<RentalPeriodValue | null>(null);
@@ -237,6 +240,40 @@ export function CreateBookingSheet({
 			);
 		});
 	}, [debouncedEqQuery, draftItems]);
+
+	// check busy items
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
+	useEffect(() => {
+		if (!period?.startDate || !period?.endDate || draftItems.length === 0) {
+			setAdminBusyIds([]);
+			return;
+		}
+		let cancelled = false;
+		const startFull = combineDateAndTime(
+			period.startDate,
+			period.startTime ?? "10:00"
+		);
+		const endFull = combineDateAndTime(
+			period.endDate,
+			period.endTime ?? "20:00"
+		);
+		if (!startFull || !endFull) return;
+
+		checkAvailabilityAction(
+			draftItems.map((d) => d.equipmentId),
+			startFull,
+			endFull
+		).then((r) => {
+			if (!cancelled) setAdminBusyIds(r.busyIds ?? []);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		draftItems.map((d) => d.equipmentId).join(","),
+		period?.startDate?.toISOString(),
+		period?.endDate?.toISOString(),
+	]);
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -587,6 +624,11 @@ export function CreateBookingSheet({
 													{fmtRub(unitPrice * item.quantity)}
 												</p>
 											</div>
+											{adminBusyIds.includes(item.equipmentId) && (
+												<p className="text-[10px] text-destructive font-bold uppercase flex items-center gap-1">
+													<WarningCircleIcon size={10} /> Занято на эти даты
+												</p>
+											)}
 											<div className="flex items-center gap-1">
 												<Button
 													variant="ghost"
@@ -762,6 +804,11 @@ export function CreateBookingSheet({
 
 				{/* Footer */}
 				<div className="shrink-0 px-5 py-4 border-t border-foreground/5 flex items-center gap-3">
+					{adminBusyIds.length > 0 && (
+						<div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
+							Есть пересечения с другими заказами.
+						</div>
+					)}
 					<Button
 						variant="outline"
 						size="sm"

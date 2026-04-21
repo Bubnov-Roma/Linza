@@ -140,7 +140,17 @@ export default function CheckoutPage() {
 	}, [math.startFull, math.endFull, items]);
 
 	const activeItems = items.filter((i) => i.quantity > 0);
-	const hasAnyBusy = busyIds.length > 0;
+	const hasAnyBusy = items.some((i) => {
+		const allIds = i.allUnitIds?.length ? i.allUnitIds : [i.equipment.id];
+		const freeCount = allIds.filter((id) => !busyIds.includes(id)).length;
+		return freeCount < i.quantity;
+	});
+	const busyItemCount = items.reduce((count, i) => {
+		const allIds = i.allUnitIds?.length ? i.allUnitIds : [i.equipment.id];
+		const freeCount = allIds.filter((id) => !busyIds.includes(id)).length;
+		const lackCount = Math.max(0, i.quantity - freeCount);
+		return count + lackCount;
+	}, 0);
 	const isCanBook =
 		math.totalRental > 0 && !hasAnyBusy && !!math.startFull && !!math.endFull;
 
@@ -257,7 +267,7 @@ export default function CheckoutPage() {
 						{hasAnyBusy && (
 							<div className="mt-3 px-4 py-2.5 rounded-xl bg-red-500/8 border border-red-500/20 text-xs text-red-400 font-medium">
 								<p>
-									{`B выбранные даты ${formatPlural(busyIds.length, "items")} ${formatPlural(busyIds.length, "unavailable", false)}.`}
+									{`В выбранные даты ${formatPlural(busyItemCount, "items")} ${formatPlural(busyItemCount, "unavailable", false)}.`}
 								</p>
 								<span>
 									Измените период аренды{" "}
@@ -306,9 +316,14 @@ export default function CheckoutPage() {
 						{itemsExpanded && (
 							<div className="border-t border-foreground/8 animate-in slide-in-from-top-2 duration-200">
 								{activeItems.map((item) => {
-									const isBusy = (
-										item.equipment.allUnitIds ?? [item.equipment.id]
-									).every((uid) => busyIds.includes(uid));
+									const allIds = item.equipment.allUnitIds?.length
+										? item.equipment.allUnitIds
+										: [item.equipment.id];
+									const freeCount = allIds.filter(
+										(id) => !busyIds.includes(id)
+									).length;
+									const isBusy = freeCount < item.quantity;
+
 									// Позиция "занята" только если ВСЕ её единицы заняты
 									// (если хотя бы одна свободна — можно бронировать)
 									const price = calculateItemPrice(item.equipment, math.hours);

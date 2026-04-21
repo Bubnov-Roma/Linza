@@ -28,7 +28,6 @@ export async function getEquipmentForCartAction(
 		where: {
 			title: { in: titles },
 			isAvailable: true,
-			status: "AVAILABLE",
 		},
 		include: {
 			equipmentImageLinks: {
@@ -46,4 +45,36 @@ export async function getEquipmentForCartAction(
 	return ids
 		.map((id) => byId[id])
 		.filter((item): item is GroupedEquipment => item !== undefined);
+}
+
+/**
+ * Для заданных заголовков техники возвращает map:
+ * title → первый доступный imageUrl (от любого экземпляра с этим title)
+ */
+export async function getEquipmentImagesByTitles(
+	titles: string[]
+): Promise<Map<string, string>> {
+	if (!titles.length) return new Map();
+
+	const rows = await prisma.equipmentImageLink.findMany({
+		where: {
+			equipment: { title: { in: titles } },
+			orderIndex: 0, // только первая картинка
+		},
+		select: {
+			image: { select: { url: true } },
+			equipment: { select: { title: true } },
+		},
+		orderBy: { orderIndex: "asc" },
+	});
+
+	// Берём первый найденный URL для каждого title
+	const map = new Map<string, string>();
+	for (const row of rows) {
+		if (!map.has(row.equipment.title) && row.image?.url) {
+			map.set(row.equipment.title, row.image.url);
+		}
+	}
+
+	return map;
 }

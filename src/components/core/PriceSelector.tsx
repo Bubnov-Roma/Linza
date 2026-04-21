@@ -28,7 +28,11 @@ export function PriceSelector({
 	activePeriod,
 	onPeriodChange,
 }: PriceSelectorProps) {
-	const [internalPeriod, setInternalPeriod] = useState<PeriodType>("h4");
+	const [internalPeriod, setInternalPeriod] = useState<PeriodType>(() => {
+		if (prices.h4 > 0) return "h4";
+		if (prices.h8 > 0) return "h8";
+		return "day";
+	});
 	const currentActivePeriod = activePeriod ?? internalPeriod;
 
 	const isDetails = variant === "details";

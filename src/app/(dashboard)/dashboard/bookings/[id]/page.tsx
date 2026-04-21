@@ -29,6 +29,11 @@ export default async function BookingDetailPage({ params }: Props) {
 							price8h: true,
 							pricePerDay: true,
 							deposit: true,
+							equipmentImageLinks: {
+								include: { image: { select: { url: true } } },
+								orderBy: { orderIndex: "asc" },
+								take: 1,
+							},
 						},
 					},
 				},
@@ -38,9 +43,37 @@ export default async function BookingDetailPage({ params }: Props) {
 
 	if (!raw) notFound();
 
+	const titlesWithoutImage = raw.bookingItems
+		.filter((item) => !item.equipment?.equipmentImageLinks?.[0]?.image?.url)
+		.map((item) => item.equipment.title);
+
+	let imageMap = new Map<string, string>();
+	if (titlesWithoutImage.length > 0) {
+		const { getEquipmentImagesByTitles } = await import(
+			"@/actions/client-equipment-actions"
+		);
+		imageMap = await getEquipmentImagesByTitles([
+			...new Set(titlesWithoutImage),
+		]);
+	}
+
+	const enrichedRaw = {
+		...raw,
+		bookingItems: raw.bookingItems.map((item) => ({
+			...item,
+			imageUrl:
+				item.equipment?.equipmentImageLinks?.[0]?.image?.url ??
+				imageMap.get(item.equipment.title) ??
+				null,
+		})),
+	};
+
 	const support = await getSupportInfo();
 
 	return (
-		<BookingDetailClient booking={toBookingDetailRow(raw)} support={support} />
+		<BookingDetailClient
+			booking={toBookingDetailRow(enrichedRaw)}
+			support={support}
+		/>
 	);
 }

@@ -41,7 +41,6 @@ export async function submitBookingAction(formData: {
 				where: {
 					id: { in: item.allUnitIds },
 					isAvailable: true,
-					status: "AVAILABLE",
 				},
 				select: { id: true },
 				take: item.quantity,
@@ -225,11 +224,10 @@ export async function checkAvailabilityAction(
 				equipmentId: { in: equipmentIds },
 				booking: {
 					status: {
-						notIn: [
-							BookingStatus.CANCELLED,
-							BookingStatus.PENDING_REVIEW,
-							BookingStatus.COMPLETED,
-							BookingStatus.EXPIRED,
+						in: [
+							BookingStatus.WAIT_PAYMENT,
+							BookingStatus.READY_TO_RENT,
+							BookingStatus.ACTIVE,
 						],
 					},
 					startDate: { lte: new Date(endDate) },

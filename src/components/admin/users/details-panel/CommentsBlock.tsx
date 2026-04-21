@@ -69,9 +69,9 @@ export function CommentsBlock({
 				<Textarea
 					value={text}
 					onChange={(e) => setText(e.target.value)}
-					placeholder="Внутренний комментарий по клиенту..."
-					rows={2}
-					className="text-xs resize-none glass-input"
+					placeholder="Внутренний комментарий..."
+					rows={10}
+					className="text-xs resize-none glass-input h-16"
 					onKeyDown={(e) => {
 						if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAdd();
 					}}

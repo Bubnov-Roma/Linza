@@ -1,8 +1,10 @@
 "use client";
 
+import { ShoppingCartSimpleIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogIn, Search, X } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { UserMenuDropdown } from "@/components/shared";
@@ -11,6 +13,7 @@ import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useAuthModalStore } from "@/store/auth-modal.store";
+import { useCartStore } from "@/store/use-cart.store";
 import { MobileSearch, type MobileSearchHandle } from "./MobileSearch";
 
 // ─── TabBtn — базовая кнопка таба ────────────────────────────────────────────
@@ -76,6 +79,10 @@ interface MobileNavBarProps {
 }
 
 export function MobileNavBar({ categories }: MobileNavBarProps) {
+	const cartCount = useCartStore((s) =>
+		s.items.reduce((sum, i) => sum + i.quantity, 0)
+	);
+
 	const pathname = usePathname();
 	const router = useRouter();
 	const { open } = useAuthModalStore();
@@ -175,6 +182,40 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 								);
 							})}
 						</div>
+					</div>
+					<div className="shrink-0 w-14 flex items-center justify-center border-l border-foreground/5">
+						<Link
+							href="/checkout"
+							data-cart-icon
+							className="relative flex flex-col items-center justify-center gap-1"
+						>
+							<div className="relative">
+								<ShoppingCartSimpleIcon
+									size={22}
+									className={cn(
+										"transition-colors",
+										pathname === "/checkout"
+											? "text-primary"
+											: "text-muted-foreground"
+									)}
+								/>
+								{cartCount > 0 && (
+									<span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground px-0.5 animate-in zoom-in">
+										{cartCount > 99 ? "99+" : cartCount}
+									</span>
+								)}
+							</div>
+							<span
+								className={cn(
+									"text-[9px] font-semibold leading-none",
+									pathname === "/checkout"
+										? "text-primary"
+										: "text-muted-foreground"
+								)}
+							>
+								Корзина
+							</span>
+						</Link>
 					</div>
 
 					<div className="shrink-0 w-14 flex items-center justify-center border-l border-foreground/5">

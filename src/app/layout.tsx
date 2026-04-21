@@ -8,6 +8,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { ApplicationInitializer } from "@/providers/application-initializer";
 import { RootProvider } from "@/providers/root-provider";
 import "./globals.css";
+import type { Metadata } from "next";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { auth } from "@/auth";
 import CookieBanner from "@/components/shared/CookieBanner";
@@ -24,6 +25,33 @@ export const viewport = {
 	initialScale: 1,
 	maximumScale: 1,
 	userScalable: false,
+};
+
+export const metadata: Metadata = {
+	title: "Linza | Прокат фото и видео оборудования в Самаре",
+	description:
+		"Аренда профессиональной фото- и видеотехники в Самаре. Широкий выбор камер, объективов, света и звука. Бронируйте онлайн на сайте Linza.",
+	keywords: [
+		"прокат фото видео оборудования",
+		"рентал фото-видео техники в Самаре",
+		"аренда камер Самара",
+		"Linza",
+	],
+	openGraph: {
+		title: "Linza | Прокат фото и видео техники",
+		description: "Аренда профессионального оборудования для съемок в Самаре.",
+		url: "https://linzarental.ru",
+		siteName: "Linza Rental",
+		images: [
+			{
+				url: "https://linzarental.ru/og-image.jpg", // Красивый баннер для соцсетей и Telegram
+				width: 1200,
+				height: 630,
+			},
+		],
+		locale: "ru_RU",
+		type: "website",
+	},
 };
 
 export default async function RootLayout({
@@ -56,6 +84,7 @@ export default async function RootLayout({
 				<meta name="mobile-web-app-capable" content="yes" />
 				<meta name="apple-mobile-web-app-title" content="Linza" />
 				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+				<meta name="yandex-verification" content="921d31c22c2388b2" />
 			</head>
 			<body suppressHydrationWarning>
 				<NextTopLoader color="#3b82f6" showSpinner={false} />

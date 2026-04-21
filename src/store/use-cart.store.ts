@@ -90,7 +90,7 @@ export const useCartStore = create<CartStore>()(
 							equipment: updatedEquipment,
 							quantity: 1,
 							insurance: true,
-							allUnitIds: [],
+							allUnitIds: updatedEquipment.allUnitIds ?? [],
 						},
 					];
 				}
@@ -195,7 +195,7 @@ export const useCartStore = create<CartStore>()(
 						equipment,
 						quantity: Math.min(quantity, equipment.availableCount),
 						insurance: true,
-						allUnitIds: [],
+						allUnitIds: equipment.allUnitIds ?? [],
 					});
 				}
 
@@ -218,10 +218,10 @@ export const useCartStore = create<CartStore>()(
 		{
 			name: "photo-rent-cart",
 			storage: createJSONStorage(() => localStorage),
-			partialize: (state) =>
-				state.authenticatedUserId === null
-					? { items: state.items, authenticatedUserId: null }
-					: { items: [], authenticatedUserId: null },
+			partialize: (state) => ({
+				items: state.items,
+				authenticatedUserId: state.authenticatedUserId,
+			}),
 		}
 	)
 );

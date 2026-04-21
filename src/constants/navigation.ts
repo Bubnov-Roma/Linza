@@ -11,7 +11,6 @@ import {
 	HouseLineIcon,
 	LayoutIcon,
 	PackageIcon,
-	ShoppingCartSimpleIcon,
 	SquaresFourIcon,
 	UserIcon,
 } from "@phosphor-icons/react/dist/ssr";
@@ -86,10 +85,5 @@ export const MOBILE_NAV: NavItem[] = [
 		title: "Каталог",
 		href: "/equipment",
 		icon: SquaresFourIcon,
-	},
-	{
-		title: "Корзина",
-		href: "/checkout",
-		icon: ShoppingCartSimpleIcon,
 	},
 ];

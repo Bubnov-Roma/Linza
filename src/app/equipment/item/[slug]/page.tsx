@@ -37,7 +37,7 @@ export default async function EquipmentDetailsPage({
 				description={
 					equipment.description ?? "аренда фото-видео техники в Самаре"
 				}
-				image={`https://s3.beget.com/linza-bucket/equipment/${equipment.slug}/main.webp`}
+				image={equipment.imageUrl}
 				sku={equipment.id}
 				price={equipment.pricePerDay}
 				priceCurrency="RUB"

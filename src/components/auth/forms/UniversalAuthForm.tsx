@@ -1,5 +1,6 @@
 "use client";
 
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
@@ -16,9 +17,14 @@ export function UniversalAuthForm() {
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isEmailSent, setIsEmailSent] = useState(false);
+	const [turnstileToken, setTurnstileToken] = useState<string>("");
 
 	const handleSubmit = async (e: React.SubmitEvent) => {
 		e.preventDefault();
+		if (!turnstileToken) {
+			toast.error("Пожалуйста, подождите проверку безопасности");
+			return;
+		}
 		const result = emailSchema.safeParse(email);
 		if (!result.success && result.error.issues[0]) {
 			setError(result.error.issues[0].message);
@@ -28,7 +34,7 @@ export function UniversalAuthForm() {
 		setIsLoading(true);
 
 		// ВЫЗЫВАЕМ ЭКШЕН ДЛЯ ОТПРАВКИ ПИСЬМА!
-		const res = await sendOtpCode(email);
+		const res = await sendOtpCode(email, turnstileToken);
 		setIsLoading(false);
 
 		if (res.error) {
@@ -74,6 +80,15 @@ export function UniversalAuthForm() {
 					icon={<Mail className="h-4 w-4" />}
 					required
 				/>
+				{/* Виджет Turnstile. Вставляем перед кнопкой отправки */}
+				{process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== undefined && (
+					<div className="my-4 flex justify-center">
+						<Turnstile
+							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+							onSuccess={(token) => setTurnstileToken(token)}
+						/>
+					</div>
+				)}
 				<Button
 					type="submit"
 					disabled={!email || isLoading}

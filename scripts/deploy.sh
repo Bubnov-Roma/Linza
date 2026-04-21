@@ -1,5 +1,6 @@
 #!/bin/bash
 # 1. Сборка
+set -e
 npm run build
 
 # 2. Подготовка папки
@@ -10,7 +11,8 @@ mkdir -p dist/.next
 cp -r .next/standalone/. dist/
 cp -r .next/static/. dist/.next/static/
 cp -r public/. dist/public/
-
+# Явно удаляем .env из папки dist, если он туда попал
+rm -f dist/.env
 # Копируем Prisma для стабильности (как обсуждали)
 mkdir -p dist/prisma
 cp prisma/schema.prisma dist/prisma/

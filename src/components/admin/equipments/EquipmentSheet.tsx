@@ -4,18 +4,15 @@ import {
 	ArrowsClockwiseIcon,
 	CircleNotchIcon,
 	DotsNineIcon,
-	// EyeIcon,
 	FolderPlusIcon,
 	InfoIcon,
 	LinkIcon,
 	MagnifyingGlassIcon,
 	NoteIcon,
-	// PencilIcon,
 	PlusIcon,
 	StarIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
 import { X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
@@ -42,6 +39,7 @@ import {
 import { MarkdownEditor } from "@/components/shared";
 import {
 	Button,
+	Card,
 	CardContent,
 	Input,
 	InputGroup,
@@ -58,7 +56,6 @@ import {
 	SheetHeader,
 	SheetTitle,
 	Textarea,
-	Tooltip,
 } from "@/components/ui";
 import { SINKABLE_FIELDS } from "@/constants";
 import type {
@@ -971,7 +968,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 	};
 
 	const isEdit = mode === "edit";
-	const title = isEdit ? `Редактирование: ${equipment.title}` : "Новая позиция";
+	const title = isEdit ? `${equipment.title}` : "Новая позиция";
 	const isPrimary = formData.isPrimary; // Теперь опираемся на локальный стейт формы
 
 	const initialImages = isEdit
@@ -994,47 +991,38 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 
 	return (
 		<Sheet open={open} onOpenChange={handleOpenChange}>
-			<SheetContent className="w-full sm:max-w-full md:w-[75vw] lg:w-[60vw] overflow-hidden flex flex-col border-l border-white/10 backdrop-blur bg-background/90 p-0">
-				<SheetHeader className="bg-muted-foreground/10 px-6 py-4 shrink-0">
+			<SheetContent className="w-full sm:max-w-full md:w-[70vw] lg:w-[60vw] lg:max-w-6xl overflow-hidden flex flex-col border-l backdrop-blur bg-background/90 p-0">
+				<SheetHeader
+					className={cn("bg-muted-foreground/10 px-6 py-2 shrink-0")}
+				>
 					<div className="flex items-start justify-between gap-3">
-						<SheetTitle className="text-xl font-bold leading-tight">
+						<SheetTitle
+							className={cn("text-xl font-bold leading-tight items-baseline")}
+						>
+							{isPrimary && (
+								<StarIcon
+									size={15}
+									weight="fill"
+									className="mr-1 mb-1 bg-muted-foreground/40 rounded-full p-0.5 fill-primary inline shadow-sm shadow-muted-foreground"
+								/>
+							)}{" "}
 							{title}
-						</SheetTitle>
-						{isEdit && (
-							<div className="flex flex-col items-end gap-1 shrink-0 pr-2">
-								<span className="font-mono text-[10px] text-muted-foreground/60 select-all bg-muted/20 px-2 py-0.5 rounded border border-white/5">
-									{equipment.id}
-								</span>
-								<div
-									className={cn(
-										"opacity-0 flex items-baseline text-[10px] text-foreground font-semibold uppercase tracking-wider transition-all caret-transparent select-none cursor-default",
-										isPrimary && "opacity-100 cursor-pointer"
-									)}
-								>
-									<Tooltip>
-										<TooltipTrigger
-											className={cn(
-												"flex gap-2 items-center group px-2 uppercase",
-												isPrimary && "cursor-pointer shadow-primary"
-											)}
-										>
-											<p>В каталоге</p>
-											<StarIcon
-												size={14}
-												weight="fill"
-												className="fill-primary group-hover:scale-120 transition-all duration-100"
-											/>
-										</TooltipTrigger>
-										{isPrimary && (
-											<TooltipContent side="left">
-												Отображается на сайте
-											</TooltipContent>
-										)}
-									</Tooltip>
+							{equipment?.title && (
+								<div className="flex flex-col sm:flex-row gap-2 sm:items-center pt-2">
+									<span className="text-muted-foreground font-black uppercase text-[10px]">
+										{" "}
+										редактирование
+									</span>
+									<span className="font-mono text-[10px] text-muted-foreground/60 select-all bg-background/20 py-0.5 px-2 rounded border border-foreground/5">
+										{equipment.id}
+									</span>
 								</div>
-							</div>
-						)}
+							)}
+						</SheetTitle>
 					</div>
+					{isEdit && (
+						<div className="flex flex-col items-start gap-1 shrink-0 pr-2"></div>
+					)}
 				</SheetHeader>
 
 				{/* ── TABS ── */}
@@ -1191,9 +1179,9 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 								{...(onCategoriesChange ? { onCategoriesChange } : {})}
 							/>
 
-							{/* DESCRIPTION / SPECS */}
+							{/* DESCRIPTION / KIT / VIDEO_URLS */}
 							{(!isEdit || isPrimary) && (
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-baseline">
 									<MarkdownEditor
 										label="Описание"
 										value={formData.description ?? ""}
@@ -1219,210 +1207,177 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 										placeholder={"- Камера\n- Зарядное устройство\n- Кейс"}
 										rows={5}
 									/>
-									<MarkdownEditor
-										label="Состояние"
+									<div className="space-y-3">
+										<Label>Видеообзоры</Label>
+										<Textarea
+											value={(formData.videoUrls ?? []).join("\n")}
+											onChange={(e) =>
+												set({
+													videoUrls: e.target.value
+														.split("\n")
+														.map((u) => u.trim())
+														.filter(Boolean),
+												})
+											}
+											placeholder={
+												"ссылки на YouTube, VK Video, RuTube\n\nhttps://youtube.com/watch?...\nhttps://vk.com/video...\nhttps://rutube.ru/video/..."
+											}
+											rows={4}
+											className="font-mono text-xs resize-none"
+										/>
+										{(formData.videoUrls ?? []).length > 0 && (
+											<p className="text-[11px] text-muted-foreground">
+												{(formData.videoUrls ?? []).length} видео добавлено
+											</p>
+										)}
+									</div>
+								</div>
+							)}
+
+							<Card className="rounded-2xl px-1 py-2  bg-muted-foreground/10 w-full">
+								{/* AVAILABILITY / OWNERSHIP / PRICES / DEPOSIT / REPLACEMENT / STATUS  */}
+								<div className="flex flex-col sm:flex-row w-full justify-between gap-4">
+									{/* AVAILABILITY / OWNERSHIP */}
+									<div className="flex flex-1 flex-col gap-4">
+										<div className="space-y-1.5 flex flex-1 flex-col">
+											<Label>Cдается в аренду</Label>
+											<Select
+												value={String(formData.isAvailable)}
+												onValueChange={(v) =>
+													set({ isAvailable: v === "true" })
+												}
+											>
+												<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="true">Да</SelectItem>
+													<SelectItem value="false">Нет</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+										<div className="space-y-1.5 flex flex-1 flex-col">
+											<Label>Субарендная позиция</Label>
+											<Select
+												value={formData.ownershipType}
+												onValueChange={(v) =>
+													set({
+														ownershipType: v as unknown as OwnershipType,
+														// Если меняем на Свое (INTERNAL), очищаем имя партнера
+														partnerName:
+															v === "INTERNAL" ? "" : formData.partnerName,
+													})
+												}
+											>
+												<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="SUBLEASE">Да</SelectItem>
+													<SelectItem value="INTERNAL">Нет</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+										<div className="space-y-1.5">
+											<Label>Владелец (Субаренда)</Label>
+											<Input
+												value={formData.partnerName ?? ""}
+												onChange={(e) => set({ partnerName: e.target.value })}
+												placeholder="Имя субарендатора"
+												disabled={formData.ownershipType !== "SUBLEASE"}
+												className="disabled:opacity-50 transition-opacity h-9"
+											/>
+										</div>
+									</div>
+									{/*  PRICES / DEPOSIT / REPLACEMENT / STATUS  */}
+									<div className="flex flex-1 gap-4">
+										<div className="flex flex-col gap-4">
+											{[
+												{ label: "Цена 4ч", key: "price4h" as const },
+												{ label: "Цена 8ч", key: "price8h" as const },
+												{ label: "Цена/сутки *", key: "pricePerDay" as const },
+											].map(({ label, key }) => (
+												<div key={key} className="space-y-1.5">
+													<Label>{label}</Label>
+													<Input
+														type="number"
+														className="h-9"
+														value={formData[key]}
+														onChange={(e) =>
+															set({
+																[key]:
+																	e.target.value === ""
+																		? ""
+																		: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+											))}
+										</div>
+										<div className="flex flex-col gap-4">
+											{[
+												{ label: "Депозит", key: "deposit" as const },
+												{
+													label: "Стоимость",
+													key: "replacementValue" as const,
+												},
+											].map(({ label, key }) => (
+												<div key={key} className="space-y-1.5">
+													<Label>{label}</Label>
+													<Input
+														type="number"
+														className="h-9"
+														value={formData[key]}
+														onChange={(e) =>
+															set({
+																[key]:
+																	e.target.value === ""
+																		? ""
+																		: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+											))}
+											<div className="space-y-1.5">
+												<Label>Состояние</Label>
+												<Select
+													value={formData.status}
+													onValueChange={(v: EquipmentStatus) =>
+														set({ status: v })
+													}
+												>
+													<SelectTrigger className="glass-input flex-1 w-full rounded-xl shadow-md shadow-muted-foreground/10">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="AVAILABLE">Исправно</SelectItem>
+														<SelectItem value="MAINTENACE">
+															В ремонте
+														</SelectItem>
+														<SelectItem value="BROKEN">Неисправно</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										</div>
+									</div>
+								</div>
+								{/*  DEFECTS */}
+								<div className="flex flex-col gap-1.5 pt-4">
+									<Label>Дефекты</Label>
+									<Textarea
 										value={formData.defects ?? ""}
-										onChange={(v) => set({ defects: v })}
-										placeholder="Укажите дефекты если имеются"
+										onChange={(e) =>
+											set({
+												defects: e.target.value,
+											})
+										}
+										placeholder="Опишите дефекты если имеются"
 										rows={5}
 									/>
 								</div>
-							)}
-
-							{/* PRICES */}
-							<div className="grid grid-cols-3 gap-4">
-								{[
-									{ label: "Цена 4ч", key: "price4h" as const },
-									{ label: "Цена 8ч", key: "price8h" as const },
-									{ label: "Цена/сутки *", key: "pricePerDay" as const },
-								].map(({ label, key }) => (
-									<div key={key} className="space-y-1.5">
-										<Label>{label}</Label>
-										<Input
-											type="number"
-											value={formData[key]}
-											onChange={(e) =>
-												set({
-													[key]:
-														e.target.value === "" ? "" : Number(e.target.value),
-												})
-											}
-										/>
-									</div>
-								))}
-							</div>
-
-							{/* STATUS / AVAILABILITY / OWNERSHIP */}
-							<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-								<div className="space-y-1.5">
-									<Label>Статус состояния</Label>
-									<Select
-										value={formData.status}
-										onValueChange={(v: EquipmentStatus) => set({ status: v })}
-									>
-										<SelectTrigger className="glass-input">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="AVAILABLE">Свободно</SelectItem>
-											<SelectItem value="RESERVED">Зарезервировано</SelectItem>
-											<SelectItem value="RENTED">В аренде</SelectItem>
-											<SelectItem value="MAINTENACE">
-												На обслуживании
-											</SelectItem>
-											<SelectItem value="BROKEN">Неисправно</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="space-y-1.5">
-									<Label>Доступность для аренды</Label>
-									<Select
-										value={String(formData.isAvailable)}
-										onValueChange={(v) => set({ isAvailable: v === "true" })}
-									>
-										<SelectTrigger className="glass-input">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="true">Да</SelectItem>
-											<SelectItem value="false">Нет</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="space-y-1.5">
-									<Label>Субаренда</Label>
-									<Select
-										value={formData.ownershipType}
-										onValueChange={(v) =>
-											set({
-												ownershipType: v as unknown as OwnershipType,
-												// Если меняем на Свое (INTERNAL), очищаем имя партнера
-												partnerName:
-													v === "INTERNAL" ? "" : formData.partnerName,
-											})
-										}
-									>
-										<SelectTrigger className="glass-input">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="SUBLEASE">Да</SelectItem>
-											<SelectItem value="INTERNAL">Нет</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="space-y-1.5">
-									<Label>Владелец (Субаренда)</Label>
-									<Input
-										value={formData.partnerName ?? ""}
-										onChange={(e) => set({ partnerName: e.target.value })}
-										placeholder="Имя субарендатора"
-										disabled={formData.ownershipType !== "SUBLEASE"}
-										className="disabled:opacity-50 transition-opacity h-9"
-									/>
-								</div>
-							</div>
-
-							{/* KIT / DEFECTS */}
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<MarkdownEditor
-									label="Состояние / Дефекты"
-									value={formData.defects ?? ""}
-									onChange={(v) => set({ defects: v })}
-									placeholder="Укажите дефекты или **новое**"
-									rows={5}
-								/>
-							</div>
-
-							{/* DEPOSIT / REPLACEMENT */}
-							<div className="grid grid-cols-2 gap-4">
-								{[
-									{ label: "Депозит", key: "deposit" as const },
-									{
-										label: "Стоимость замены",
-										key: "replacementValue" as const,
-									},
-								].map(({ label, key }) => (
-									<div key={key} className="space-y-1.5">
-										<Label>{label}</Label>
-										<Input
-											type="number"
-											value={formData[key]}
-											onChange={(e) =>
-												set({
-													[key]:
-														e.target.value === "" ? "" : Number(e.target.value),
-												})
-											}
-										/>
-									</div>
-								))}
-							</div>
-
-							{/* COMMENTS */}
-							<div className="space-y-1.5">
-								<Label className="flex items-center gap-2">
-									Комментарии для сотрудников
-									{comments.length > 0 && (
-										<span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-											{comments.length}
-										</span>
-									)}
-								</Label>
-								<CommentsBlock
-									comments={comments}
-									onAdd={(text) => {
-										const newComment: UserComment = {
-											id: crypto.randomUUID(),
-											text,
-											author: "admin",
-											createdAt: new Date().toISOString(),
-										};
-										const updated = [...comments, newComment];
-										setComments(updated);
-										markDirty();
-									}}
-									onRemove={(id) => {
-										const updated = comments.filter((c) => c.id !== id);
-										setComments(updated);
-										markDirty();
-									}}
-								/>
-							</div>
-
-							{/* VIDEO URLS */}
-							{(!isEdit || isPrimary) && (
-								<div className="space-y-3">
-									<Label>
-										Видеообзоры{" "}
-										<span className="font-normal text-muted-foreground text-xs ml-1">
-											— по одной ссылке на строку (YouTube, VK Video, RuTube)
-										</span>
-									</Label>
-									<Textarea
-										value={(formData.videoUrls ?? []).join("\n")}
-										onChange={(e) =>
-											set({
-												videoUrls: e.target.value
-													.split("\n")
-													.map((u) => u.trim())
-													.filter(Boolean),
-											})
-										}
-										placeholder={
-											"https://youtube.com/watch?v=...\nhttps://vk.com/video...\nhttps://rutube.ru/video/..."
-										}
-										rows={4}
-										className="font-mono text-xs resize-none"
-									/>
-									{(formData.videoUrls ?? []).length > 0 && (
-										<p className="text-[11px] text-muted-foreground">
-											{(formData.videoUrls ?? []).length} видео добавлено
-										</p>
-									)}
-								</div>
-							)}
-
+							</Card>
 							{/* SYNC */}
 							{isEdit && hasSiblings && isPrimary && (
 								<div className="border-t border-white/10 pt-4">
@@ -1468,6 +1423,62 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									)}
 								</div>
 							)}
+
+							{/* DEPOSIT / REPLACEMENT */}
+							{/* <div className="grid grid-cols-2 gap-4">
+								{[
+									{ label: "Депозит", key: "deposit" as const },
+									{
+										label: "Стоимость замены",
+										key: "replacementValue" as const,
+									},
+								].map(({ label, key }) => (
+									<div key={key} className="space-y-1.5">
+										<Label>{label}</Label>
+										<Input
+											type="number"
+											value={formData[key]}
+											onChange={(e) =>
+												set({
+													[key]:
+														e.target.value === "" ? "" : Number(e.target.value),
+												})
+											}
+										/>
+									</div>
+								))}
+							</div> */}
+
+							{/* COMMENTS */}
+							{/* <div className="space-y-1.5">
+								<Label className="flex items-center gap-2">
+									Комментарии для сотрудников
+									{comments.length > 0 && (
+										<span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+											{comments.length}
+										</span>
+									)}
+								</Label>
+								<CommentsBlock
+									comments={comments}
+									onAdd={(text) => {
+										const newComment: UserComment = {
+											id: crypto.randomUUID(),
+											text,
+											author: "admin",
+											createdAt: new Date().toISOString(),
+										};
+										const updated = [...comments, newComment];
+										setComments(updated);
+										markDirty();
+									}}
+									onRemove={(id) => {
+										const updated = comments.filter((c) => c.id !== id);
+										setComments(updated);
+										markDirty();
+									}}
+								/>
+							</div> */}
 						</div>
 					)}
 

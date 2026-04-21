@@ -3,7 +3,14 @@
 import { EyeIcon, PencilSimpleLineIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { Label, Textarea } from "@/components/ui";
+import {
+	Button,
+	Label,
+	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 const RE_LINK = /^\[([^\]]+)\]\(([^)]+)\)/;
@@ -151,9 +158,9 @@ export function SimpleMarkdown({
 				currentList.push(
 					<li
 						key={i}
-						className="flex items-start gap-2 text-sm text-foreground/80"
+						className="flex items-start gap-3 text-sm text-foreground/80 "
 					>
-						<span className="text-primary mt-1 shrink-0">•</span>
+						<span className="mt-0.5 shrink-0">•</span>
 						<span>{parseLine(trimmed.slice(2), i)}</span>
 					</li>
 				);
@@ -215,26 +222,33 @@ export function MarkdownEditor({
 		<div className={cn("space-y-1.5", className)}>
 			<div className="flex items-center justify-between">
 				{label && <Label>{label}</Label>}
-				<div className="flex items-center gap-0.5 rounded-md border border-foreground/10 bg-foreground/5 p-0.5 ml-auto">
+				<div className="flex items-center gap-0.5 rounded-md border border-foreground/10 bg-foreground/10 p-0.5 ml-auto">
 					{(["write", "preview"] as const).map((t) => (
-						<button
-							key={t}
-							type="button"
-							onClick={() => setTab(t)}
-							className={cn(
-								"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors",
-								tab === t
-									? "bg-primary/10 text-foreground"
-									: "text-muted-foreground hover:text-foreground"
-							)}
-						>
-							{t === "write" ? (
-								<PencilSimpleLineIcon size={9} />
-							) : (
-								<EyeIcon size={9} />
-							)}
-							{t === "write" ? "Редактор" : "Превью"}
-						</button>
+						<Tooltip>
+							<TooltipTrigger>
+								<Button
+									key={t}
+									size="icon-xs"
+									variant="tab"
+									onClick={() => setTab(t)}
+									className={cn(
+										"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors hover:bg-muted-foreground/20",
+										tab === t
+											? "bg-secondary text-foreground shadow-md hover:bg-secondary/80"
+											: "text-muted-foreground hover:text-foreground"
+									)}
+								>
+									{t === "write" ? (
+										<PencilSimpleLineIcon size={9} />
+									) : (
+										<EyeIcon size={9} />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t === "write" ? "Редактор" : "Просмотр"}
+							</TooltipContent>
+						</Tooltip>
 					))}
 				</div>
 			</div>
@@ -252,7 +266,7 @@ export function MarkdownEditor({
 				/>
 			) : (
 				<div
-					className="rounded-md border border-foreground/10 bg-foreground/5 p-3 overflow-auto"
+					className="rounded-md border border-foreground/10 card-surface p-3 overflow-auto"
 					style={{ minHeight: `${rows * 24}px` }}
 				>
 					{value ? (

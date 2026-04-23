@@ -16,9 +16,18 @@ const RESEND_COOLDOWN_SEC = 120;
 interface OtpFormProps {
 	email: string;
 	onBack: () => void;
+	onSuccess?: (() => void) | undefined;
+	isModal?: boolean;
+	title?: string;
 }
 
-export function OtpForm({ email, onBack }: OtpFormProps) {
+export function OtpForm({
+	email,
+	onSuccess,
+	// onBack,
+	isModal = false,
+	title = "Введите код",
+}: OtpFormProps) {
 	const router = useRouter();
 	const [isSendingCode, setIsSendingCode] = useState(false);
 	const [isVerifying, setIsVerifying] = useState(false);
@@ -47,7 +56,12 @@ export function OtpForm({ email, onBack }: OtpFormProps) {
 				redirect: false,
 			});
 			if (result?.ok) {
-				router.push("/dashboard");
+				if (onSuccess) {
+					onSuccess();
+				} else {
+					router.push("/dashboard");
+					router.refresh();
+				}
 			}
 		} catch (err) {
 			toast.error(getErrorMessage(err) || "Ошибка проверки кода");
@@ -89,20 +103,30 @@ export function OtpForm({ email, onBack }: OtpFormProps) {
 
 	return (
 		<AuthCard
-			title="Введите код"
+			title={isModal ? title : "Введите код"}
 			description={`Отправили код подтверждения на ${email}`}
-			footerLink={{
-				text: "Ошиблись почтой?",
-				label: "Изменить",
-				href: "#",
-				onClick: (e: Event) => {
-					e.preventDefault();
-					onBack();
-				},
-			}}
+			isModal={isModal}
+			footerLink={
+				isModal
+					? {
+							text: "",
+							label: "",
+							href: "#",
+						}
+					: {
+							text: "Ошиблись почтой?",
+							label: "Изменить",
+							href: "/auth?view=register",
+						}
+			}
 			isLoading={isLoading}
 		>
-			<div className="flex flex-col items-center space-y-8">
+			<div
+				className={cn(
+					"flex flex-col items-center space-y-8",
+					isModal && "py-6"
+				)}
+			>
 				<OTPInput
 					maxLength={6}
 					onComplete={handleComplete}

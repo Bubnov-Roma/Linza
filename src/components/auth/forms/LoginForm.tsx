@@ -11,7 +11,12 @@ import { Button } from "@/components/ui";
 import { loginSchema } from "@/schemas";
 import { AuthCard } from "../AuthCard";
 
-export function LoginForm() {
+interface LoginFormProps {
+	isModal: boolean;
+	onSuccess: () => void;
+}
+
+export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -51,9 +56,13 @@ export function LoginForm() {
 				return;
 			}
 
-			toast.success("С возвращением!");
-			router.push("/dashboard");
-			router.refresh();
+			if (isModal && onSuccess) {
+				onSuccess();
+			} else {
+				toast.success("С возвращением!");
+				router.push("/dashboard");
+				router.refresh();
+			}
 		} catch {
 			toast.error("Ошибка авторизации");
 		} finally {
@@ -63,13 +72,22 @@ export function LoginForm() {
 
 	return (
 		<AuthCard
-			title="С возвращением"
-			description="Введите данные для входа в аккаунт"
-			footerLink={{
-				text: "Нет аккаунта?",
-				label: "Зарегистрироваться",
-				href: "/auth?view=register",
-			}}
+			title={isModal ? "Вход по паролю" : "С возвращением"}
+			isModal={isModal}
+			description={isModal ? undefined : "Введите данные для входа в аккаунт"}
+			footerLink={
+				isModal
+					? {
+							text: "",
+							label: "",
+							href: "#",
+						}
+					: {
+							text: "Нет аккаунта?",
+							label: "Зарегистрироваться",
+							href: "/auth?view=register",
+						}
+			}
 			isLoading={isLoading}
 		>
 			<form onSubmit={handlePasswordLogin} className="space-y-3" noValidate>
@@ -117,7 +135,7 @@ export function LoginForm() {
 						}
 					/>
 					<Link
-						href="/auth?view=forgot"
+						href="/auth?view=register"
 						className="absolute right-0 -top-0.5 pb-1 text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
 					>
 						Забыли пароль?

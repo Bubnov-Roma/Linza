@@ -3,6 +3,7 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import { AuthCard } from "@/components/auth/AuthCard";
 
 export function SuccessView() {
 	const router = useRouter();
@@ -19,8 +20,8 @@ export function SuccessView() {
 	}, [redirectPath, router]);
 
 	return (
-		<div className="w-full max-w-md mx-auto p-8 rounded-3xl bg-black/40 border border-white/5 backdrop-blur-xl animate-in zoom-in-95 fade-in duration-500">
-			<div className="flex flex-col items-center justify-center text-center space-y-6">
+		<AuthCard title="Успешно" description="Выполняется вход в систему...">
+			<div className="flex flex-col items-center justify-center py-8">
 				<div className="relative">
 					<div className="absolute inset-0 blur-2xl bg-green-500/20 rounded-full" />
 					<div className="relative bg-background rounded-full p-2 border border-green-500/20">
@@ -37,6 +38,6 @@ export function SuccessView() {
 
 				<Loader2 className="w-6 h-6 animate-spin text-muted-foreground/50" />
 			</div>
-		</div>
+		</AuthCard>
 	);
 }

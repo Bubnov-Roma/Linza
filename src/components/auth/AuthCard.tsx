@@ -3,18 +3,21 @@
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
 import { RainbowSpinner } from "@/components/shared";
+import { cn } from "@/lib/utils";
 
+export interface AuthFooterLink {
+	text?: string;
+	href: string;
+	label: string;
+	onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}
 interface AuthCardProps {
 	title: string;
-	description?: string;
+	description?: string | undefined;
 	children: React.ReactNode;
-	footerLink?: {
-		text?: string;
-		href: string;
-		label: string;
-		onClick?: (e: Event) => void;
-	};
+	footerLink?: AuthFooterLink;
 	isLoading?: boolean;
+	isModal?: boolean;
 }
 
 export function AuthCard({
@@ -23,33 +26,48 @@ export function AuthCard({
 	children,
 	footerLink,
 	isLoading,
+	isModal = false,
 }: AuthCardProps) {
 	return (
-		<div className="w-full max-w-md mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-4">
+		<div
+			className={cn(
+				"w-full transition-all duration-500",
+				!isModal
+					? "max-w-md mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 p-4"
+					: "space-y-4 p-6"
+			)}
+		>
 			<div className="text-center space-y-2">
-				<div className="flex items-center justify-center">
-					<Link
-						href="/"
-						className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity pb-4 duration-500"
-					>
-						<Logo size={30} className="text-primary shadow-primary/30" />
-					</Link>
-				</div>
-				<h1 className="text-3xl font-bold tracking-tight text-foreground">
+				{!isModal && (
+					<div className="flex items-center justify-center">
+						<Link
+							href="/"
+							className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity pb-4 duration-500"
+						>
+							<Logo size={30} className="text-primary shadow-primary/30" />
+						</Link>
+					</div>
+				)}
+				<h1
+					className={cn(
+						"font-bold tracking-tight text-foreground",
+						isModal ? "text-2xl uppercase italic font-black" : "text-3xl"
+					)}
+				>
 					{title}
 				</h1>
 				{description && (
-					<p className="text-muted-foreground text-sm">{description}</p>
+					<p className="text-muted-foreground text-sm px-4">{description}</p>
 				)}
 			</div>
 
-			<div className="relative p-2">
+			<div className="relative">
 				{isLoading && (
-					<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+					<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-xl">
 						<RainbowSpinner size={50} />
 					</div>
 				)}
-				{children}
+				<div className={cn(isModal ? "py-2" : "p-2")}>{children}</div>
 			</div>
 
 			{footerLink && (
@@ -64,16 +82,18 @@ export function AuthCard({
 				</p>
 			)}
 
-			<p className="text-center text-[10px] text-muted-foreground/50 px-8">
-				Продолжая, вы принимаете{" "}
-				<Link href="/terms" className="hover:text-foreground">
-					Условия использования
-				</Link>{" "}
-				и{" "}
-				<Link href="/privacy" className="hover:text-foreground">
-					Политику конфиденциальности
-				</Link>
-			</p>
+			{!isModal && (
+				<p className="text-center text-[10px] text-muted-foreground/50 px-8">
+					Продолжая, вы принимаете{" "}
+					<Link href="/terms" className="hover:text-foreground">
+						Условия использования
+					</Link>{" "}
+					и{" "}
+					<Link href="/privacy" className="hover:text-foreground">
+						Политику конфиденциальности
+					</Link>
+				</p>
+			)}
 		</div>
 	);
 }

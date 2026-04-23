@@ -82,7 +82,7 @@ export function SignOutButton({
 							"w-12 h-12 rounded-2xl flex items-center justify-center mb-2 mx-auto sm:mx-0",
 							isDirty
 								? "bg-orange-500/20 text-orange-400"
-								: "bg-red-500/20 text-red-400" // Исправил цвет
+								: "bg-red-500/20 text-red-400"
 						)}
 					>
 						<LogOut size={24} />

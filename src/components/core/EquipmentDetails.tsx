@@ -2,6 +2,8 @@
 
 import {
 	BriefcaseMetalIcon,
+	CaretLeftIcon,
+	CaretRightIcon,
 	HeartIcon,
 	InfoIcon,
 	LightningIcon,
@@ -9,10 +11,6 @@ import {
 	VideoIcon,
 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
-import {
-	ChevronLeft as ChevronLeftIcon,
-	ChevronRight as ChevronRightIcon,
-} from "lucide-react";
 import Image from "next/image";
 import NProgress from "nprogress";
 import { useEffect, useMemo, useState } from "react";
@@ -265,7 +263,7 @@ function RelatedSlider({ ids }: { ids: string[] }) {
 							disabled={slideIdx === 0}
 							className="h-8 w-8 rounded-full border border-foreground/10 flex items-center justify-center hover:bg-foreground/8 disabled:opacity-30 transition-colors"
 						>
-							<ChevronLeftIcon size={14} />
+							<CaretLeftIcon size={14} />
 						</button>
 						<button
 							type="button"
@@ -273,7 +271,7 @@ function RelatedSlider({ ids }: { ids: string[] }) {
 							disabled={slideIdx === maxIdx}
 							className="h-8 w-8 rounded-full border border-foreground/10 flex items-center justify-center hover:bg-foreground/8 disabled:opacity-30 transition-colors"
 						>
-							<ChevronRightIcon size={14} />
+							<CaretRightIcon size={14} />
 						</button>
 					</div>
 				</div>
@@ -339,10 +337,10 @@ export default function EquipmentDetails({
 	}, [period, equipment, quantity]);
 
 	const currentMode = useMemo(() => {
-		if (math.hours <= 4) return "h4";
-		if (math.hours <= 8) return "h8";
+		if (math.hours <= 4 && equipment.price4h !== 0) return "h4";
+		if (math.hours <= 8 && equipment.price8h !== 0) return "h8";
 		return "day";
-	}, [math.hours]);
+	}, [math.hours, equipment.price4h, equipment.price8h]);
 
 	const setQuickPeriodMobile = (mode: "h4" | "h8" | "day") => {
 		const startFull = combineDateAndTime(period.startDate, period.startTime);
@@ -678,10 +676,10 @@ export default function EquipmentDetails({
 					</div>
 
 					{/* ━━ RIGHT COLUMN: Sticky Booking Panel ━━ */}
-					<div className="order-2 lg:col-span-5 relative">
+					<div className="hidden lg:block order-2 lg:col-span-5 relative">
 						<div className="lg:sticky lg:top-24 flex flex-col gap-6">
 							{/* Основной блок выбора дат */}
-							<div className="card-surface p-6 rounded-[2rem] border border-foreground/5 shadow-xl shadow-foreground/5 space-y-6">
+							<div className="card-surface p-3 xl:p-6 rounded-[2rem] border border-foreground/5 shadow-xl shadow-foreground/5 space-y-6">
 								<div className="flex items-center justify-between px-1">
 									<p className="text-[10px] font-black uppercase italic tracking-widest opacity-40">
 										Параметры аренды
@@ -693,72 +691,76 @@ export default function EquipmentDetails({
 
 								<RentalPeriod value={period} onChange={setPeriod} />
 
-								{/* Линия разграничения */}
 								<div className="h-px bg-foreground/5 -mx-6" />
 
-								{/* Красивые карточки бенефиты для Десктопа */}
-								<div className="hidden lg:grid grid-cols-2 gap-3 pt-2">
-									{equipment.price4h > 0 && (
-										<div className="glass-card rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
-											<div className="flex items-center justify-between mb-2">
-												<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-													4 часа
-												</span>
-												<span className="text-[9px] font-black bg-lime-500/15 text-lime-600 dark:text-lime-400 px-2 py-0.5 rounded-full">
-													−
-													{Math.round(
-														(1 - equipment.price4h / equipment.pricePerDay) *
-															100
-													)}
-													%
-												</span>
-											</div>
-											<div>
-												<p className="text-xl font-black italic tracking-tighter leading-none">
-													{equipment.price4h.toLocaleString("ru")} ₽
-												</p>
-												<p className="text-[10px] text-muted-foreground mt-1 font-medium">
-													Экономия{" "}
-													{(
-														equipment.pricePerDay - equipment.price4h
-													).toLocaleString("ru")}{" "}
-													₽
-												</p>
-											</div>
+								{equipment.price4h > 0 && equipment.price8h > 0 && (
+									<>
+										<div className="hidden lg:grid grid-cols-2 gap-3 pt-2">
+											{equipment.price4h > 0 && (
+												<div className="glass-card rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
+													<div className="flex items-center justify-between mb-2">
+														<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+															4 часа
+														</span>
+														<span className="text-[9px] font-black bg-lime-500/15 text-lime-600 dark:text-lime-400 px-2 py-0.5 rounded-full">
+															−
+															{Math.round(
+																(1 -
+																	equipment.price4h / equipment.pricePerDay) *
+																	100
+															)}
+															%
+														</span>
+													</div>
+													<div>
+														<p className="text-xl font-black italic tracking-tighter leading-none">
+															{equipment.price4h.toLocaleString("ru")} ₽
+														</p>
+														<p className="text-[10px] text-muted-foreground mt-1 font-medium">
+															Экономия{" "}
+															{(
+																equipment.pricePerDay - equipment.price4h
+															).toLocaleString("ru")}{" "}
+															₽
+														</p>
+													</div>
+												</div>
+											)}
+											{equipment.price8h > 0 && (
+												<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
+													<div className="flex items-center justify-between mb-2">
+														<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+															8 часов
+														</span>
+														<span className="text-[9px] font-black bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 px-2 py-0.5 rounded-full">
+															−
+															{Math.round(
+																(1 -
+																	equipment.price8h / equipment.pricePerDay) *
+																	100
+															)}
+															%
+														</span>
+													</div>
+													<div>
+														<p className="text-xl font-black italic tracking-tighter leading-none">
+															{equipment.price8h.toLocaleString("ru")} ₽
+														</p>
+														<p className="text-[10px] text-muted-foreground mt-1 font-medium">
+															Экономия{" "}
+															{(
+																equipment.pricePerDay - equipment.price8h
+															).toLocaleString("ru")}{" "}
+															₽
+														</p>
+													</div>
+												</div>
+											)}
 										</div>
-									)}
-									{equipment.price8h > 0 && (
-										<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
-											<div className="flex items-center justify-between mb-2">
-												<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-													8 часов
-												</span>
-												<span className="text-[9px] font-black bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 px-2 py-0.5 rounded-full">
-													−
-													{Math.round(
-														(1 - equipment.price8h / equipment.pricePerDay) *
-															100
-													)}
-													%
-												</span>
-											</div>
-											<div>
-												<p className="text-xl font-black italic tracking-tighter leading-none">
-													{equipment.price8h.toLocaleString("ru")} ₽
-												</p>
-												<p className="text-[10px] text-muted-foreground mt-1 font-medium">
-													Экономия{" "}
-													{(
-														equipment.pricePerDay - equipment.price8h
-													).toLocaleString("ru")}{" "}
-													₽
-												</p>
-											</div>
-										</div>
-									)}
-								</div>
 
-								<div className="h-px bg-foreground/5 -mx-6" />
+										<div className="h-px bg-foreground/5 -mx-6" />
+									</>
+								)}
 
 								{/* Итоговая цена и кнопка (Десктоп) */}
 								<div className="hidden lg:flex flex-col gap-4">

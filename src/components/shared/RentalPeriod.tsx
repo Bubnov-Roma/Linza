@@ -276,9 +276,9 @@ function PeriodRow({
 	if (isMobile) {
 		return (
 			<div className="space-y-1.5">
-				<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 px-1">
+				<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 px-1">
 					{label}
-				</p>
+				</span>
 				<div className="flex gap-2">
 					{/* Date button - Mobile */}
 					<Drawer
@@ -369,77 +369,84 @@ function PeriodRow({
 
 	// Desktop AnchoredPortal
 	return (
-		<div className="flex gap-2 items-center">
-			{/* Date button - Desktop */}
-			<p className="w-20 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+		<>
+			<p className="text-xs uppercase tracking-widest text-muted-foreground">
 				{label}:
 			</p>
-			<div className="relative flex-1">
-				<button
-					ref={dateBtnRef}
-					type="button"
-					onClick={onDateToggle}
-					className={cn(
-						"w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all select-none",
-						isDateOpen
-							? "border-primary/50 bg-primary/5 text-primary"
-							: "border-foreground/10 bg-card/60 text-foreground hover:border-foreground/20 hover:bg-foreground/5"
-					)}
-				>
-					<CalendarIcon
-						size={13}
-						className="text-muted-foreground/50 shrink-0"
-					/>
-					<span className="flex-1 text-left">{dateLabel}</span>
-					<ChevronDown
-						size={13}
-						className={cn(
-							"text-muted-foreground/40 transition-transform shrink-0",
-							isDateOpen && "rotate-180"
-						)}
-					/>
-				</button>
-				{isDateOpen && (
-					<AnchoredPortal anchorRef={dateBtnRef} align="left" onClose={onClose}>
-						{renderCalendar()}
-					</AnchoredPortal>
-				)}
-			</div>
+			<div className="flex gap-2 items-center">
+				{/* Date button - Desktop */}
 
-			{/* Time button - Desktop */}
-			<div className="w-30 relative">
-				<button
-					ref={timeBtnRef}
-					type="button"
-					onClick={onTimeToggle}
-					className={cn(
-						"w-full flex items-center gap-2 px-3 py-3 rounded-xl border text-sm font-medium transition-all select-none",
-						isTimeOpen
-							? "border-primary/50 bg-primary/5 text-primary"
-							: "border-foreground/10 bg-card/60 text-foreground hover:border-foreground/20 hover:bg-foreground/5"
-					)}
-				>
-					<Clock size={13} className="text-muted-foreground/50 shrink-0" />
-					<span className="flex-1 text-left font-mono">{time}</span>
-					<ChevronDown
-						size={13}
+				<div className="relative flex-1">
+					<button
+						ref={dateBtnRef}
+						type="button"
+						onClick={onDateToggle}
 						className={cn(
-							"text-muted-foreground/40 transition-transform shrink-0",
-							isTimeOpen && "rotate-180"
+							"w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all select-none",
+							isDateOpen
+								? "border-primary/50 bg-primary/5 text-primary"
+								: "border-foreground/10 bg-card/60 text-foreground hover:border-foreground/20 hover:bg-foreground/5"
 						)}
-					/>
-				</button>
-				{isTimeOpen && (
-					<AnchoredPortal
-						anchorRef={timeBtnRef}
-						align="right"
-						onClose={onClose}
 					>
-						{renderTime()}
-					</AnchoredPortal>
-				)}
+						<CalendarIcon
+							size={13}
+							className="text-muted-foreground/50 shrink-0"
+						/>
+						<span className="flex-1 text-left">{dateLabel}</span>
+						<ChevronDown
+							size={13}
+							className={cn(
+								"text-muted-foreground/40 transition-transform shrink-0",
+								isDateOpen && "rotate-180"
+							)}
+						/>
+					</button>
+					{isDateOpen && (
+						<AnchoredPortal
+							anchorRef={dateBtnRef}
+							align="left"
+							onClose={onClose}
+						>
+							{renderCalendar()}
+						</AnchoredPortal>
+					)}
+				</div>
+
+				{/* Time button - Desktop */}
+				<div className="w-30 relative">
+					<button
+						ref={timeBtnRef}
+						type="button"
+						onClick={onTimeToggle}
+						className={cn(
+							"w-full flex items-center gap-2 px-3 py-3 rounded-xl border text-sm font-medium transition-all select-none",
+							isTimeOpen
+								? "border-primary/50 bg-primary/5 text-primary"
+								: "border-foreground/10 bg-card/60 text-foreground hover:border-foreground/20 hover:bg-foreground/5"
+						)}
+					>
+						<Clock size={13} className="text-muted-foreground/50 shrink-0" />
+						<span className="flex-1 text-left font-mono">{time}</span>
+						<ChevronDown
+							size={13}
+							className={cn(
+								"text-muted-foreground/40 transition-transform shrink-0",
+								isTimeOpen && "rotate-180"
+							)}
+						/>
+					</button>
+					{isTimeOpen && (
+						<AnchoredPortal
+							anchorRef={timeBtnRef}
+							align="right"
+							onClose={onClose}
+						>
+							{renderTime()}
+						</AnchoredPortal>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 

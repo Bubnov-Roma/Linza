@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthModal } from "@/components/shared";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { useAuthModalStore } from "@/store/auth-modal.store";
 
 export function AuthModalProvider() {

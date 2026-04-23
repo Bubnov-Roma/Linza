@@ -1,6 +1,12 @@
 "use client";
 
-import { Check, Monitor, Moon, Sun, SunMoon } from "lucide-react";
+import {
+	CheckIcon,
+	MonitorIcon,
+	MoonIcon,
+	SunHorizonIcon,
+	SunIcon,
+} from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -12,11 +18,11 @@ function ThemeIcon({ className }: { className?: string }) {
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 
-	if (!mounted) return <SunMoon className={className} />;
+	if (!mounted) return <SunHorizonIcon className={className} />;
 	return resolvedTheme === "dark" ? (
-		<Moon className={className} />
+		<MoonIcon className={className} />
 	) : (
-		<Sun className={className} />
+		<SunIcon className={className} />
 	);
 }
 
@@ -25,9 +31,9 @@ function ThemeIcon({ className }: { className?: string }) {
 export function ThemeCard() {
 	const { theme, setTheme } = useTheme();
 	const themes = [
-		{ id: "light", label: "Светлая", icon: Sun },
-		{ id: "dark", label: "Тёмная", icon: Moon },
-		{ id: "system", label: "Системная", icon: Monitor },
+		{ id: "light", label: "Светлая", icon: SunIcon },
+		{ id: "dark", label: "Тёмная", icon: MoonIcon },
+		{ id: "system", label: "Системная", icon: MonitorIcon },
 	] as const;
 
 	return (
@@ -48,7 +54,7 @@ export function ThemeCard() {
 					>
 						<Icon size={18} />
 						<span className="text-[11px] font-semibold">{label}</span>
-						{active && <Check size={10} />}
+						{active && <CheckIcon size={10} />}
 					</button>
 				);
 			})}
@@ -163,11 +169,11 @@ export function ThemeIconButton({
 			aria-label="Переключить тему"
 		>
 			{!mounted ? (
-				<SunMoon size={size} className="text-muted-foreground" />
+				<SunHorizonIcon size={size} className="text-muted-foreground" />
 			) : resolvedTheme === "dark" ? (
-				<Moon size={size} className="text-muted-foreground" />
+				<MoonIcon size={size} className="text-muted-foreground" />
 			) : (
-				<Sun size={size} className="text-muted-foreground" />
+				<SunIcon size={size} className="text-muted-foreground" />
 			)}
 		</span>
 	);

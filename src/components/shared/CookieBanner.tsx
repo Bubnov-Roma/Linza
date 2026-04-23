@@ -18,7 +18,7 @@ export default function CookieBanner() {
 	if (!isVisible) return null;
 
 	return (
-		<div className="fixed bottom-16 sm:bottom-3 max-w-fit mx-auto sm:ml-auto sm:mr-10 left-0 right-0 rounded-2xl bg-slate-900/80 backdrop-blur-2xl text-white p-4 z-50 shadow-2xl shadow-muted-foreground flex flex-col md:flex-row items-center justify-between border-t border-slate-700">
+		<div className="fixed bottom-16 sm:bottom-3 max-w-fit mx-auto sm:ml-auto left-0 right-0 rounded-2xl bg-slate-900/80 backdrop-blur-2xl text-white p-4 z-50 shadow-2xl shadow-muted-foreground flex flex-col md:flex-row items-center justify-between border-t border-slate-700">
 			<div className="text-xs text-center mb-4 md:mb-0 md:mr-8 max-w-4xl">
 				Мы используем файлы cookie, чтобы сайт работал лучше. Продолжая
 				использовать сайт, вы соглашаетесь с нашей{" "}

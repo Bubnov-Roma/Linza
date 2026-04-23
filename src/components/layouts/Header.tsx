@@ -52,7 +52,6 @@ export function Header({ categories }: HeaderProps) {
 		<header
 			className={cn(
 				"fixed top-0 left-0 right-0 z-5",
-				!isMobile && "left-20",
 				!isCollapsed && "md:left-(--sidebar-width)",
 				"transition-[left] duration-300 ease-in-out",
 				"flex h-16 items-center justify-between gap-4 border-b border-foreground/5 bg-background/60 px-4 md:px-6 backdrop-blur-xl group"

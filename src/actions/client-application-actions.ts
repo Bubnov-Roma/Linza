@@ -50,7 +50,6 @@ export async function submitClientApplicationAction(
 			return { success: false, message: "Не авторизован" };
 
 		const personalData = data.applicationData.personalData;
-		console.log("personalData", personalData);
 		const fullName = personalData.name;
 		const phone = personalData.phone;
 

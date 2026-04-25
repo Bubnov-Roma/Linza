@@ -16,7 +16,8 @@ const cspHeader = `
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverExternalPackages: ['@prisma/client', '@prisma/adapter-mariadb', 'bcryptjs'],
+  // Убрали better-sqlite3 и prisma-adapter
+  serverExternalPackages: ["@prisma/client", "bcryptjs"], 
   async headers() {
     return [
       {
@@ -32,30 +33,11 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "avatars.yandex.net",
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-        port: '',
-        pathname: '/**',
-      },
-      { protocol: "https", 
-        hostname: "aeb737f5febe-linza-storage.s3.ru1.storage.beget.cloud",
-        pathname: '/**'
-      },
-      {
-        protocol: "https",
-        hostname: "ibb.co",
-        pathname: '/**',
-      },
-      {
-        protocol: "https",
-        hostname: "*.ibb.co",
-        pathname: '/**',
-      },
+      { protocol: "https", hostname: "avatars.yandex.net" },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com', port: '', pathname: '/**' },
+      { protocol: "https", hostname: "aeb737f5febe-linza-storage.s3.ru1.storage.beget.cloud", pathname: '/**' },
+      { protocol: "https", hostname: "ibb.co", pathname: '/**' },
+      { protocol: "https", hostname: "*.ibb.co", pathname: '/**' },
     ],
     formats: ['image/avif', 'image/webp'],
   },

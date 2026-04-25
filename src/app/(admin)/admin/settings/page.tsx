@@ -11,7 +11,6 @@ export default async function SettingsPage() {
 	const session = await auth();
 
 	if (session?.user?.role !== "ADMIN") {
-		console.log(session?.user?.role);
 		redirect("/admin");
 	}
 

@@ -1,19 +1,26 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import "dotenv/config";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as {
 	prisma: PrismaClient | undefined;
 };
 
-const adapter = new PrismaMariaDb({
-	host: process.env.DATABASE_HOST as string,
-	user: process.env.DATABASE_USER as string,
-	password: process.env.DATABASE_PASSWORD as string,
-	database: process.env.DATABASE_NAME as string,
-	connectionLimit: 5,
-});
+function createPrisma() {
+	const connectionString = process.env.DATABASE_URL;
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
+	const pool = new Pool({ connectionString });
+	const adapter = new PrismaPg(pool);
+
+	return new PrismaClient({
+		adapter,
+		log:
+			process.env.NODE_ENV === "development"
+				? ["query", "error", "warn"]
+				: ["error"],
+	});
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrisma();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

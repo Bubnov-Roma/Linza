@@ -19,7 +19,7 @@ const buttonVariants = cva(
 					"hover:bg-primary-foreground/20 hover:text-foreground dark:hover:bg-primary-accent/80 transition-colors duration-500",
 				link: "text-primary underline-offset-4 hover:underline",
 				social:
-					"bg-muted-foreground/5 backdrop-blur-lg border border-foreground/5 text-foreground hover:bg-white/10 hover:shadow-xl hover:border-foreground/10",
+					"bg-muted-foreground/5 backdrop-blur-lg border border-foreground/5 text-foreground hover:bg-white/10 hover:shadow-xl hover:border-foreground/10 active:shadow-md",
 				glass: cn(
 					"relative overflow-hidden bg-secondary/80 backdrop-blur-lg text-foreground transition-all duration-500",
 					"hover:border-primary/30",

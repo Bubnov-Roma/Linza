@@ -17,7 +17,6 @@ export async function Footer() {
 	const sectionTitleClass =
 		"text-sm font-bold uppercase tracking-widest text-foreground/70 mb-6";
 
-	console.log(support.telegram);
 	return (
 		<footer className="w-full border-t border-foreground/5 bg-background">
 			<div className="container mx-auto px-6 py-16">

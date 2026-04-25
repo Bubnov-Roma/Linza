@@ -6,13 +6,14 @@ services:
     container_name: linza-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-linza}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-linza_password}
       POSTGRES_DB: ${POSTGRES_DB:-linza_db}
-    ports:
-      - "5434:5432" # Можно закрыть порт снаружи (убрать эту секцию), если к БД будет стучаться только само приложение
+    # ports:
+    #   - "5432:5432"
     volumes:
       - linza-db-data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-linza_db}"]
       interval: 10s
@@ -21,19 +22,22 @@ services:
       start_period: 10s
     networks:
       - linza-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M 
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: linza-app:latest
     container_name: linza-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-linza_db}?schema=public
-      - DIRECT_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-linza_db}?schema=public
+      - NODE_OPTIONS=--max-old-space-size=768
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-linza}:${POSTGRES_PASSWORD:-linza_password}@db:5432/${POSTGRES_DB:-linza_db}?schema=public
+      - DIRECT_URL=postgresql://${POSTGRES_USER:-linza}:${POSTGRES_PASSWORD:-linza_password}@db:5432/${POSTGRES_DB:-linza_db}?schema=public
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - EMAIL_SERVER_USER=${EMAIL_SERVER_USER}
@@ -60,6 +64,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
 volumes:
   linza-db-data:

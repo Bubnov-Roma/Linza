@@ -37,6 +37,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "jest.config.ts"  ],
+, "jest.config.ts", "prisma.config.mjs"  ],
   "exclude": ["node_modules"]
 }

@@ -83,7 +83,7 @@ export async function sendOtpCode(email: string, turnstileToken?: string) {
 
 		// --- Генерация кода ---
 		const code = Math.floor(100000 + Math.random() * 900000).toString();
-		const expires = new Date(Date.now() + 10 * 60 * 1000);
+		const expires = new Date(Date.now() + 5 * 60 * 1000);
 
 		await prisma.verificationToken.deleteMany({
 			where: { identifier: email },
@@ -103,7 +103,7 @@ export async function sendOtpCode(email: string, turnstileToken?: string) {
           <h2>Код подтверждения</h2>
           <p>Ваш код для авторизации:</p>
           <h1 style="letter-spacing: 5px; color: #3b82f6;">${code}</h1>
-          <p style="color: #888; font-size: 13px;">Код действителен 10 минут.<br>
+          <p style="color: #888; font-size: 13px;">Код действителен 5 минут.<br>
           Если вы не запрашивали этот код — просто проигнорируйте письмо.</p>
         </div>
       `,

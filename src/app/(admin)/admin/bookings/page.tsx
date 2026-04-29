@@ -84,17 +84,5 @@ export default async function AdminBookingsPage() {
 		};
 	});
 
-	return (
-		<div className="space-y-6">
-			<div>
-				<h1 className="text-3xl font-black italic uppercase tracking-tight">
-					Заказы
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Управление заявками · {initialBookings.length} всего
-				</p>
-			</div>
-			<AdminBookingsTable initialBookings={initialBookings} />
-		</div>
-	);
+	return <AdminBookingsTable initialBookings={initialBookings} />;
 }

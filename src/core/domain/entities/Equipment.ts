@@ -29,10 +29,12 @@ export interface DbEquipmentBase {
 	pricePerDay: number;
 	price4h: number;
 	price8h: number;
+	priceStudio: number;
 	deposit: number;
 	replacementValue: number;
 	isAvailable: boolean;
 	isPrimary: boolean;
+	isFeatured: boolean;
 	status: EquipmentStatus;
 	ownershipType: OwnershipType;
 	partnerName: string | null;

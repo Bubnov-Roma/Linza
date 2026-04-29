@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: linza-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: linza
+      POSTGRES_PASSWORD: linza
+      POSTGRES_DB: linza_dev
+    ports:
+    - "5434:5432"
+    volumes:
+      - linza-dev-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linza -d linza_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  linza-dev-db-data:

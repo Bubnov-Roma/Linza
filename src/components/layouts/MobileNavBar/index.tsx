@@ -1,6 +1,15 @@
 "use client";
 
-import { ShoppingCartSimpleIcon } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
+import {
+	CameraIcon,
+	CaretDownIcon,
+	PackageIcon,
+	ShoppingCartSimpleIcon,
+	SquaresFourIcon,
+	UserIcon,
+	VideoIcon,
+} from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogIn, Search, X } from "lucide-react";
 import Image from "next/image";
@@ -8,6 +17,19 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { UserMenuDropdown } from "@/components/shared";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerHeader,
+	DrawerTitle,
+	DrawerTrigger,
+} from "@/components/ui/drawer";
+import { getCategoryIcon } from "@/constants";
 import { MOBILE_NAV } from "@/constants/navigation";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,14 +45,14 @@ function TabBtn({
 	onClick,
 	icon: Icon,
 	label,
-	children,
+	badge,
 	className,
 }: {
 	isActive: boolean;
 	onClick?: () => void;
-	icon?: React.ElementType;
+	icon?: Icon;
 	label: string;
-	children?: React.ReactNode;
+	badge?: string | number;
 	className?: string;
 }) {
 	return (
@@ -46,23 +68,27 @@ function TabBtn({
 				<span className="absolute inset-x-1 top-1 bottom-1 bg-primary/10 rounded-xl" />
 			)}
 			<div className="relative z-10">
-				{children ??
-					(Icon && (
-						<Icon
-							size={24}
-							strokeWidth={isActive ? 2.5 : 2}
-							className={cn(
-								"transition-all duration-200",
-								isActive
-									? "text-primary scale-105"
-									: "text-muted-foreground group-active:scale-90"
-							)}
-						/>
-					))}
+				{Icon && (
+					<Icon
+						size={24}
+						weight={isActive ? "fill" : "regular"}
+						className={cn(
+							"transition-all duration-200",
+							isActive
+								? "text-primary scale-105"
+								: "text-muted-foreground group-active:scale-90"
+						)}
+					/>
+				)}
+				{badge !== undefined && (
+					<span className="absolute -top-1.5 -right-2 flex h-3.5 min-w-3.5 px-1 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground animate-in zoom-in">
+						{Number(badge) > 99 ? "99+" : badge}
+					</span>
+				)}
 			</div>
 			<span
 				className={cn(
-					"relative z-10 text-[9px] font-semibold tracking-wide transition-colors leading-none",
+					"relative z-10 text-[9px] font-semibold tracking-wide transition-colors leading-none mt-0.5",
 					isActive ? "text-primary" : "text-muted-foreground"
 				)}
 			>
@@ -76,9 +102,17 @@ function TabBtn({
 
 interface MobileNavBarProps {
 	categories: DbCategory[];
+	isAdmin: boolean;
+	pendingBookings: number;
+	pendingApplications: number;
 }
 
-export function MobileNavBar({ categories }: MobileNavBarProps) {
+export function MobileNavBar({
+	categories,
+	isAdmin,
+	pendingBookings = 0,
+	pendingApplications = 0,
+}: MobileNavBarProps) {
 	const cartCount = useCartStore((s) =>
 		s.items.reduce((sum, i) => sum + i.quantity, 0)
 	);
@@ -88,6 +122,7 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 	const { open } = useAuthModalStore();
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
+	const [catalogDrawerOpen, setCatalogDrawerOpen] = useState(false);
 
 	const searchRef = useRef<MobileSearchHandle>(null);
 	const { user, profile } = useAuth();
@@ -96,6 +131,42 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 	const avatarUrl = user?.user_metadata?.avatar_url;
 	const name =
 		profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0];
+
+	// Формируем список навигации на основе роли
+	const navItems = isAdmin
+		? [
+				{
+					title: "Заказы",
+					href: "/admin/bookings",
+					icon: PackageIcon,
+					badge: pendingBookings > 0 ? pendingBookings : undefined,
+				},
+				{
+					title: "Клиенты",
+					href: "/admin/users",
+					icon: UserIcon,
+					badge: pendingApplications > 0 ? pendingApplications : undefined,
+				},
+				{
+					title: "Техника",
+					href: "/admin/equipment",
+					icon: CameraIcon,
+				},
+				{
+					title: "Студия",
+					href: "/admin/studio",
+					icon: VideoIcon,
+				},
+			]
+		: [
+				...MOBILE_NAV,
+				{
+					title: "Корзина",
+					href: "/checkout",
+					icon: ShoppingCartSimpleIcon,
+					badge: cartCount > 0 ? cartCount : undefined,
+				},
+			];
 
 	return (
 		<>
@@ -113,10 +184,15 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 					className="flex items-stretch mx-0 border-t border-foreground/8 bg-background/55 backdrop-blur-2xl"
 					style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
 				>
-					{/* ── Закреплённый левый элемент: User / Войти / Loading ── */}
+					{/* ── Левый закрепленный блок (User) ── */}
 					<div className="shrink-0 w-14 flex items-center justify-center border-r border-foreground/5">
 						{user ? (
-							<UserMenuDropdown align="start" side="top" sideOffset={16}>
+							<UserMenuDropdown
+								align="start"
+								side="top"
+								sideOffset={16}
+								isAdmin={isAdmin}
+							>
 								<button
 									ref={userBtnRef}
 									type="button"
@@ -141,7 +217,6 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 											{name?.charAt(0).toUpperCase()}
 										</div>
 									)}
-									{/* Online dot */}
 									<span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
 								</button>
 							</UserMenuDropdown>
@@ -163,76 +238,119 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 						)}
 					</div>
 
-					{/* ── Прокручиваемые пункты навигации ── */}
-					<div className="flex-1 flex items-center h-14 overflow-x-auto no-scrollbar snap-x snap-mandatory">
-						<div className="flex items-stretch h-full px-1 gap-1 min-w-full">
-							{MOBILE_NAV.map((item) => {
-								const { href, title, icon: Icon } = item;
+					{/* ── Прокручиваемые пункты меню ── */}
+					<div className="flex-1 flex items-center h-14 overflow-x-auto custom-scrollbar snap-x snap-mandatory">
+						<div className="flex items-stretch justify-center h-full px-1 gap-1 min-w-full">
+							{navItems.map((item) => {
+								const { href, title, icon: Icon, badge } = item;
 								const isActive =
 									href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+								// Особая обработка для кнопки "Каталог" (вызов Drawer'а)
+								if (href === "/equipment") {
+									return (
+										<Drawer
+											key={href}
+											open={catalogDrawerOpen}
+											onOpenChange={setCatalogDrawerOpen}
+										>
+											<DrawerTrigger asChild>
+												<div className="h-full snap-center px-1 shrink-0 flex">
+													<TabBtn
+														isActive={isActive}
+														icon={Icon}
+														label={title}
+														className="w-16"
+													/>
+												</div>
+											</DrawerTrigger>
+											<DrawerContent className="max-h-[85vh] flex flex-col">
+												<DrawerHeader className="text-left pb-2">
+													<DrawerTitle className="text-xl font-bold">
+														Каталог техники
+													</DrawerTitle>
+												</DrawerHeader>
+												<div className="overflow-y-auto px-4 pb-8 space-y-2 custom-scrollbar">
+													<Link
+														href="/equipment"
+														onClick={() => setCatalogDrawerOpen(false)}
+														className="flex items-center gap-4 px-4 h-14 rounded-2xl bg-primary/10 text-primary font-bold mb-4 active:scale-95 transition-transform"
+													>
+														<SquaresFourIcon size={24} weight="fill" />
+														Весь каталог
+													</Link>
+													{categories.map((cat) => {
+														const CatIcon = getCategoryIcon(cat.iconName);
+														return (
+															<Collapsible
+																key={cat.id}
+																className="group/collapsible bg-muted-foreground/5 rounded-2xl overflow-hidden"
+															>
+																<CollapsibleTrigger className="flex w-full items-center justify-between p-4 active:bg-muted-foreground/10 transition-colors">
+																	<div className="flex items-center gap-3">
+																		<CatIcon
+																			size={24}
+																			className="text-muted-foreground group-data-[state=open]/collapsible:text-foreground transition-colors"
+																		/>
+																		<span className="font-semibold text-[15px]">
+																			{cat.name}
+																		</span>
+																	</div>
+																	<CaretDownIcon
+																		size={20}
+																		className="text-muted-foreground transition-transform group-data-[state=open]/collapsible:rotate-180"
+																	/>
+																</CollapsibleTrigger>
+																<CollapsibleContent className="px-4 pb-3 flex flex-col gap-1">
+																	{cat.subcategories.map((sub) => (
+																		<Link
+																			key={sub.id}
+																			href={`/equipment?category=${cat.slug}&subcategory=${sub.slug}`}
+																			onClick={() =>
+																				setCatalogDrawerOpen(false)
+																			}
+																			className="py-2.5 px-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground transition-colors"
+																		>
+																			{sub.name}
+																		</Link>
+																	))}
+																</CollapsibleContent>
+															</Collapsible>
+														);
+													})}
+												</div>
+											</DrawerContent>
+										</Drawer>
+									);
+								}
+
 								return (
 									<TabBtn
 										key={href}
 										isActive={isActive}
 										icon={Icon}
 										label={title}
+										{...(badge && { badge })}
 										onClick={() => router.push(href)}
-										className="min-w-15 h-full snap-center px-1"
+										className="w-16 h-full snap-center px-1"
 									/>
 								);
 							})}
 						</div>
 					</div>
-					<div className="shrink-0 w-14 flex items-center justify-center border-l border-foreground/5">
-						<Link
-							href="/checkout"
-							data-cart-icon
-							className="relative flex flex-col items-center justify-center gap-1"
-						>
-							<div className="relative">
-								<ShoppingCartSimpleIcon
-									size={22}
-									className={cn(
-										"transition-colors",
-										pathname === "/checkout"
-											? "text-primary"
-											: "text-muted-foreground"
-									)}
-								/>
-								{cartCount > 0 && (
-									<span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground px-0.5 animate-in zoom-in">
-										{cartCount > 99 ? "99+" : cartCount}
-									</span>
-								)}
-							</div>
-							<span
-								className={cn(
-									"text-[9px] font-semibold leading-none",
-									pathname === "/checkout"
-										? "text-primary"
-										: "text-muted-foreground"
-								)}
-							>
-								Корзина
-							</span>
-						</Link>
-					</div>
 
+					{/* ── Правый закрепленный блок (Поиск) ── */}
 					<div className="shrink-0 w-14 flex items-center justify-center border-l border-foreground/5">
 						<button
 							type="button"
 							onClick={() => {
 								const nextState = !searchOpen;
 								setSearchOpen(nextState);
-
-								if (nextState) {
-									searchRef.current?.focus();
-								}
+								if (nextState) searchRef.current?.focus();
 							}}
 							className="flex flex-col h-full items-center justify-center gap-1 group active:scale-90 transition-transform"
 							aria-label={searchOpen ? "Закрыть поиск" : "Открыть поиск"}
 						>
-							{/* Анимация: Search ↔ X через AnimatePresence */}
 							<div className="relative w-5.5 h-5.5">
 								<AnimatePresence mode="wait" initial={false}>
 									{searchOpen ? (
@@ -253,12 +371,12 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 											animate={{ opacity: 1, rotate: 0, scale: 1 }}
 											exit={{ opacity: 0, rotate: -90, scale: 0.5 }}
 											transition={{ duration: 0.15, ease: "easeOut" }}
-											className="absolute inset-0 flex items-center justify-center"
+											className="absolute inset-0 flex items-center justify-around"
 										>
 											<Search
 												size={24}
 												strokeWidth={2}
-												className="text-muted-foreground"
+												className="text-muted-foreground group-active:scale-90"
 											/>
 										</motion.div>
 									)}
@@ -266,7 +384,7 @@ export function MobileNavBar({ categories }: MobileNavBarProps) {
 							</div>
 							<span
 								className={cn(
-									"text-[9px] font-semibold leading-none transition-colors",
+									"text-[9px] font-semibold leading-none mt-0.5 transition-colors",
 									searchOpen ? "text-primary" : "text-muted-foreground"
 								)}
 							>

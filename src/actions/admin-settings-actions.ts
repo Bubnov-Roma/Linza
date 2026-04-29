@@ -3,7 +3,10 @@
 import type { PrismaPromise } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import {
+	DEFAULT_PRIVACY,
+	DEFAULT_TERMS,
 	SUPPORT_ADDRESS_DEFAULT,
+	SUPPORT_EMAIL_DEFAULT,
 	SUPPORT_PHONE_DEFAULT,
 	SUPPORT_TELEGRAM_DEFAULT,
 	type SupportInfo,
@@ -16,6 +19,9 @@ export interface SiteSettingsInfo {
 	phone: string;
 	telegram: string;
 	address: string;
+	supportEmail: string;
+	privacyPolicy: string;
+	termsOfService: string;
 	workStart: number;
 	workEnd: number;
 	disabledDates: string[];
@@ -29,6 +35,9 @@ export async function getSiteSettings(): Promise<SiteSettingsInfo> {
 					"supportPhone",
 					"supportTelegram",
 					"supportAddress",
+					"supportEmail",
+					"privacyPolicy",
+					"termsOfService",
 					"workStart",
 					"workEnd",
 					"disabledDates",
@@ -51,8 +60,11 @@ export async function getSiteSettings(): Promise<SiteSettingsInfo> {
 		phone: map.supportPhone ?? SUPPORT_PHONE_DEFAULT,
 		telegram: map.supportTelegram ?? SUPPORT_TELEGRAM_DEFAULT,
 		address: map.supportAddress ?? SUPPORT_ADDRESS_DEFAULT,
-		workStart: map.workStart ? Number(map.work_start) : WORK_START,
-		workEnd: map.workEnd ? Number(map.work_end) : WORK_END,
+		supportEmail: map.supportEmail ?? SUPPORT_EMAIL_DEFAULT,
+		privacyPolicy: map.privacyPolicy ?? DEFAULT_PRIVACY,
+		termsOfService: map.termsOfService ?? DEFAULT_TERMS,
+		workStart: map.workStart ? Number(map.workStart) : WORK_START,
+		workEnd: map.workEnd ? Number(map.workEnd) : WORK_END,
 		disabledDates: parsedDates,
 	};
 }
@@ -79,6 +91,12 @@ export async function updateSiteSettingsAction(
 			addPromise("supportTelegram", patch.telegram);
 		if (patch.address !== undefined)
 			addPromise("supportAddress", patch.address);
+		if (patch.supportEmail !== undefined)
+			addPromise("supportEmail", patch.supportEmail);
+		if (patch.privacyPolicy !== undefined)
+			addPromise("privacyPolicy", patch.privacyPolicy);
+		if (patch.termsOfService !== undefined)
+			addPromise("termsOfService", patch.termsOfService);
 		if (patch.workStart !== undefined)
 			addPromise("workStart", String(patch.workStart));
 		if (patch.workEnd !== undefined)
@@ -99,20 +117,25 @@ export async function updateSiteSettingsAction(
 export async function getSupportInfo(): Promise<SupportInfo> {
 	const data = await prisma.siteSetting.findMany({
 		where: {
-			key: { in: ["support_phone", "support_telegram", "support_address"] },
+			key: {
+				in: [
+					"supportPhone",
+					"supportTelegram",
+					"supportAddress",
+					"supportEmail",
+				],
+			},
 		},
-
 		select: { key: true, value: true },
 	});
 
 	const map = Object.fromEntries(data.map((r) => [r.key, r.value]));
 
 	return {
-		phone: map.support_phone ?? SUPPORT_PHONE_DEFAULT,
-
-		telegram: map.support_telegram ?? SUPPORT_TELEGRAM_DEFAULT,
-
-		address: map.support_address ?? SUPPORT_ADDRESS_DEFAULT,
+		phone: map.supportPhone ?? SUPPORT_PHONE_DEFAULT,
+		telegram: map.supportTelegram ?? SUPPORT_TELEGRAM_DEFAULT,
+		address: map.supportAddress ?? SUPPORT_ADDRESS_DEFAULT,
+		email: map.supportEmail ?? SUPPORT_EMAIL_DEFAULT,
 	};
 }
 
@@ -124,6 +147,7 @@ export async function updateSupportInfoAction(
 			phone: "support_phone",
 			telegram: "support_telegram",
 			address: "support_address",
+			email: "support_email",
 		};
 
 		const promises = (Object.keys(patch) as (keyof SupportInfo)[])

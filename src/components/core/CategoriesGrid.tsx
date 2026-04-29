@@ -53,7 +53,6 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 								<div className="absolute inset-0 bg-linear-to-b from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 							)}
 							<div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-								{/* Если картинки нет, показываем иконку по центру */}
 								{!cat.imageUrl && (
 									<div className="mb-4 text-primary group-hover:scale-110 transition-transform text-4xl">
 										<IconComp weight="duotone" />

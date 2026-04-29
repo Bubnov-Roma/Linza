@@ -5,6 +5,8 @@ import { Button } from "@/components/ui";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 
 export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
+	if (popular.length === 0) return null;
+
 	return (
 		<section className="container mx-auto px-4 space-y-4">
 			<div className="flex items-center justify-between">
@@ -17,8 +19,7 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 					</Link>
 				</Button>
 			</div>
-			{/* Горизонтальный скролл на мобиле, сетка на десктопе */}
-			<div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar md:grid md:grid-cols-4 md:overflow-visible">
+			<div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar md:grid xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:overflow-visible">
 				{popular.map((item) => (
 					<div key={item.id} className="shrink-0 w-55 md:w-auto">
 						<EquipmentCard item={item} />

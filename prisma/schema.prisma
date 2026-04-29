@@ -160,10 +160,13 @@ model User {
   bookingLabels           BookingLabel[]          @relation("LabelAuthor")
   documentGenerationLogs  DocumentGenerationLog[] @relation("DocGenAuthor")
   documentTemplates       DocumentTemplate[]      @relation("TemplateCreator")
-  bookingPaymentsAuthored BookingPayment[]        @relation("PaymentAuthor")
-  auditLogsReceived       UserAuditLog[]          @relation("UserAuditTarget")
-  auditLogsAuthored       UserAuditLog[]          @relation("UserAuditAuthor")
-  bookingAdminNotes       BookingAdminNote[]      @relation("BookingNoteAuthor")
+  bookingPaymentsAuthored    BookingPayment[]          @relation("PaymentAuthor")
+  auditLogsReceived          UserAuditLog[]            @relation("UserAuditTarget")
+  auditLogsAuthored          UserAuditLog[]            @relation("UserAuditAuthor")
+  bookingAdminNotes          BookingAdminNote[]        @relation("BookingNoteAuthor")
+  studioBookings             StudioBooking[]
+  studioPaymentsAuthored     StudioBookingPayment[]    @relation("StudioPaymentAuthor")
+  studioAuditLogsAuthored    StudioBookingAuditLog[]   @relation("StudioAuditAuthor")
 }
 
 model UserAuditLog {
@@ -366,6 +369,9 @@ model Equipment {
   
   isAvailable      Boolean         @default(true)
   isPrimary        Boolean         @default(false)
+  isFeatured       Boolean         @default(false)
+  priceStudio      Float           @default(0)
+  studioAvailable  Boolean         @default(true)
   status           EquipmentStatus @default(AVAILABLE)
   inventoryNumber  String?
   defects          String?         @db.Text
@@ -389,6 +395,7 @@ model Equipment {
   cartItems           CartItem[]
   favorites           Favorite[]
   equipmentImageLinks EquipmentImageLink[]
+  studioBookingItems  StudioBookingItem[]
 }
 
 model EquipmentRelation {
@@ -625,4 +632,90 @@ model DocumentGenerationLog {
   booking          Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   template         DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   author           User?            @relation("DocGenAuthor", fields: [generatedBy], references: [id], onDelete: SetNull)
+}
+
+// ─── STUDIO ──────────────────────────────────────────────────────────────────
+
+// Тариф студии (база, интервью, хромакей и кастомные)
+model StudioTariff {
+  id          String   @id @default(uuid())
+  name        String                          // "База", "Интервью", "Хромакей"
+  description String?  @db.Text               // Описание тарифа
+  details     String?  @db.Text               // Детализация (что входит)
+  pricePerHour Float                          // Стоимость за час
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  imageUrls   Json     @default("[]")         // Массив URL фотографий
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  studioBookings StudioBooking[]
+}
+
+// Заказ аренды студии
+model StudioBooking {
+  id                 String        @id @default(uuid())
+  userId             String
+  tariffId           String
+  startDate          DateTime
+  endDate            DateTime
+  durationHours      Float                              // Расчётная длительность в часах
+  tariffPriceAtBooking Float                            // Цена тарифа на момент бронирования
+  totalAmount        Float                              // Итоговая сумма (тариф + техника)
+  status             BookingStatus @default(PENDING_REVIEW)
+  cancellationReason String?
+  cancelledAt        DateTime?
+  expiredAt          DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id])
+  tariff  StudioTariff @relation(fields: [tariffId], references: [id], onDelete: Restrict)
+
+  items       StudioBookingItem[]
+  auditLogs   StudioBookingAuditLog[]
+  payments    StudioBookingPayment[]
+}
+
+// Дополнительная техника в заказе студии
+model StudioBookingItem {
+  id                  String        @id @default(uuid())
+  studioBookingId     String
+  equipmentId         String
+  priceAtBooking      Float                              // priceStudio на момент бронирования
+
+  studioBooking StudioBooking @relation(fields: [studioBookingId], references: [id], onDelete: Cascade)
+  equipment     Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+}
+
+// Платежи по заказу студии (идентичны BookingPayment)
+model StudioBookingPayment {
+  id              String        @id @default(uuid())
+  studioBookingId String
+  authorId        String?
+  amount          Float
+  method          PaymentMethod @default(CASH)
+  note            String?       @db.Text
+  paidAt          DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  type            PaymentType   @default(PAYMENT)
+
+  studioBooking StudioBooking @relation(fields: [studioBookingId], references: [id], onDelete: Cascade)
+  author        User?         @relation("StudioPaymentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+model StudioBookingAuditLog {
+  id              String   @id @default(uuid())
+  studioBookingId String
+  authorId        String?
+  authorName      String?
+  action          String
+  fieldName       String?
+  valueBefore     String?  @db.Text
+  valueAfter      String?  @db.Text
+  meta            Json?
+  createdAt       DateTime @default(now())
+
+  studioBooking StudioBooking @relation(fields: [studioBookingId], references: [id], onDelete: Cascade)
+  author        User?         @relation("StudioAuditAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }

@@ -8,6 +8,7 @@ import {
 	updateSiteSettingsAction,
 } from "@/actions/admin-settings-actions";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
+import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 import {
 	Button,
 	Calendar,
@@ -28,12 +29,10 @@ export function SettingsClient({
 	const [formData, setFormData] = useState(initialSettings);
 	const [isSaving, setIsSaving] = useState(false);
 
-	// Конвертируем строки YYYY-MM-DD в Date объекты для календаря
 	const selectedDates = formData.disabledDates.map((d) => new Date(d));
 
 	const handleDatesChange = (dates: Date[] | undefined) => {
 		if (!dates) return;
-		// Сохраняем в ISO формате (срез YYYY-MM-DD)
 		const strings = dates.map((d) => {
 			const year = d.getFullYear();
 			const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -47,14 +46,7 @@ export function SettingsClient({
 		e.preventDefault();
 		setIsSaving(true);
 		try {
-			const result = await updateSiteSettingsAction({
-				phone: formData.phone,
-				telegram: formData.telegram,
-				address: formData.address,
-				workStart: Number(formData.workStart),
-				workEnd: Number(formData.workEnd),
-				disabledDates: formData.disabledDates,
-			});
+			const result = await updateSiteSettingsAction(formData);
 
 			if (result.success) {
 				toast.success("Настройки успешно обновлены");
@@ -75,7 +67,7 @@ export function SettingsClient({
 					Настройки
 				</h1>
 				<p className="text-muted-foreground mt-1 text-sm">
-					Глобальные параметры и график работы.
+					Глобальные параметры, контакты и юридические документы.
 				</p>
 			</div>
 
@@ -130,7 +122,7 @@ export function SettingsClient({
 						<CardHeader>
 							<CardTitle>Нерабочие дни</CardTitle>
 							<CardDescription>
-								Заблокированы для выдачи и возврата (праздники и т.д.)
+								Заблокированы для выдачи и возврата
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="flex flex-col items-center">
@@ -146,38 +138,76 @@ export function SettingsClient({
 				</div>
 
 				{/* Контакты */}
-				<Card>
+				<div className="space-y-6">
+					<Card>
+						<CardHeader>
+							<CardTitle>Контактная информация</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="space-y-2">
+								<Label>Email поддержки</Label>
+								<Input
+									type="email"
+									value={formData.supportEmail}
+									onChange={(e) =>
+										setFormData({ ...formData, supportEmail: e.target.value })
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>Телефон поддержки</Label>
+								<Input
+									value={formData.phone}
+									onChange={(e) =>
+										setFormData({ ...formData, phone: e.target.value })
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>Telegram (@username или ссылка)</Label>
+								<Input
+									value={formData.telegram}
+									onChange={(e) =>
+										setFormData({ ...formData, telegram: e.target.value })
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>Адрес самовывоза</Label>
+								<Input
+									value={formData.address}
+									onChange={(e) =>
+										setFormData({ ...formData, address: e.target.value })
+									}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+
+				{/* Юридические документы */}
+				<Card className="lg:col-span-2">
 					<CardHeader>
-						<CardTitle>Контактная информация</CardTitle>
+						<CardTitle>Юридические документы</CardTitle>
+						<CardDescription>Редактор в формате Markdown</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="space-y-2">
-							<Label>Телефон поддержки</Label>
-							<Input
-								value={formData.phone}
-								onChange={(e) =>
-									setFormData({ ...formData, phone: e.target.value })
-								}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label>Telegram (@username или ссылка)</Label>
-							<Input
-								value={formData.telegram}
-								onChange={(e) =>
-									setFormData({ ...formData, telegram: e.target.value })
-								}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label>Адрес самовывоза</Label>
-							<Input
-								value={formData.address}
-								onChange={(e) =>
-									setFormData({ ...formData, address: e.target.value })
-								}
-							/>
-						</div>
+					<CardContent className="space-y-6">
+						<MarkdownEditor
+							label="Политика конфиденциальности"
+							value={formData.privacyPolicy}
+							onChange={(val) =>
+								setFormData({ ...formData, privacyPolicy: val })
+							}
+							rows={12}
+						/>
+						<MarkdownEditor
+							label="Договор оферты (Terms of Service)"
+							value={formData.termsOfService}
+							onChange={(val) =>
+								setFormData({ ...formData, termsOfService: val })
+							}
+							rows={12}
+						/>
 					</CardContent>
 				</Card>
 

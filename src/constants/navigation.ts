@@ -4,15 +4,13 @@ import type { Icon } from "@phosphor-icons/react";
 import {
 	CameraIcon,
 	ChatsIcon,
-	FileTextIcon,
 	FolderIcon,
-	GearIcon,
 	HeartIcon,
 	HouseLineIcon,
-	LayoutIcon,
 	PackageIcon,
 	SquaresFourIcon,
 	UserIcon,
+	VideoIcon,
 } from "@phosphor-icons/react/dist/ssr";
 
 export type NavItem = {
@@ -24,49 +22,34 @@ export type NavItem = {
 
 export const ADMIN_NAV: NavItem[] = [
 	{
-		title: "Админ-панель",
-		href: "/admin",
-		icon: LayoutIcon,
-	},
-	{
 		title: "Клиенты",
 		href: "/admin/users",
 		icon: UserIcon,
-		badge: "156",
 	},
 	{
-		title: "Заказы",
+		title: "Аренда",
 		href: "/admin/bookings",
 		icon: PackageIcon,
-		badge: "18",
+	},
+	{
+		title: "Студия",
+		href: "/admin/studio",
+		icon: VideoIcon,
 	},
 	{
 		title: "Техника",
 		href: "/admin/equipment",
 		icon: CameraIcon,
-		badge: "42",
 	},
 	{
 		title: "Категории",
 		href: "/admin/categories",
 		icon: FolderIcon,
-		badge: "18",
 	},
 	{
-		title: "Отзывы",
+		title: "Чаты",
 		href: "/admin/reviews",
 		icon: ChatsIcon,
-		badge: "23",
-	},
-	{
-		title: "Документы",
-		href: "/admin/documents",
-		icon: FileTextIcon,
-	},
-	{
-		title: "Настройки",
-		href: "/admin/settings",
-		icon: GearIcon,
 	},
 ];
 

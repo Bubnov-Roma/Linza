@@ -1,6 +1,8 @@
 "use client";
 
 import {
+	FileTextIcon,
+	GearIcon,
 	HeartIcon,
 	LayoutIcon,
 	PackageIcon,
@@ -18,6 +20,7 @@ import {
 } from "@/components/ui";
 
 interface UserMenuDropdownProps {
+	isAdmin: boolean;
 	children: React.ReactNode;
 	align?: "start" | "center" | "end";
 	side?: "top" | "right" | "bottom" | "left";
@@ -25,6 +28,7 @@ interface UserMenuDropdownProps {
 }
 
 export function UserMenuDropdown({
+	isAdmin = false,
 	children,
 	align = "end",
 	side = "top",
@@ -42,34 +46,62 @@ export function UserMenuDropdown({
 				sideOffset={8}
 			>
 				<div className="flex flex-col gap-1">
-					<DropdownMenuItem
-						onClick={() => router.push("/dashboard")}
-						className="rounded-xl p-3 cursor-pointer"
-					>
-						<LayoutIcon className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Личный кабинет</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						onClick={() => router.push("/dashboard/bookings")}
-						className="rounded-xl p-3 cursor-pointer"
-					>
-						<PackageIcon className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Бронирования</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						onClick={() => router.push("/favorites")}
-						className="rounded-xl p-3 cursor-pointer"
-					>
-						<HeartIcon className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Избранное</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						onClick={() => router.push("/dashboard/profile")}
-						className="rounded-xl p-3 cursor-pointer"
-					>
-						<UserCircleIcon className="mr-3 h-5 w-5 text-muted-foreground" />
-						<span className="font-medium">Профиль</span>
-					</DropdownMenuItem>
+					{isAdmin ? (
+						<>
+							<DropdownMenuItem
+								onClick={() => router.push("/admin")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<LayoutIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span>Админ-панель</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/admin/documents")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<FileTextIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span>Документы</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/admin/settings")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<GearIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span>Настройки</span>
+							</DropdownMenuItem>
+						</>
+					) : (
+						<>
+							<DropdownMenuItem
+								onClick={() => router.push("/dashboard")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<LayoutIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span className="font-medium">Личный кабинет</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/dashboard/bookings")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<PackageIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span className="font-medium">Бронирования</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/favorites")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<HeartIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span className="font-medium">Избранное</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/dashboard/profile")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<UserCircleIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span className="font-medium">Профиль</span>
+							</DropdownMenuItem>
+						</>
+					)}
 				</div>
 
 				<div className="px-3 py-3 mt-1 hover:bg-foreground/10 rounded-xl">

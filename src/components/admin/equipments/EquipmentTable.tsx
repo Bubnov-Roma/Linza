@@ -1,6 +1,9 @@
 "use client";
 
 import {
+	ArrowLeftIcon,
+	ArrowRightIcon,
+	CameraIcon,
 	CaretDownIcon,
 	CaretUpDownIcon,
 	CaretUpIcon,
@@ -14,6 +17,7 @@ import {
 	PlusIcon,
 	SmileyXEyesIcon,
 	SortDescendingIcon,
+	SparkleIcon,
 	StarIcon,
 	TrashIcon,
 	UploadSimpleIcon,
@@ -33,6 +37,7 @@ import {
 	exportEquipment,
 	getEquipmentWithFilters,
 	toggleEquipmentAvailabilityAction,
+	toggleEquipmentFeaturedAction,
 	toggleEquipmentPrimaryAction,
 } from "@/actions/admin-equipment-actions";
 import { FilterBuilder } from "@/components/admin/equipments/FilterBuilder";
@@ -201,6 +206,56 @@ function PrimaryToggle({
 				{isPrimary
 					? "Убрать из каталога на сайте"
 					: "Показывать в каталоге на сайте"}
+			</TooltipContent>
+		</Tooltip>
+	);
+}
+
+function FeaturedToggle({
+	id,
+	isFeatured,
+	onRefresh,
+}: {
+	id: string;
+	isFeatured: boolean;
+	onRefresh: () => void;
+}) {
+	const [isPending, startTransition] = useTransition();
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					disabled={isPending}
+					onClick={(e) => {
+						e.stopPropagation();
+						startTransition(async () => {
+							const r = await toggleEquipmentFeaturedAction(id, !isFeatured);
+							if (r.success) {
+								toast.success(
+									isFeatured ? "Убрано из витрины" : "Добавлено на витрину"
+								);
+								onRefresh();
+							} else toast.error(r.error);
+						});
+					}}
+					className="p-1 rounded hover:bg-foreground/10 transition-colors disabled:opacity-50 shrink-0"
+				>
+					<SparkleIcon
+						weight={isFeatured ? "fill" : "regular"}
+						size={16}
+						className={
+							isFeatured
+								? "text-violet-400"
+								: "text-muted-foreground/30 hover:text-violet-400/50"
+						}
+					/>
+				</button>
+			</TooltipTrigger>
+			<TooltipContent className="text-xs">
+				{isFeatured
+					? "Убрать с витрины главной страницы"
+					: "Показать на витрине главной страницы"}
 			</TooltipContent>
 		</Tooltip>
 	);
@@ -453,55 +508,84 @@ export default function EquipmentTable() {
 	};
 
 	return (
-		<div className="w-full space-y-4 relative">
+		<div className="w-full space-y-2 relative">
 			{/* Header */}
-			<div className="flex gap-2 flex-col sm:flex-row items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-black italic uppercase tracking-tighter">
+			<div className="px-3 pt-6 border-b border-foreground/5 flex items-start justify-between gap-4">
+				<div className="flex items-center gap-2.5">
+					<CameraIcon size={20} className="text-primary" weight="duotone" />
+					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
 						Техника
 					</h1>
-					<p className="pl-2 text-sm text-muted-foreground">
-						Парк техники · {formatPlural(totalCount, "equipment")}
-					</p>
-				</div>
-				<div className="items-center gap-2 flex">
 					{selectedIds.size > 0 && (
-						<div className="ml-auto flex gap-2 w-full justify-center sm:w-auto">
-							<Button
-								variant="outline"
-								onClick={handleExport}
-								disabled={isPending}
-							>
-								<UploadSimpleIcon className="w-4 h-4 mr-1" />
-								<span className="hidden sm:inline">Экспорт</span> (
-								{selectedIds.size})
-							</Button>
-							<Button
-								variant="outline"
-								onClick={() => handleDelete()}
-								disabled={isPending}
-							>
-								<TrashIcon className="w-4 h-4 mr-1" />
-								<span className="hidden sm:inline">Удалить</span> (
-								{selectedIds.size})
-							</Button>
-							<Button
-								variant="outline"
-								onClick={() => handleDuplicate()}
-								disabled={isPending}
-							>
-								<CopySimpleIcon className="w-4 h-4 mr-1" />
-								<span className="hidden sm:inline">Копировать</span> (
-								{selectedIds.size})
-							</Button>
-						</div>
+						<Badge className="h-5 pl-2 pr-0 text-[10px] font-bold bg-primary text-primary-foreground">
+							<span>{formatPlural(selectedIds.size, "items")}</span>{" "}
+							<Tooltip>
+								<TooltipTrigger>
+									<Button
+										variant="ghost"
+										size="icon-xs"
+										onClick={() => handleDelete()}
+										disabled={isPending}
+										className="rounded-l-xs"
+									>
+										<TrashIcon className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Удалить</p>
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger>
+									<Button
+										variant="ghost"
+										size="icon-xs"
+										onClick={handleExport}
+										disabled={isPending}
+										className="rounded-xs"
+									>
+										<UploadSimpleIcon className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Экспортировать</p>
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger>
+									<Button
+										variant="ghost"
+										size="icon-xs"
+										onClick={() => handleDuplicate()}
+										disabled={isPending}
+										className="rounded-l-xs"
+									>
+										<CopySimpleIcon className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Копировать</p>
+								</TooltipContent>
+							</Tooltip>
+						</Badge>
 					)}
 				</div>
+
+				{/* Add button */}
+				<Button
+					onClick={() => setShowCreateSheet(true)}
+					variant="ghost"
+					size="sm"
+					className="sm:flex h-9 gap-2 font-bold"
+				>
+					<PlusIcon size={14} />
+					<span className="hidden sm:inline">Создать</span>
+				</Button>
 			</div>
 
 			{/* Toolbar Card */}
-			<Card>
-				<CardContent className="p-3 space-y-3">
+			<Card className="mx-3">
+				<CardContent className="px-0 space-y-3 justify-between">
 					<div className="flex flex-col lg:flex-row items-center gap-2 flex-wrap">
 						<div className="flex flex-col flex-1 w-full sm:max-w-sm">
 							<InputGroup className="relative flex-1 glass-input min-h-9">
@@ -516,9 +600,9 @@ export default function EquipmentTable() {
 								/>
 							</InputGroup>
 						</div>
-						<div className="flex gap-2 w-full sm:w-auto items-center flex-wrap">
+						<div className="flex gap-2 w-full sm:w-auto items-center flex-wrap justify-between">
 							{/* Filters */}
-							<div className="flex items-center gap-1 rounded-lg border border-foreground/10 bg-foreground/5 p-1 mx-auto">
+							<div className="flex items-center gap-1 rounded-lg border border-foreground/10 bg-foreground/5 p-1">
 								<Popover>
 									<PopoverTrigger asChild>
 										<Button
@@ -529,7 +613,8 @@ export default function EquipmentTable() {
 												filters.length > 0 && "border-primary"
 											)}
 										>
-											<FunnelSimpleIcon size={13} /> Фильтры
+											<FunnelSimpleIcon size={13} />{" "}
+											<span className="hidden md:inline">Фильтры</span>
 											{filters.length > 0 && (
 												<Badge
 													variant="outline"
@@ -541,7 +626,7 @@ export default function EquipmentTable() {
 										</Button>
 									</PopoverTrigger>
 									<PopoverContent
-										className="w-125 backdrop-blur-xl"
+										className="w-auto backdrop-blur-xl p-0"
 										align="start"
 									>
 										<FilterBuilder
@@ -561,7 +646,8 @@ export default function EquipmentTable() {
 												sorts.length > 0 && "border-primary"
 											)}
 										>
-											<SortDescendingIcon size={13} /> Сортировка
+											<SortDescendingIcon size={13} />{" "}
+											<span className="hidden md:inline">Сортировка</span>
 											{sorts.length > 0 && (
 												<Badge
 													variant="outline"
@@ -581,53 +667,6 @@ export default function EquipmentTable() {
 								</Popover>
 							</div>
 
-							{/* Quick: isPrimary sort */}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="outline"
-										size="sm"
-										className={cn(
-											"h-9 gap-1.5 text-xs",
-											sorts.some((s) => s.column === "isPrimary")
-												? "border-amber-400 text-primary-accent bg-secondary/30"
-												: "text-muted-foreground"
-										)}
-										onClick={() => {
-											const hasPrimarySort = sorts.some(
-												(s) => s.column === "isPrimary"
-											);
-											setSorts(
-												hasPrimarySort
-													? sorts.filter((s) => s.column !== "isPrimary")
-													: [
-															{ column: "isPrimary", ascending: false },
-															...sorts,
-														]
-											);
-										}}
-									>
-										<StarIcon
-											size={13}
-											weight={
-												sorts.some((s) => s.column === "isPrimary")
-													? "fill"
-													: "light"
-											}
-											className={cn(
-												sorts.some((s) => s.column === "isPrimary")
-													? "text-amber-400 fill-amber-400"
-													: "text-muted-foreground"
-											)}
-										/>
-										Основные
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent className="text-xs">
-									Показать позиции которые отображаются на сайте
-								</TooltipContent>
-							</Tooltip>
-
 							{/* View mode toggle */}
 							<div className="flex items-center gap-1 rounded-lg border border-foreground/10 bg-foreground/5 p-1">
 								<Tooltip>
@@ -643,7 +682,8 @@ export default function EquipmentTable() {
 													: "text-muted-foreground hover:text-foreground"
 											)}
 										>
-											<ColumnsIcon size={13} /> Сжатый
+											<ColumnsIcon size={13} />{" "}
+											<span className="hidden md:inline">Сжатый</span>
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent className="text-xs">
@@ -663,7 +703,8 @@ export default function EquipmentTable() {
 													: "text-muted-foreground hover:text-foreground"
 											)}
 										>
-											<ColumnsPlusRightIcon size={13} /> Полный
+											<ColumnsPlusRightIcon size={13} />{" "}
+											<span className="hidden md:inline">Полный</span>
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent className="text-xs">
@@ -671,55 +712,555 @@ export default function EquipmentTable() {
 									</TooltipContent>
 								</Tooltip>
 							</div>
+							<div className="flex items-center gap-2 rounded-lg">
+								{/* Quick: isPrimary sort */}
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="outline"
+											size="icon"
+											className={cn(
+												"h-9 gap-1.5 text-xs",
+												sorts.some((s) => s.column === "isPrimary")
+													? "border-amber-400 text-primary-accent bg-secondary/30"
+													: "text-muted-foreground"
+											)}
+											onClick={() => {
+												const hasPrimarySort = sorts.some(
+													(s) => s.column === "isPrimary"
+												);
+												setSorts(
+													hasPrimarySort
+														? sorts.filter((s) => s.column !== "isPrimary")
+														: [
+																{ column: "isPrimary", ascending: false },
+																...sorts,
+															]
+												);
+											}}
+										>
+											<StarIcon
+												size={13}
+												weight={
+													sorts.some((s) => s.column === "isPrimary")
+														? "fill"
+														: "light"
+												}
+												className={cn(
+													sorts.some((s) => s.column === "isPrimary")
+														? "text-amber-400 fill-amber-400"
+														: "text-muted-foreground"
+												)}
+											/>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent className="text-xs">
+										Отображаются на сайте
+									</TooltipContent>
+								</Tooltip>
 
-							{/* Add button */}
-							<Button
-								onClick={() => setShowCreateSheet(true)}
-								className="hidden sm:flex gap-2 h-9 rounded-xl shadow-lg shadow-primary/20 items-center"
+								{/* Quick: isFeatured filter */}
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="outline"
+											size="sm"
+											className={cn(
+												"h-9 gap-1.5 text-xs",
+												filters.some(
+													(f) => f.column === "isFeatured" && f.value === true
+												)
+													? "border-violet-400 text-violet-400 bg-secondary/30"
+													: "text-muted-foreground"
+											)}
+											onClick={() => {
+												const hasFilter = filters.some(
+													(f) => f.column === "isFeatured" && f.value === true
+												);
+												setFilters(
+													hasFilter
+														? filters.filter((f) => f.column !== "isFeatured")
+														: [
+																...filters,
+																{
+																	column:
+																		"isFeatured" as EquipmentFilter["column"],
+																	operator: "eq" as const,
+																	value: true,
+																},
+															]
+												);
+											}}
+										>
+											<SparkleIcon
+												size={13}
+												weight={
+													filters.some(
+														(f) => f.column === "isFeatured" && f.value === true
+													)
+														? "fill"
+														: "light"
+												}
+												className={cn(
+													filters.some(
+														(f) => f.column === "isFeatured" && f.value === true
+													)
+														? "text-violet-400"
+														: "text-muted-foreground"
+												)}
+											/>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent className="text-xs">
+										В "Популярном" на главной странице
+									</TooltipContent>
+								</Tooltip>
+							</div>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Summary strip */}
+			<div className="flex items-center gap-4 text-sm text-muted-foreground px-3 justify-between">
+				<span>
+					Найдено: <strong className="text-foreground">{totalCount}</strong>
+				</span>
+				{isFetching && !isLoading && (
+					<span className="text-primary-accent/60 flex items-center gap-1">
+						<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
+						Обновление...
+					</span>
+				)}
+				{selectedIds.size > 0 && (
+					<span className="text-primary font-medium">
+						Выбрано: {selectedIds.size}
+					</span>
+				)}
+
+				<div className="flex flex-1 flex-col sm:flex-row justify-between items-center pt-1 border-foreground/5 w-full">
+					{/* Active filter chips */}
+					{(filters.length > 0 || sorts.length > 0) && (
+						<div className="flex flex-wrap gap-1.5 items-center">
+							<span className="text-[10px] text-muted-foreground py-2">
+								Активные:
+							</span>
+							{filters.map((f, i) => (
+								<span
+									key={i}
+									className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-primary-accent text-[10px] font-medium border border-primary/50"
+								>
+									{f.column ?? "фильтр"}
+									<button
+										type="button"
+										onClick={() =>
+											setFilters(filters.filter((_, j) => j !== i))
+										}
+										className="hover:text-destructive/60 cursor-pointer"
+									>
+										<XIcon size={10} />
+									</button>
+								</span>
+							))}
+							<button
+								type="button"
+								onClick={() => {
+									setFilters([]);
+									setSorts([]);
+								}}
+								className="flex items-center border gap-1 pl-2 pr-1 py-0.5 rounded-full border-muted-foreground/50 text-[10px] text-muted-foreground hover:text-foreground hover:bg-destructive/5 cursor-pointer"
 							>
-								<PlusIcon size={16} />{" "}
-								<span className="hidden sm:inline">Добавить</span>
+								Сбросить все <TrashIcon size={10} />
+							</button>
+						</div>
+					)}
+				</div>
+
+				{totalPages > 1 && (
+					<div className="flex items-center gap-2 md:ml-auto w-auto">
+						<span className="text-xs text-muted-foreground hidden sm:inline">
+							Страница {page} из {totalPages}
+						</span>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={page === 1}
+								onClick={() => setPage((p) => p - 1)}
+							>
+								<span className="hidden md:inline">Назад</span>
+								<ArrowLeftIcon size={13} className="md:hidden" />
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={page >= totalPages}
+								onClick={() => setPage((p) => p + 1)}
+							>
+								<span className="hidden md:inline">Вперед</span>
+								<ArrowRightIcon size={13} className="md:hidden" />
 							</Button>
 						</div>
 					</div>
-					<div className="flex flex-col sm:flex-row justify-between items-center pt-1 border-t border-foreground/5 w-full">
-						{/* Active filter chips */}
-						{(filters.length > 0 || sorts.length > 0) && (
-							<div className="flex flex-wrap gap-1.5 items-center">
-								<span className="text-[10px] text-muted-foreground py-2">
-									Активные:
-								</span>
-								{filters.map((f, i) => (
-									<span
-										key={i}
-										className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-primary-accent text-[10px] font-medium border border-primary/50"
-									>
-										{f.column ?? "фильтр"}
-										<button
-											type="button"
-											onClick={() =>
-												setFilters(filters.filter((_, j) => j !== i))
-											}
-											className="hover:text-destructive/60 cursor-pointer"
-										>
-											<XIcon size={10} />
-										</button>
-									</span>
-								))}
-								<button
-									type="button"
-									onClick={() => {
-										setFilters([]);
-										setSorts([]);
-									}}
-									className="flex items-center border gap-1 pl-2 pr-1 py-0.5 rounded-full border-muted-foreground/50 text-[10px] text-muted-foreground hover:text-foreground hover:bg-destructive/5 cursor-pointer"
+				)}
+			</div>
+
+			{totalCount === 0 && !isPending && !isLoading ? (
+				<div className="flex flex-col w-full items-center justify-center space-y-4 py-8 text-center">
+					<SmileyXEyesIcon size={80} weight="fill" />
+					<p className="text-3xl">Нет результатов</p>
+					<p className="text-muted-foreground">
+						Попробуйте обновить поиск или сбросить фильтры
+					</p>
+				</div>
+			) : (
+				<div className="px-3">
+					<Card className="overflow-hidden relative">
+						{/* NpLoader (Top Loading Bar) */}
+						<div
+							className={cn(
+								"absolute top-0 left-0 w-full h-2 z-50 bg-primary/10 overflow-hidden transition-opacity duration-300",
+								isFetching ? "opacity-100" : "opacity-0"
+							)}
+						>
+							<div className="h-full bg-primary w-1/2 rounded-full animate-[pulse_1s_ease-in-out_infinite] origin-left" />
+						</div>
+
+						<div className="overflow-x-auto">
+							<Table className="w-full backdrop-blur-2xl rounded-xl overflow-hidden">
+								<TableHeader
+									className={cn(
+										"bg-muted-foreground/20 rounded-2xl",
+										isFetching &&
+											!isLoading &&
+											"opacity-80 transition-opacity duration-200"
+									)}
 								>
-									Сбросить все <TrashIcon size={10} />
-								</button>
-							</div>
-						)}
+									<TableRow className="font-black">
+										<TableHead className="w-10">
+											<Checkbox
+												checked={
+													items.length > 0 && selectedIds.size === items.length
+												}
+												onCheckedChange={(checked) => {
+													setSelectedIds(
+														checked
+															? new Set(items.map((i) => i.id))
+															: new Set()
+													);
+												}}
+											/>
+										</TableHead>
+										<TableHead className="w-12 text-amber-50" />
+										<TableHead
+											className="min-w-45 cursor-pointer select-none hover:text-foreground transition-colors"
+											onClick={() => handleHeaderSort("title")}
+										>
+											<span className="flex items-center gap-1">
+												Наименование
+												<SortIcon column="title" sorts={sorts} />
+											</span>
+										</TableHead>
+										<TableHead
+											className="min-w-27.5 cursor-pointer select-none hover:text-foreground transition-colors"
+											onClick={() => handleHeaderSort("categoryId")}
+										>
+											<span className="flex items-center gap-1">
+												Категория <SortIcon column="categoryId" sorts={sorts} />
+											</span>
+										</TableHead>
+										<TableHead className="min-w-30">Подкатегория</TableHead>
+										<TableHead
+											className="min-w-22.5 cursor-pointer select-none hover:text-foreground transition-colors"
+											onClick={() => handleHeaderSort("pricePerDay")}
+										>
+											<span className="flex items-center gap-1">
+												Цена/сут <SortIcon column="pricePerDay" sorts={sorts} />
+											</span>
+										</TableHead>
+										<TableHead
+											className="min-w-32 cursor-pointer select-none hover:text-foreground transition-colors"
+											onClick={() => handleHeaderSort("status")}
+										>
+											<span className="flex items-center gap-1">
+												Доступность <SortIcon column="status" sorts={sorts} />
+											</span>
+										</TableHead>
+										<TableHead
+											className="min-w-28 cursor-pointer select-none hover:text-foreground transition-colors"
+											onClick={() => handleHeaderSort("status")}
+										>
+											<span className="flex items-center gap-1">
+												Аренда <SortIcon column="status" sorts={sorts} />
+											</span>
+										</TableHead>
+
+										{viewMode === "extended" && (
+											<>
+												<TableHead className="min-w-24">4ч / 8ч</TableHead>
+												<TableHead
+													className="min-w-22 cursor-pointer select-none hover:text-foreground transition-colors"
+													onClick={() => handleHeaderSort("deposit")}
+												>
+													<span className="flex items-center gap-1">
+														Депозит <SortIcon column="deposit" sorts={sorts} />
+													</span>
+												</TableHead>
+												<TableHead
+													className="min-w-28 cursor-pointer select-none hover:text-foreground transition-colors"
+													onClick={() => handleHeaderSort("replacementValue")}
+												>
+													<span className="flex items-center gap-1">
+														Замена{" "}
+														<SortIcon column="replacementValue" sorts={sorts} />
+													</span>
+												</TableHead>
+												<TableHead className="min-w-24">Владение</TableHead>
+												<TableHead className="min-w-20">Инв. №</TableHead>
+											</>
+										)}
+										<TableHead className="w-12 text-right">Действия</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{isLoading
+										? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+												<TableRowSkeleton key={i} />
+											))
+										: items.map((item) => {
+												const siblings =
+													(
+														item as DbEquipmentWithImages & {
+															siblingCount?: number;
+														}
+													).siblingCount ?? 1;
+												const hasSiblings = siblings > 1;
+												const categoryName = getCategoryName(item.categoryId);
+												const subcategoryName = getSubcategoryName(
+													item.subcategoryId ?? ""
+												);
+
+												return (
+													<TableRow
+														key={item.id}
+														className={cn(
+															"group hover:bg-foreground/3 border-foreground/5 transition-colors cursor-pointer",
+															selectedIds.has(item.id) && "bg-primary/10"
+														)}
+														onClick={() => {
+															setActiveEquipment(item);
+														}}
+													>
+														<TableCell onClick={(e) => e.stopPropagation()}>
+															<Checkbox
+																checked={selectedIds.has(item.id)}
+																onCheckedChange={() => toggleSelect(item.id)}
+															/>
+														</TableCell>
+														<TableCell>
+															<div className="relative w-10 h-10 rounded overflow-hidden border border-white/10 bg-zinc-400/15 shrink-0">
+																<Image
+																	src={
+																		item.equipmentImageLinks?.[0]?.image?.url ??
+																		(
+																			item as unknown as {
+																				imageUrlFallback?: string;
+																			}
+																		).imageUrlFallback ??
+																		"/placeholder-equipment.png"
+																	}
+																	alt="placeholder"
+																	fill
+																	sizes="40px"
+																	className="object-cover"
+																/>
+															</div>
+														</TableCell>
+														<TableCell className="font-medium">
+															<div className="flex flex-col gap-0.5">
+																<div className="flex items-center gap-1.5">
+																	{/* Быстрый переключатель isPrimary */}
+																	<PrimaryToggle
+																		id={item.id}
+																		isPrimary={!!item.isPrimary}
+																		onRefresh={refreshData}
+																	/>
+																	{/* Витрина isFeatured */}
+																	<FeaturedToggle
+																		id={item.id}
+																		isFeatured={
+																			!!(
+																				item as unknown as {
+																					isFeatured?: boolean;
+																				}
+																			).isFeatured
+																		}
+																		onRefresh={refreshData}
+																	/>
+
+																	<span className="truncate max-w-50">
+																		{item.title}
+																	</span>
+																	{hasSiblings && (
+																		<Badge
+																			variant="secondary"
+																			className="h-4 py-0 px-1.5 text-[10px] shrink-0 text-muted-foreground"
+																		>
+																			×{siblings}
+																		</Badge>
+																	)}
+																</div>
+																{viewMode === "compact" && (
+																	<span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+																		{item.inventoryNumber}
+																	</span>
+																)}
+															</div>
+														</TableCell>
+														<TableCell>
+															{categoryName && (
+																<Badge
+																	variant="outline"
+																	className="bg-background text-[10px] font-normal"
+																>
+																	{categoryName}
+																</Badge>
+															)}
+														</TableCell>
+														<TableCell>
+															{subcategoryName && (
+																<Badge
+																	variant="outline"
+																	className="bg-background/50 text-[10px] font-normal border-white/10 text-muted-foreground"
+																>
+																	{subcategoryName}
+																</Badge>
+															)}
+														</TableCell>
+														<TableCell className="text-sm">
+															{item.pricePerDay} ₽
+														</TableCell>
+														<TableCell onClick={(e) => e.stopPropagation()}>
+															<AvailabilityToggle
+																id={item.id}
+																isAvailable={item.isAvailable}
+																status={item.status}
+																onRefresh={refreshData}
+															/>
+														</TableCell>
+														<TableCell>
+															{(() => {
+																const activeStatus = (
+																	item as unknown as {
+																		activeBookingStatus: string | null;
+																	}
+																).activeBookingStatus;
+																if (!activeStatus)
+																	return (
+																		<span className="text-xs text-muted-foreground/40">
+																			—
+																		</span>
+																	);
+																const cfg =
+																	BOOKING_STATUS_EQUIPMENT_LABELS[activeStatus];
+																if (!cfg) return null;
+																return (
+																	<span
+																		className={cn(
+																			"text-xs font-medium",
+																			cfg.color
+																		)}
+																	>
+																		{cfg.label}
+																	</span>
+																);
+															})()}
+														</TableCell>
+
+														{viewMode === "extended" && (
+															<>
+																<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+																	{item.price4h ? `${item.price4h} ₽` : "—"} /{" "}
+																	{item.price8h ? `${item.price8h} ₽` : "—"}
+																</TableCell>
+																<TableCell className="text-xs text-muted-foreground">
+																	{item.deposit ? `${item.deposit} ₽` : "—"}
+																</TableCell>
+																<TableCell className="text-xs text-muted-foreground">
+																	{item.replacementValue
+																		? `${item.replacementValue} ₽`
+																		: "—"}
+																</TableCell>
+																<TableCell>
+																	<Badge
+																		variant="outline"
+																		className={cn(
+																			"text-[10px] border-white/10",
+																			item.ownershipType === "SUBLEASE"
+																				? "text-violet-400"
+																				: "text-muted-foreground"
+																		)}
+																	>
+																		{item.ownershipType === "SUBLEASE"
+																			? "Субаренда"
+																			: "Своё"}
+																	</Badge>
+																</TableCell>
+																<TableCell className="text-[10px] text-muted-foreground font-mono">
+																	{item.inventoryNumber ?? "—"}
+																</TableCell>
+															</>
+														)}
+														<TableCell
+															className="text-right"
+															onClick={(e) => e.stopPropagation()}
+														>
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+																	>
+																		<DotsThreeVerticalIcon className="h-4 w-4" />
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent
+																	align="end"
+																	className="w-48 bg-white/20 border-white/10"
+																>
+																	<DropdownMenuItem
+																		onClick={() => setActiveEquipment(item)}
+																	>
+																		<PencilSimpleIcon className="w-4 h-4 mr-2" />{" "}
+																		Редактировать
+																	</DropdownMenuItem>
+																	<DropdownMenuItem
+																		onClick={() => handleDuplicate(item.id)}
+																	>
+																		<CopySimpleIcon className="w-4 h-4 mr-2" />{" "}
+																		Создать копию
+																	</DropdownMenuItem>
+																	<DropdownMenuSeparator className="bg-white/5" />
+																	<DropdownMenuItem
+																		className="text-red-500 focus:text-red-500"
+																		onClick={() => handleDelete(item.id)}
+																	>
+																		<TrashIcon className="w-4 h-4 mr-2" />{" "}
+																		Удалить
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</TableCell>
+													</TableRow>
+												);
+											})}
+								</TableBody>
+							</Table>
+						</div>
+
 						{totalPages > 1 && (
-							<div className="flex items-center gap-2 sm:ml-auto">
+							<div className="flex items-center justify-between px-4 py-3 bg-foreground/10 rounded-2xl border-foreground/5 mt-2">
 								<span className="text-xs text-muted-foreground">
 									Страница {page} из {totalPages}
 								</span>
@@ -743,393 +1284,8 @@ export default function EquipmentTable() {
 								</div>
 							</div>
 						)}
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* Summary strip */}
-			<div className="flex items-center gap-4 text-sm text-muted-foreground px-1">
-				<span>
-					Найдено позиций:{" "}
-					<strong className="text-foreground">{totalCount}</strong>
-				</span>
-				{isFetching && !isLoading && (
-					<span className="text-primary-accent/60 flex items-center gap-1">
-						<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
-						Обновление...
-					</span>
-				)}
-				{selectedIds.size > 0 && (
-					<span className="text-primary font-medium">
-						Выбрано: {selectedIds.size}
-					</span>
-				)}
-			</div>
-
-			{totalCount === 0 && !isPending && !isLoading ? (
-				<div className="flex flex-col w-full items-center justify-center space-y-4 py-8 text-center">
-					<SmileyXEyesIcon size={80} weight="fill" />
-					<p className="text-3xl">Нет результатов</p>
-					<p className="text-muted-foreground">
-						Попробуйте обновить поиск или сбросить фильтры
-					</p>
+					</Card>
 				</div>
-			) : (
-				<Card className="overflow-hidden relative">
-					{/* NpLoader (Top Loading Bar) */}
-					<div
-						className={cn(
-							"absolute top-0 left-0 w-full h-2 z-50 bg-primary/10 overflow-hidden transition-opacity duration-300",
-							isFetching ? "opacity-100" : "opacity-0"
-						)}
-					>
-						<div className="h-full bg-primary w-1/2 rounded-full animate-[pulse_1s_ease-in-out_infinite] origin-left" />
-					</div>
-
-					<div className="overflow-x-auto">
-						<Table className="w-full backdrop-blur-2xl rounded-xl overflow-hidden">
-							<TableHeader
-								className={cn(
-									"bg-muted-foreground/20 rounded-2xl",
-									isFetching &&
-										!isLoading &&
-										"opacity-80 transition-opacity duration-200"
-								)}
-							>
-								<TableRow className="font-black">
-									<TableHead className="w-10">
-										<Checkbox
-											checked={
-												items.length > 0 && selectedIds.size === items.length
-											}
-											onCheckedChange={(checked) => {
-												setSelectedIds(
-													checked ? new Set(items.map((i) => i.id)) : new Set()
-												);
-											}}
-										/>
-									</TableHead>
-									<TableHead className="w-12 text-amber-50" />
-									<TableHead
-										className="min-w-45 cursor-pointer select-none hover:text-foreground transition-colors"
-										onClick={() => handleHeaderSort("title")}
-									>
-										<span className="flex items-center gap-1">
-											Наименование
-											<SortIcon column="title" sorts={sorts} />
-										</span>
-									</TableHead>
-									<TableHead
-										className="min-w-27.5 cursor-pointer select-none hover:text-foreground transition-colors"
-										onClick={() => handleHeaderSort("categoryId")}
-									>
-										<span className="flex items-center gap-1">
-											Категория <SortIcon column="categoryId" sorts={sorts} />
-										</span>
-									</TableHead>
-									<TableHead className="min-w-30">Подкатегория</TableHead>
-									<TableHead
-										className="min-w-22.5 cursor-pointer select-none hover:text-foreground transition-colors"
-										onClick={() => handleHeaderSort("pricePerDay")}
-									>
-										<span className="flex items-center gap-1">
-											Цена/сут <SortIcon column="pricePerDay" sorts={sorts} />
-										</span>
-									</TableHead>
-									<TableHead
-										className="min-w-32 cursor-pointer select-none hover:text-foreground transition-colors"
-										onClick={() => handleHeaderSort("status")}
-									>
-										<span className="flex items-center gap-1">
-											Доступность <SortIcon column="status" sorts={sorts} />
-										</span>
-									</TableHead>
-									<TableHead
-										className="min-w-28 cursor-pointer select-none hover:text-foreground transition-colors"
-										onClick={() => handleHeaderSort("status")}
-									>
-										<span className="flex items-center gap-1">
-											Аренда <SortIcon column="status" sorts={sorts} />
-										</span>
-									</TableHead>
-
-									{viewMode === "extended" && (
-										<>
-											<TableHead className="min-w-24">4ч / 8ч</TableHead>
-											<TableHead
-												className="min-w-22 cursor-pointer select-none hover:text-foreground transition-colors"
-												onClick={() => handleHeaderSort("deposit")}
-											>
-												<span className="flex items-center gap-1">
-													Депозит <SortIcon column="deposit" sorts={sorts} />
-												</span>
-											</TableHead>
-											<TableHead
-												className="min-w-28 cursor-pointer select-none hover:text-foreground transition-colors"
-												onClick={() => handleHeaderSort("replacementValue")}
-											>
-												<span className="flex items-center gap-1">
-													Замена{" "}
-													<SortIcon column="replacementValue" sorts={sorts} />
-												</span>
-											</TableHead>
-											<TableHead className="min-w-24">Владение</TableHead>
-											<TableHead className="min-w-20">Инв. №</TableHead>
-										</>
-									)}
-									<TableHead className="w-12 text-right">Действия</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{isLoading
-									? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-											<TableRowSkeleton key={i} />
-										))
-									: items.map((item) => {
-											const siblings =
-												(
-													item as DbEquipmentWithImages & {
-														siblingCount?: number;
-													}
-												).siblingCount ?? 1;
-											const hasSiblings = siblings > 1;
-											const categoryName = getCategoryName(item.categoryId);
-											const subcategoryName = getSubcategoryName(
-												item.subcategoryId ?? ""
-											);
-
-											return (
-												<TableRow
-													key={item.id}
-													className={cn(
-														"group hover:bg-foreground/3 border-foreground/5 transition-colors cursor-pointer",
-														selectedIds.has(item.id) && "bg-primary/10"
-													)}
-													onClick={() => {
-														setActiveEquipment(item);
-													}}
-												>
-													<TableCell onClick={(e) => e.stopPropagation()}>
-														<Checkbox
-															checked={selectedIds.has(item.id)}
-															onCheckedChange={() => toggleSelect(item.id)}
-														/>
-													</TableCell>
-													<TableCell>
-														<div className="relative w-10 h-10 rounded overflow-hidden border border-white/10 bg-zinc-400/15 shrink-0">
-															<Image
-																src={
-																	item.equipmentImageLinks?.[0]?.image?.url ??
-																	(
-																		item as unknown as {
-																			imageUrlFallback?: string;
-																		}
-																	).imageUrlFallback ??
-																	"/placeholder-equipment.png"
-																}
-																alt="placeholder"
-																fill
-																sizes="40px"
-																className="object-cover"
-															/>
-														</div>
-													</TableCell>
-													<TableCell className="font-medium">
-														<div className="flex flex-col gap-0.5">
-															<div className="flex items-center gap-1.5">
-																{/* Быстрый переключатель isPrimary */}
-																<PrimaryToggle
-																	id={item.id}
-																	isPrimary={!!item.isPrimary}
-																	onRefresh={refreshData}
-																/>
-
-																<span className="truncate max-w-50">
-																	{item.title}
-																</span>
-																{hasSiblings && (
-																	<Badge
-																		variant="secondary"
-																		className="h-4 py-0 px-1.5 text-[10px] shrink-0 text-muted-foreground"
-																	>
-																		×{siblings}
-																	</Badge>
-																)}
-															</div>
-															{viewMode === "compact" && (
-																<span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-																	{item.inventoryNumber}
-																</span>
-															)}
-														</div>
-													</TableCell>
-													<TableCell>
-														{categoryName && (
-															<Badge
-																variant="outline"
-																className="bg-background text-[10px] font-normal"
-															>
-																{categoryName}
-															</Badge>
-														)}
-													</TableCell>
-													<TableCell>
-														{subcategoryName && (
-															<Badge
-																variant="outline"
-																className="bg-background/50 text-[10px] font-normal border-white/10 text-muted-foreground"
-															>
-																{subcategoryName}
-															</Badge>
-														)}
-													</TableCell>
-													<TableCell className="text-sm">
-														{item.pricePerDay} ₽
-													</TableCell>
-													<TableCell onClick={(e) => e.stopPropagation()}>
-														<AvailabilityToggle
-															id={item.id}
-															isAvailable={item.isAvailable}
-															status={item.status}
-															onRefresh={refreshData}
-														/>
-													</TableCell>
-													<TableCell>
-														{(() => {
-															const activeStatus = (
-																item as unknown as {
-																	activeBookingStatus: string | null;
-																}
-															).activeBookingStatus;
-															if (!activeStatus)
-																return (
-																	<span className="text-xs text-muted-foreground/40">
-																		—
-																	</span>
-																);
-															const cfg =
-																BOOKING_STATUS_EQUIPMENT_LABELS[activeStatus];
-															if (!cfg) return null;
-															return (
-																<span
-																	className={cn(
-																		"text-xs font-medium",
-																		cfg.color
-																	)}
-																>
-																	{cfg.label}
-																</span>
-															);
-														})()}
-													</TableCell>
-
-													{viewMode === "extended" && (
-														<>
-															<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-																{item.price4h ? `${item.price4h} ₽` : "—"} /{" "}
-																{item.price8h ? `${item.price8h} ₽` : "—"}
-															</TableCell>
-															<TableCell className="text-xs text-muted-foreground">
-																{item.deposit ? `${item.deposit} ₽` : "—"}
-															</TableCell>
-															<TableCell className="text-xs text-muted-foreground">
-																{item.replacementValue
-																	? `${item.replacementValue} ₽`
-																	: "—"}
-															</TableCell>
-															<TableCell>
-																<Badge
-																	variant="outline"
-																	className={cn(
-																		"text-[10px] border-white/10",
-																		item.ownershipType === "SUBLEASE"
-																			? "text-violet-400"
-																			: "text-muted-foreground"
-																	)}
-																>
-																	{item.ownershipType === "SUBLEASE"
-																		? "Субаренда"
-																		: "Своё"}
-																</Badge>
-															</TableCell>
-															<TableCell className="text-[10px] text-muted-foreground font-mono">
-																{item.inventoryNumber ?? "—"}
-															</TableCell>
-														</>
-													)}
-													<TableCell
-														className="text-right"
-														onClick={(e) => e.stopPropagation()}
-													>
-														<DropdownMenu>
-															<DropdownMenuTrigger asChild>
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-																>
-																	<DotsThreeVerticalIcon className="h-4 w-4" />
-																</Button>
-															</DropdownMenuTrigger>
-															<DropdownMenuContent
-																align="end"
-																className="w-48 bg-white/20 border-white/10"
-															>
-																<DropdownMenuItem
-																	onClick={() => setActiveEquipment(item)}
-																>
-																	<PencilSimpleIcon className="w-4 h-4 mr-2" />{" "}
-																	Редактировать
-																</DropdownMenuItem>
-																<DropdownMenuItem
-																	onClick={() => handleDuplicate(item.id)}
-																>
-																	<CopySimpleIcon className="w-4 h-4 mr-2" />{" "}
-																	Создать копию
-																</DropdownMenuItem>
-																<DropdownMenuSeparator className="bg-white/5" />
-																<DropdownMenuItem
-																	className="text-red-500 focus:text-red-500"
-																	onClick={() => handleDelete(item.id)}
-																>
-																	<TrashIcon className="w-4 h-4 mr-2" /> Удалить
-																</DropdownMenuItem>
-															</DropdownMenuContent>
-														</DropdownMenu>
-													</TableCell>
-												</TableRow>
-											);
-										})}
-							</TableBody>
-						</Table>
-					</div>
-
-					{totalPages > 1 && (
-						<div className="flex items-center justify-between px-4 py-3 bg-foreground/10 rounded-2xl border-foreground/5 mt-2">
-							<span className="text-xs text-muted-foreground">
-								Страница {page} из {totalPages}
-							</span>
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={page === 1}
-									onClick={() => setPage((p) => p - 1)}
-								>
-									Назад
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={page >= totalPages}
-									onClick={() => setPage((p) => p + 1)}
-								>
-									Вперед
-								</Button>
-							</div>
-						</div>
-					)}
-				</Card>
 			)}
 
 			{activeEquipment && (
@@ -1210,6 +1366,7 @@ export default function EquipmentTable() {
 					Добавить новую технику
 				</TooltipContent>
 			</Tooltip>
+
 			<EquipmentSheet
 				mode="create"
 				categories={categories}

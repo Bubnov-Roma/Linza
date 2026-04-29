@@ -19,7 +19,7 @@ function useDisplayName() {
 	return name;
 }
 
-export function UserMenu() {
+export function UserMenu({ isAdmin = false }: { isAdmin: boolean }) {
 	const { user, isLoading } = useAuth();
 	const userBtnRef = useRef<HTMLButtonElement>(null);
 	const { state, isMobile } = useSidebar();
@@ -117,7 +117,7 @@ export function UserMenu() {
 	);
 
 	return (
-		<UserMenuDropdown align="end">
+		<UserMenuDropdown align="end" isAdmin={isAdmin}>
 			<Button
 				ref={userBtnRef}
 				variant="ghost"

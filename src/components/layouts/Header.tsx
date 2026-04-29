@@ -1,9 +1,18 @@
 "use client";
 
 import {
+	AddressBookIcon,
+	EnvelopeSimpleIcon,
+	InfoIcon,
+	ListIcon,
 	MagnifyingGlassIcon,
+	MapPinIcon,
+	PhoneIcon,
+	QuestionIcon,
+	ScrollIcon,
 	ShoppingCartSimpleIcon,
 	SidebarSimpleIcon,
+	TelegramLogoIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -11,7 +20,23 @@ import { useRef, useState } from "react";
 import { useOnClickOutside } from "usehooks-ts";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
 import { Logo } from "@/components/icons/Logo";
-import { Button, useSidebar } from "@/components/ui";
+import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+	useSidebar,
+} from "@/components/ui";
+import type { SupportInfo } from "@/constants";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useSearchState } from "@/hooks";
 import { useSearchHistory } from "@/hooks/use-search-history";
@@ -20,10 +45,20 @@ import { useCartStore } from "@/store/use-cart.store";
 
 interface HeaderProps {
 	categories: DbCategory[];
+	isAdmin: boolean;
+	support: SupportInfo;
 }
 
-export function Header({ categories }: HeaderProps) {
+const STATIC_LINKS = [
+	{ href: "/about", label: "О сервисе", icon: InfoIcon },
+	{ href: "/rules", label: "Правила проката", icon: ScrollIcon },
+	{ href: "/faq", label: "Вопросы и ответы", icon: QuestionIcon },
+	{ href: "/contacts", label: "Контакты", icon: AddressBookIcon },
+];
+
+export function Header({ categories, support }: HeaderProps) {
 	const [isFocused, setIsFocused] = useState(false);
+	const [isMapMenuOpen, setIsMapMenuOpen] = useState(false);
 	const { state: searchState } = useSearchState();
 	const { addToHistory } = useSearchHistory();
 
@@ -33,7 +68,6 @@ export function Header({ categories }: HeaderProps) {
 
 	const { state: sidebarState, toggleSidebar, isMobile } = useSidebar();
 	const isCollapsed = sidebarState === "collapsed" && !isMobile;
-
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useOnClickOutside(containerRef as React.RefObject<HTMLDivElement>, () => {
@@ -48,6 +82,8 @@ export function Header({ categories }: HeaderProps) {
 		setIsFocused(false);
 	};
 
+	const encodedAddress = encodeURIComponent(support.address);
+
 	return (
 		<header
 			className={cn(
@@ -57,14 +93,128 @@ export function Header({ categories }: HeaderProps) {
 				"flex h-16 items-center justify-between gap-4 border-b border-foreground/5 bg-background/60 px-4 md:px-6 backdrop-blur-xl group"
 			)}
 		>
-			{/* ── Mobile: логотип слева (sidebar trigger убран — он в MobileNavBar) ── */}
-			<div className="md:hidden flex items-center">
-				<Link href="/" className="flex items-center gap-2">
-					<div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0">
-						<Logo className="h-5 w-auto text-primary-foreground pl-0.5" />
-					</div>
-					<span className="font-black tracking-tighter text-base">LINZA</span>
-				</Link>
+			{/* ── Mobile: Лого + Гамбургер меню ── */}
+			<div className="md:hidden flex items-center gap-3">
+				<Sheet>
+					<SheetTrigger asChild>
+						<Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+							<ListIcon size={24} className="text-foreground" />
+						</Button>
+					</SheetTrigger>
+					<SheetContent side="left" className="flex flex-col w-75 p-0">
+						<SheetHeader className="p-6 border-b border-foreground/5 text-left">
+							<SheetTitle className="flex items-center gap-2">
+								<div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0">
+									<Logo className="max-h-5 w-auto text-primary-foreground pl-0.5" />
+								</div>
+								<span className="font-black tracking-tighter text-lg">
+									LINZA
+								</span>
+							</SheetTitle>
+						</SheetHeader>
+
+						<div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+							{/* Меню ссылок */}
+							<nav className="flex flex-col space-y-2">
+								{STATIC_LINKS.map((link) => (
+									<Link
+										key={link.href}
+										href={link.href}
+										className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted-foreground/10 transition-colors font-medium"
+									>
+										<link.icon size={20} className="text-muted-foreground" />
+										{link.label}
+									</Link>
+								))}
+							</nav>
+
+							{/* Контакты */}
+							<div className="space-y-4 px-2">
+								<h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/50">
+									Связь с нами
+								</h4>
+								<div className="flex flex-col space-y-4 text-sm font-medium">
+									<a
+										href={`tel:${support.phone}`}
+										className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+									>
+										<PhoneIcon
+											size={18}
+											weight="fill"
+											className="text-primary"
+										/>
+										{support.phone}
+									</a>
+									<a
+										href={support.telegram}
+										target="_blank"
+										rel="noreferrer"
+										className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+									>
+										<TelegramLogoIcon
+											size={18}
+											weight="fill"
+											className="text-[#2AABEE]"
+										/>
+										Telegram
+									</a>
+									<a
+										href={`mailto:${support.email}`}
+										className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+									>
+										<EnvelopeSimpleIcon
+											size={18}
+											weight="fill"
+											className="text-muted-foreground"
+										/>
+										{support.email}
+									</a>
+
+									{/* Интерактивный адрес */}
+									<Collapsible
+										open={isMapMenuOpen}
+										onOpenChange={setIsMapMenuOpen}
+									>
+										<CollapsibleTrigger className="flex items-start gap-3 text-foreground hover:text-primary transition-colors text-left">
+											<MapPinIcon
+												size={18}
+												weight="fill"
+												className="text-red-500 shrink-0 mt-0.5"
+											/>
+											<span>{support.address}</span>
+										</CollapsibleTrigger>
+										<CollapsibleContent className="pt-3 pl-7 space-y-2">
+											<a
+												href={`https://yandex.ru/maps/?text=${encodedAddress}`}
+												target="_blank"
+												rel="noreferrer"
+												className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											>
+												📍 Открыть в Яндекс Картах
+											</a>
+											<a
+												href={`https://2gis.ru/search/${encodedAddress}`}
+												target="_blank"
+												rel="noreferrer"
+												className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											>
+												🏢 Открыть в 2GIS
+											</a>
+											<a
+												href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`}
+												target="_blank"
+												rel="noreferrer"
+												className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											>
+												🗺 Открыть в Google Maps
+											</a>
+										</CollapsibleContent>
+									</Collapsible>
+								</div>
+							</div>
+						</div>
+					</SheetContent>
+				</Sheet>
 			</div>
 
 			{/* ── Desktop: toggle кнопка когда sidebar свёрнут ── */}
@@ -72,16 +222,16 @@ export function Header({ categories }: HeaderProps) {
 				<Button
 					variant="ghost"
 					onClick={toggleSidebar}
-					className="items-center justify-center h-8 w-8 rounded-lg text-foreground transition-all duration-300 hover:scale-110 ml-2"
+					className="items-center justify-center h-8 w-8 rounded-lg text-foreground transition-all duration-300 hover:scale-110 ml-26"
 				>
 					<SidebarSimpleIcon size={16} />
 				</Button>
 			)}
 
-			{/* ── Desktop: поле поиска ── */}
+			{/* ── Desktop: поле поиска (гибкое, занимает всё доступное место) ── */}
 			<div
 				ref={containerRef}
-				className="relative w-full max-w-xl h-11 hidden md:block"
+				className="relative flex-1 max-w-xl h-11 hidden md:block ml-4"
 			>
 				<div
 					className={cn(
@@ -93,7 +243,7 @@ export function Header({ categories }: HeaderProps) {
 					)}
 				/>
 
-				<div className="relative z-10 flex flex-col">
+				<div className="relative z-5 flex flex-col">
 					<div className="flex items-center h-11 px-4">
 						<MagnifyingGlassIcon
 							className={cn(
@@ -140,19 +290,40 @@ export function Header({ categories }: HeaderProps) {
 				</div>
 			</div>
 
-			{/* ── Desktop: корзина ── */}
-			<div className="hidden md:flex items-center gap-2">
+			{/* ── Desktop: Ссылки и Корзина ── */}
+			<div className="hidden md:flex items-center gap-1">
+				<TooltipProvider delayDuration={150}>
+					{STATIC_LINKS.map((link) => (
+						<Tooltip key={link.href}>
+							<TooltipTrigger asChild>
+								<Link
+									href={link.href}
+									className="p-2.5 text-muted-foreground hover:bg-foreground/5 hover:text-foreground rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+								>
+									<link.icon size={20} weight="duotone" />
+								</Link>
+							</TooltipTrigger>
+							<TooltipContent side="bottom" className="text-xs font-bold">
+								{link.label}
+							</TooltipContent>
+						</Tooltip>
+					))}
+				</TooltipProvider>
+
+				<div className="w-px h-6 bg-foreground/10 mx-2" />
+
 				<Link
 					href="/checkout"
 					data-cart-icon
-					className="relative group/cart p-2 hover:bg-foreground/5 rounded-lg transition-colors"
+					className="relative group/cart p-2.5 hover:bg-primary/10 rounded-xl transition-colors"
 				>
 					<ShoppingCartSimpleIcon
-						size={20}
-						className="text-muted-foreground group-hover/cart:text-foreground transition-colors"
+						size={22}
+						weight="fill"
+						className="text-foreground group-hover/cart:text-primary transition-colors"
 					/>
 					{cartCount > 0 && (
-						<span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-in zoom-in">
+						<span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background animate-in zoom-in">
 							{cartCount}
 						</span>
 					)}

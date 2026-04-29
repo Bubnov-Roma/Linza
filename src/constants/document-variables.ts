@@ -48,7 +48,7 @@ export const TEMPLATE_VARIABLES: {
 	},
 	{
 		key: "equipmentListNumbered",
-		label: "Список техники (нумер.)",
+		label: "Список техники (номерами)",
 		example: "1. Камера Sony — 3 000 ₽\n2. Штатив — 500 ₽",
 	},
 	{ key: "equipmentCount", label: "Кол-во позиций техники", example: "3" },

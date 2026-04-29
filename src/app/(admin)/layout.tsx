@@ -25,5 +25,5 @@ export default async function AdminLayout({
 		redirect("/auth");
 	}
 
-	return <section className="p-6">{children}</section>;
+	return <>{children}</>;
 }

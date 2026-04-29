@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Banner } from "@/actions/admin-banner-actions";
-import { BannerCarousel } from "@/components/home/events-banner/BannerCarousel";
+import { BannerCarousel } from "@/components/layouts/home/events-banner/BannerCarousel";
 import { Button } from "@/components/ui";
 
 interface HeroSectionProps {

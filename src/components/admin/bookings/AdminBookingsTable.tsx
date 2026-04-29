@@ -8,6 +8,7 @@ import {
 	EyeIcon,
 	FunnelIcon,
 	MagnifyingGlassIcon,
+	PackageIcon,
 	PlusIcon,
 	ProhibitIcon,
 	UploadSimpleIcon,
@@ -531,462 +532,491 @@ export default function AdminBookingsTable({
 	}
 
 	const totalAmountSum = bookings.reduce((s, b) => s + b.totalAmount, 0);
+	const pendingCount = bookings.filter(
+		(b) => b.status === "PENDING_REVIEW"
+	).length;
 
 	return (
-		<div className="space-y-4 relative">
-			{/* Controls */}
-			<Card>
-				<CardContent className="p-3 space-y-3">
-					<div className="flex flex-col sm:flex-row gap-3">
-						{/* Search */}
-						<div className="relative flex-1">
-							<MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-							<Input
-								placeholder="Клиент, техника, ID, метка..."
-								className="pl-9 h-9"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
-							{search && (
+		<>
+			{/* ── Header ── */}
+			<div className="px-3 pt-6 border-b border-foreground/5 flex items-start justify-between gap-4">
+				<div className="flex items-center gap-2.5">
+					<PackageIcon size={20} className="text-primary" weight="duotone" />
+					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
+						Аренда
+					</h1>
+					{pendingCount > 0 && (
+						<Badge className="h-5 px-2 text-[10px] font-bold bg-primary text-primary-foreground">
+							{formatPlural(pendingCount, "new")}
+						</Badge>
+					)}
+				</div>
+
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-9 gap-2 font-bold"
+					onClick={() => setCreateOpen(true)}
+				>
+					<PlusIcon size={14} />
+					Создать
+				</Button>
+			</div>
+			<div className="p-3">
+				{/* Controls */}
+				<Card>
+					<CardContent className="space-y-3 p-0">
+						<div className="flex flex-col sm:flex-row gap-3">
+							{/* Search */}
+							<div className="relative flex-1">
+								<MagnifyingGlassIcon className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+								<Input
+									placeholder="Клиент, техника, ID, метка..."
+									className="pl-9 h-9"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+								{search && (
+									<button
+										type="button"
+										onClick={() => setSearch("")}
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+									>
+										<XIcon size={12} />
+									</button>
+								)}
+							</div>
+
+							{/* Status filter */}
+							<Select
+								value={statusFilter}
+								onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+							>
+								<SelectTrigger className="h-9 w-44">
+									<SelectValue placeholder="Все статусы" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">Все статусы</SelectItem>
+									{(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[]).map(
+										(s) => (
+											<SelectItem key={s} value={s}>
+												{BOOKING_STATUS_CONFIG[s].label}
+											</SelectItem>
+										)
+									)}
+								</SelectContent>
+							</Select>
+
+							{/* Payment filter */}
+							<Select
+								value={paymentFilter}
+								onValueChange={(v) =>
+									setPaymentFilter(v as typeof paymentFilter)
+								}
+							>
+								<SelectTrigger className="h-9 w-44">
+									<SelectValue placeholder="Все оплаты" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">Все оплаты</SelectItem>
+									{(
+										Object.entries(PAYMENT_STATUS_CONFIG) as [
+											PaymentStatus,
+											{ label: string },
+										][]
+									).map(([k, v]) => (
+										<SelectItem key={k} value={k}>
+											{v.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+
+							{/* Buttons */}
+							<div className="flex gap-2 shrink-0">
+								<Button
+									variant="outline"
+									size="sm"
+									className={cn(
+										"h-9 gap-2",
+										showFilters && "border-primary text-primary"
+									)}
+									onClick={() => setShowFilters(!showFilters)}
+								>
+									<FunnelIcon size={13} />
+									Ещё
+									{(dateFrom || dateTo) && (
+										<span className="w-4 h-4 rounded-full bg-primary text-white text-[9px] flex items-center justify-center">
+											{(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
+										</span>
+									)}
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									className="h-9 gap-2"
+									onClick={handleExport}
+								>
+									<UploadSimpleIcon size={13} />
+									CSV
+								</Button>
+							</div>
+						</div>
+
+						{/* Extended date filters */}
+						{showFilters && (
+							<div className="pt-2 border-t border-foreground/5 flex flex-wrap gap-3 items-end">
+								<div className="space-y-1">
+									<p className="text-xs text-muted-foreground font-medium">
+										Дата начала от
+									</p>
+									<Input
+										type="date"
+										className="h-8 text-xs w-36"
+										value={dateFrom}
+										onChange={(e) => setDateFrom(e.target.value)}
+									/>
+								</div>
+								<div className="space-y-1">
+									<p className="text-xs text-muted-foreground font-medium">
+										до
+									</p>
+									<Input
+										type="date"
+										className="h-8 text-xs w-36"
+										value={dateTo}
+										onChange={(e) => setDateTo(e.target.value)}
+									/>
+								</div>
+								{(dateFrom || dateTo) && (
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-8 text-xs text-muted-foreground gap-1"
+										onClick={() => {
+											setDateFrom("");
+											setDateTo("");
+										}}
+									>
+										<XIcon size={11} /> Сброс дат
+									</Button>
+								)}
+							</div>
+						)}
+
+						{/* Active filter chips */}
+						{activeFilters.length > 0 && (
+							<div className="flex flex-wrap gap-1.5 items-center pt-1">
+								<span className="text-[10px] text-muted-foreground">
+									Активные фильтры:
+								</span>
+								{activeFilters.map((f) => (
+									<ActiveFilterChip
+										key={f.label}
+										label={f.label}
+										onRemove={f.onRemove}
+									/>
+								))}
 								<button
 									type="button"
-									onClick={() => setSearch("")}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-								>
-									<XIcon size={12} />
-								</button>
-							)}
-						</div>
-
-						{/* Status filter */}
-						<Select
-							value={statusFilter}
-							onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
-						>
-							<SelectTrigger className="h-9 w-44">
-								<SelectValue placeholder="Все статусы" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Все статусы</SelectItem>
-								{(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[]).map(
-									(s) => (
-										<SelectItem key={s} value={s}>
-											{BOOKING_STATUS_CONFIG[s].label}
-										</SelectItem>
-									)
-								)}
-							</SelectContent>
-						</Select>
-
-						{/* Payment filter */}
-						<Select
-							value={paymentFilter}
-							onValueChange={(v) => setPaymentFilter(v as typeof paymentFilter)}
-						>
-							<SelectTrigger className="h-9 w-44">
-								<SelectValue placeholder="Все оплаты" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Все оплаты</SelectItem>
-								{(
-									Object.entries(PAYMENT_STATUS_CONFIG) as [
-										PaymentStatus,
-										{ label: string },
-									][]
-								).map(([k, v]) => (
-									<SelectItem key={k} value={k}>
-										{v.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-
-						{/* Buttons */}
-						<div className="flex gap-2 shrink-0">
-							<Button
-								variant="outline"
-								size="sm"
-								className={cn(
-									"h-9 gap-2",
-									showFilters && "border-primary text-primary"
-								)}
-								onClick={() => setShowFilters(!showFilters)}
-							>
-								<FunnelIcon size={13} />
-								Ещё
-								{(dateFrom || dateTo) && (
-									<span className="w-4 h-4 rounded-full bg-primary text-white text-[9px] flex items-center justify-center">
-										{(dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
-									</span>
-								)}
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-9 gap-2"
-								onClick={handleExport}
-							>
-								<UploadSimpleIcon size={13} />
-								CSV
-							</Button>
-							<Button
-								size="sm"
-								className="h-9 gap-2 font-bold"
-								onClick={() => setCreateOpen(true)}
-							>
-								<PlusIcon size={14} />
-								Новый заказ
-							</Button>
-						</div>
-					</div>
-
-					{/* Extended date filters */}
-					{showFilters && (
-						<div className="pt-2 border-t border-foreground/5 flex flex-wrap gap-3 items-end">
-							<div className="space-y-1">
-								<p className="text-xs text-muted-foreground font-medium">
-									Дата начала от
-								</p>
-								<Input
-									type="date"
-									className="h-8 text-xs w-36"
-									value={dateFrom}
-									onChange={(e) => setDateFrom(e.target.value)}
-								/>
-							</div>
-							<div className="space-y-1">
-								<p className="text-xs text-muted-foreground font-medium">до</p>
-								<Input
-									type="date"
-									className="h-8 text-xs w-36"
-									value={dateTo}
-									onChange={(e) => setDateTo(e.target.value)}
-								/>
-							</div>
-							{(dateFrom || dateTo) && (
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-8 text-xs text-muted-foreground gap-1"
 									onClick={() => {
+										setStatusFilter("all");
+										setPaymentFilter("all");
 										setDateFrom("");
 										setDateTo("");
 									}}
+									className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors ml-1"
 								>
-									<XIcon size={11} /> Сброс дат
-								</Button>
-							)}
-						</div>
-					)}
+									Сбросить все
+								</button>
+							</div>
+						)}
+					</CardContent>
+				</Card>
 
-					{/* Active filter chips */}
-					{activeFilters.length > 0 && (
-						<div className="flex flex-wrap gap-1.5 items-center pt-1">
-							<span className="text-[10px] text-muted-foreground">
-								Активные фильтры:
-							</span>
-							{activeFilters.map((f) => (
-								<ActiveFilterChip
-									key={f.label}
-									label={f.label}
-									onRemove={f.onRemove}
-								/>
-							))}
-							<button
-								type="button"
-								onClick={() => {
-									setStatusFilter("all");
-									setPaymentFilter("all");
-									setDateFrom("");
-									setDateTo("");
-								}}
-								className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors ml-1"
-							>
-								Сбросить все
-							</button>
-						</div>
-					)}
-				</CardContent>
-			</Card>
-
-			{/* Summary strip */}
-			<div className="flex items-center gap-4 text-sm text-muted-foreground px-1">
-				<span>
-					Найдено: <strong className="text-foreground">{totalCount}</strong>
-				</span>
-				{isFetching && !isLoading && (
-					<span className="text-primary-accent/60 flex items-center gap-1">
-						<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
-						Обновление...
+				{/* Summary strip */}
+				<div className="flex items-center gap-4 text-sm text-muted-foreground p-2">
+					<span>
+						Найдено: <strong className="text-foreground">{totalCount}</strong>
 					</span>
-				)}
-				<span className="ml-auto font-bold text-foreground">
-					{totalAmountSum.toLocaleString("ru-RU")} ₽
-				</span>
-			</div>
-
-			{/* Table */}
-			<Card className="overflow-hidden relative">
-				{/* NpLoader (Top Loading Bar) */}
-				<div
-					className={cn(
-						"absolute top-0 left-0 w-full h-2 z-50 bg-primary/10 overflow-hidden transition-opacity duration-300",
-						isFetching ? "opacity-100" : "opacity-0"
-					)}
-				>
-					<div className="h-full bg-primary w-1/2 rounded-full animate-[pulse_1s_ease-in-out_infinite] origin-left" />
-				</div>
-
-				<div className="overflow-x-auto">
-					<Table className="w-full backdrop-blur-2xl rounded-xl overflow-hidden">
-						<TableHeader
-							className={cn(
-								"bg-muted-foreground/20 rounded-2xl",
-								isFetching &&
-									!isLoading &&
-									"opacity-80 transition-opacity duration-200"
-							)}
-						>
-							<TableRow className="border-foreground/5 hover:bg-transparent font-black">
-								<TableHead
-									className="cursor-pointer select-none hover:text-foreground transition-colors"
-									onClick={() => handleSort("createdAt")}
-								>
-									<span className="flex items-center gap-1">
-										Дата{" "}
-										<SortIcon
-											field="createdAt"
-											active={sortField}
-											dir={sortDir}
-										/>
-									</span>
-								</TableHead>
-								<TableHead>Клиент</TableHead>
-								<TableHead>Техника</TableHead>
-								<TableHead
-									className="cursor-pointer select-none hover:text-foreground transition-colors"
-									onClick={() => handleSort("startDate")}
-								>
-									<span className="flex items-center gap-1">
-										Период{" "}
-										<SortIcon
-											field="startDate"
-											active={sortField}
-											dir={sortDir}
-										/>
-									</span>
-								</TableHead>
-								<TableHead
-									className="cursor-pointer select-none hover:text-foreground transition-colors"
-									onClick={() => handleSort("totalAmount")}
-								>
-									<span className="flex items-center gap-1">
-										Сумма{" "}
-										<SortIcon
-											field="totalAmount"
-											active={sortField}
-											dir={sortDir}
-										/>
-									</span>
-								</TableHead>
-								<TableHead>Оплата</TableHead>
-								<TableHead
-									className="cursor-pointer select-none hover:text-foreground transition-colors"
-									onClick={() => handleSort("status")}
-								>
-									<span className="flex items-center gap-1">
-										Статус{" "}
-										<SortIcon field="status" active={sortField} dir={sortDir} />
-									</span>
-								</TableHead>
-								<TableHead className="text-right">Действия</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{bookings.map((booking) => {
-								const createdDate = new Date(
-									booking.createdAt
-								).toLocaleDateString("ru-RU", {
-									day: "numeric",
-									month: "short",
-								});
-								const startDate = new Date(
-									booking.startDate
-								).toLocaleDateString("ru-RU", {
-									day: "numeric",
-									month: "short",
-								});
-								const endDate = new Date(booking.endDate).toLocaleDateString(
-									"ru-RU",
-									{ day: "numeric", month: "short" }
-								);
-
-								return (
-									<TableRow
-										key={booking.id}
-										className={cn(
-											"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
-											activeBooking?.id === booking.id &&
-												sheetOpen &&
-												"bg-foreground/7",
-											booking.status === "PENDING_REVIEW" &&
-												"bg-amber-500/7 border-l-2 border-l-amber-500/40",
-											booking.status === "WAIT_PAYMENT" &&
-												"bg-blue-500/7 border-l-2 border-l-blue-500/40",
-											booking.status === "READY_TO_RENT" &&
-												"bg-green-500/7 border-l-2 border-l-green-500/40",
-											booking.status === "ACTIVE" &&
-												"bg-emerald-500/7 border-l-2 border-l-emerald-500/40",
-											booking.status === "CANCELLED" && "opacity-60",
-											booking.status === "EXPIRED" && "opacity-50"
-										)}
-										onClick={() => openBooking(booking)}
-									>
-										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-											{createdDate}
-										</TableCell>
-										<TableCell>
-											<p className="text-sm font-medium truncate max-w-32">
-												{booking.clientName || "Без имени"}
-											</p>
-											<p className="text-[11px] text-muted-foreground truncate max-w-32">
-												{booking.clientEmail || "—"}
-											</p>
-										</TableCell>
-										<TableCell>
-											<EquipmentCell booking={booking} />
-										</TableCell>
-										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-											{startDate} — {endDate}
-										</TableCell>
-										<TableCell className="font-bold text-sm whitespace-nowrap">
-											{booking.totalAmount.toLocaleString("ru-RU")} ₽
-										</TableCell>
-										<TableCell onClick={(e) => e.stopPropagation()}>
-											<InlinePaymentChanger
-												bookingId={booking.id}
-												status={booking.paymentStatus ?? "UNPAID"}
-												onRefresh={refreshData}
-											/>
-										</TableCell>
-										<TableCell onClick={(e) => e.stopPropagation()}>
-											<InlineStatusChanger
-												bookingId={booking.id}
-												status={booking.status}
-												onRefresh={refreshData}
-											/>
-										</TableCell>
-										<TableCell
-											className="text-right"
-											onClick={(e) => e.stopPropagation()}
-										>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="h-8 w-8"
-													>
-														<DotsThreeVerticalIcon className="h-4 w-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem
-														onClick={() => openBooking(booking)}
-													>
-														<EyeIcon className="w-4 h-4 mr-2" /> Подробнее
-													</DropdownMenuItem>
-													{booking.status !== "CANCELLED" && (
-														<>
-															<DropdownMenuSeparator />
-															<DropdownMenuItem
-																className="text-red-500"
-																onClick={async () => {
-																	const r =
-																		await adminForceSetBookingStatusAction(
-																			booking.id,
-																			"CANCELLED"
-																		);
-																	if (r.success) {
-																		refreshData();
-																		toast.success("Заказ отменён");
-																	} else {
-																		toast.error(r.error ?? "Ошибка");
-																	}
-																}}
-															>
-																<ProhibitIcon className="w-4 h-4 mr-2" />
-																Отменить заказ
-															</DropdownMenuItem>
-														</>
-													)}
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</TableCell>
-									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
-				</div>
-				{bookings.length === 0 && !isLoading && (
-					<div className="text-center py-12 text-muted-foreground text-sm">
-						Бронирования не найдены
-					</div>
-				)}
-
-				{/* Pagination Footer */}
-				{totalPages > 1 && (
-					<div className="flex items-center justify-between px-4 py-3 border-t border-white/5 bg-foreground/5">
-						<span className="text-xs text-muted-foreground">
-							Страница {page} из {totalPages}
+					{isFetching && !isLoading && (
+						<span className="text-primary-accent/60 flex items-center gap-1">
+							<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
+							Обновление...
 						</span>
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={page === 1}
-								onClick={() => setPage((p) => p - 1)}
-							>
-								Назад
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={page >= totalPages}
-								onClick={() => setPage((p) => p + 1)}
-							>
-								Вперед
-							</Button>
-						</div>
+					)}
+					<span className="ml-auto font-bold text-foreground">
+						{totalAmountSum.toLocaleString("ru-RU")} ₽
+					</span>
+				</div>
+
+				{/* Table */}
+				<Card className="overflow-hidden relative">
+					{/* NpLoader (Top Loading Bar) */}
+					<div
+						className={cn(
+							"absolute top-0 left-0 w-full h-2 z-50 bg-primary/10 overflow-hidden transition-opacity duration-300",
+							isFetching ? "opacity-100" : "opacity-0"
+						)}
+					>
+						<div className="h-full bg-primary w-1/2 rounded-full animate-[pulse_1s_ease-in-out_infinite] origin-left" />
 					</div>
-				)}
-			</Card>
 
-			{/* Detail Sheet */}
-			<BookingDetailSheet
-				booking={activeBooking}
-				open={sheetOpen}
-				onOpenChange={(open) => {
-					setSheetOpen(open);
-					if (!open) {
-						setTimeout(() => setActiveBooking(null), 300);
-						refreshData(); // Рефреш при закрытии, чтобы обновить суммы, если они менялись внутри Sheet
-					}
-				}}
-				onStatusUpdate={() => refreshData()}
-				onBookingUpdate={(b) => setActiveBooking(b)}
-			/>
+					<div className="overflow-x-auto">
+						<Table className="w-full backdrop-blur-2xl rounded-xl overflow-hidden">
+							<TableHeader
+								className={cn(
+									"bg-muted-foreground/20 rounded-2xl",
+									isFetching &&
+										!isLoading &&
+										"opacity-80 transition-opacity duration-200"
+								)}
+							>
+								<TableRow className="border-foreground/5 hover:bg-transparent font-black">
+									<TableHead
+										className="cursor-pointer select-none hover:text-foreground transition-colors"
+										onClick={() => handleSort("createdAt")}
+									>
+										<span className="flex items-center gap-1">
+											Дата{" "}
+											<SortIcon
+												field="createdAt"
+												active={sortField}
+												dir={sortDir}
+											/>
+										</span>
+									</TableHead>
+									<TableHead>Клиент</TableHead>
+									<TableHead>Техника</TableHead>
+									<TableHead
+										className="cursor-pointer select-none hover:text-foreground transition-colors"
+										onClick={() => handleSort("startDate")}
+									>
+										<span className="flex items-center gap-1">
+											Период{" "}
+											<SortIcon
+												field="startDate"
+												active={sortField}
+												dir={sortDir}
+											/>
+										</span>
+									</TableHead>
+									<TableHead
+										className="cursor-pointer select-none hover:text-foreground transition-colors"
+										onClick={() => handleSort("totalAmount")}
+									>
+										<span className="flex items-center gap-1">
+											Сумма{" "}
+											<SortIcon
+												field="totalAmount"
+												active={sortField}
+												dir={sortDir}
+											/>
+										</span>
+									</TableHead>
+									<TableHead>Оплата</TableHead>
+									<TableHead
+										className="cursor-pointer select-none hover:text-foreground transition-colors"
+										onClick={() => handleSort("status")}
+									>
+										<span className="flex items-center gap-1">
+											Статус{" "}
+											<SortIcon
+												field="status"
+												active={sortField}
+												dir={sortDir}
+											/>
+										</span>
+									</TableHead>
+									<TableHead className="text-right">Действия</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{bookings.map((booking) => {
+									const createdDate = new Date(
+										booking.createdAt
+									).toLocaleDateString("ru-RU", {
+										day: "numeric",
+										month: "short",
+									});
+									const startDate = new Date(
+										booking.startDate
+									).toLocaleDateString("ru-RU", {
+										day: "numeric",
+										month: "short",
+									});
+									const endDate = new Date(booking.endDate).toLocaleDateString(
+										"ru-RU",
+										{ day: "numeric", month: "short" }
+									);
 
-			{/* Create Sheet */}
-			<CreateBookingSheet
-				open={createOpen}
-				onOpenChange={setCreateOpen}
-				onCreated={() => {
-					refreshData();
-					setCreateOpen(false);
-				}}
-			/>
-		</div>
+									return (
+										<TableRow
+											key={booking.id}
+											className={cn(
+												"border-foreground/5 cursor-pointer hover:bg-foreground/3 transition-colors",
+												activeBooking?.id === booking.id &&
+													sheetOpen &&
+													"bg-foreground/7",
+												booking.status === "PENDING_REVIEW" &&
+													"bg-amber-500/7 border-l-2 border-l-amber-500/40",
+												booking.status === "WAIT_PAYMENT" &&
+													"bg-blue-500/7 border-l-2 border-l-blue-500/40",
+												booking.status === "READY_TO_RENT" &&
+													"bg-green-500/7 border-l-2 border-l-green-500/40",
+												booking.status === "ACTIVE" &&
+													"bg-emerald-500/7 border-l-2 border-l-emerald-500/40",
+												booking.status === "CANCELLED" && "opacity-60",
+												booking.status === "EXPIRED" && "opacity-50"
+											)}
+											onClick={() => openBooking(booking)}
+										>
+											<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+												{createdDate}
+											</TableCell>
+											<TableCell>
+												<p className="text-sm font-medium truncate max-w-32">
+													{booking.clientName || "Без имени"}
+												</p>
+												<p className="text-[11px] text-muted-foreground truncate max-w-32">
+													{booking.clientEmail || "—"}
+												</p>
+											</TableCell>
+											<TableCell>
+												<EquipmentCell booking={booking} />
+											</TableCell>
+											<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+												{startDate} — {endDate}
+											</TableCell>
+											<TableCell className="font-bold text-sm whitespace-nowrap">
+												{booking.totalAmount.toLocaleString("ru-RU")} ₽
+											</TableCell>
+											<TableCell onClick={(e) => e.stopPropagation()}>
+												<InlinePaymentChanger
+													bookingId={booking.id}
+													status={booking.paymentStatus ?? "UNPAID"}
+													onRefresh={refreshData}
+												/>
+											</TableCell>
+											<TableCell onClick={(e) => e.stopPropagation()}>
+												<InlineStatusChanger
+													bookingId={booking.id}
+													status={booking.status}
+													onRefresh={refreshData}
+												/>
+											</TableCell>
+											<TableCell
+												className="text-right"
+												onClick={(e) => e.stopPropagation()}
+											>
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="h-8 w-8"
+														>
+															<DotsThreeVerticalIcon className="h-4 w-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuItem
+															onClick={() => openBooking(booking)}
+														>
+															<EyeIcon className="w-4 h-4 mr-2" /> Подробнее
+														</DropdownMenuItem>
+														{booking.status !== "CANCELLED" && (
+															<>
+																<DropdownMenuSeparator />
+																<DropdownMenuItem
+																	className="text-red-500"
+																	onClick={async () => {
+																		const r =
+																			await adminForceSetBookingStatusAction(
+																				booking.id,
+																				"CANCELLED"
+																			);
+																		if (r.success) {
+																			refreshData();
+																			toast.success("Заказ отменён");
+																		} else {
+																			toast.error(r.error ?? "Ошибка");
+																		}
+																	}}
+																>
+																	<ProhibitIcon className="w-4 h-4 mr-2" />
+																	Отменить заказ
+																</DropdownMenuItem>
+															</>
+														)}
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</TableCell>
+										</TableRow>
+									);
+								})}
+							</TableBody>
+						</Table>
+					</div>
+					{bookings.length === 0 && !isLoading && (
+						<div className="text-center py-12 text-muted-foreground text-sm">
+							Бронирования не найдены
+						</div>
+					)}
+
+					{/* Pagination Footer */}
+					{totalPages > 1 && (
+						<div className="flex items-center justify-between px-4 py-3 border-t border-white/5 bg-foreground/5">
+							<span className="text-xs text-muted-foreground">
+								Страница {page} из {totalPages}
+							</span>
+							<div className="flex gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={page === 1}
+									onClick={() => setPage((p) => p - 1)}
+								>
+									Назад
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={page >= totalPages}
+									onClick={() => setPage((p) => p + 1)}
+								>
+									Вперед
+								</Button>
+							</div>
+						</div>
+					)}
+				</Card>
+
+				{/* Detail Sheet */}
+				<BookingDetailSheet
+					booking={activeBooking}
+					open={sheetOpen}
+					onOpenChange={(open) => {
+						setSheetOpen(open);
+						if (!open) {
+							setTimeout(() => setActiveBooking(null), 300);
+							refreshData(); // Рефреш при закрытии, чтобы обновить суммы, если они менялись внутри Sheet
+						}
+					}}
+					onStatusUpdate={() => refreshData()}
+					onBookingUpdate={(b) => setActiveBooking(b)}
+				/>
+
+				{/* Create Sheet */}
+				<CreateBookingSheet
+					open={createOpen}
+					onOpenChange={setCreateOpen}
+					onCreated={() => {
+						refreshData();
+						setCreateOpen(false);
+					}}
+				/>
+			</div>
+		</>
 	);
 }

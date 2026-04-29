@@ -10,6 +10,7 @@ import { RootProvider } from "@/providers/root-provider";
 import "./globals.css";
 import type { Metadata } from "next";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
 import CookieBanner from "@/components/shared/CookieBanner";
 import { prisma } from "@/lib/prisma";
@@ -61,6 +62,7 @@ export default async function RootLayout({
 }) {
 	const session = await auth();
 	const user = session?.user;
+	const support = await getSupportInfo();
 
 	const [categories, initialApp] = await Promise.all([
 		getCategoriesFromDb(),
@@ -68,6 +70,9 @@ export default async function RootLayout({
 			? prisma.clientApplication.findFirst({ where: { userId: user.id } })
 			: Promise.resolve(null),
 	]);
+
+	let pendingBookings = 0;
+	let pendingApplications = 0;
 
 	const typedInitialApp: ClientApplication | null = initialApp
 		? {
@@ -77,6 +82,15 @@ export default async function RootLayout({
 		: null;
 
 	const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+	if (isAdmin) {
+		const [bookingCount, appCount] = await Promise.all([
+			prisma.booking.count({ where: { status: "PENDING_REVIEW" } }),
+			prisma.clientApplication.count({ where: { status: "PENDING" } }),
+		]);
+		pendingBookings = bookingCount;
+		pendingApplications = appCount;
+	}
 
 	return (
 		<html lang="ru" suppressHydrationWarning>
@@ -89,30 +103,27 @@ export default async function RootLayout({
 			<body suppressHydrationWarning>
 				<NextTopLoader color="#3b82f6" showSpinner={false} />
 				<RootProvider session={session}>
-					{user ? (
-						<ApplicationInitializer
-							userId={user.id}
-							initialData={typedInitialApp}
-						>
-							<AppSidebar isAdmin={isAdmin} categories={categories} />
-							<SidebarInset className="flex flex-col min-h-screen">
-								<Header categories={categories} />
-								<main className="flex-1 pt-16">{children}</main>
-								<Footer />
-								<MobileNavBar categories={categories} />
-							</SidebarInset>
-						</ApplicationInitializer>
-					) : (
-						<>
-							<AppSidebar isAdmin={false} categories={categories} />
-							<SidebarInset className="flex flex-col min-h-screen">
-								<Header categories={categories} />
-								<main className="flex-1 pt-16">{children}</main>
-								<Footer />
-								<MobileNavBar categories={categories} />
-							</SidebarInset>
-						</>
-					)}
+					<ApplicationInitializer
+						userId={session?.user?.id ?? null}
+						initialData={typedInitialApp}
+					>
+						<AppSidebar isAdmin={isAdmin} categories={categories} />
+						<SidebarInset className="flex flex-col min-h-screen">
+							<Header
+								categories={categories}
+								isAdmin={isAdmin}
+								support={support}
+							/>
+							<main className="flex-1 pt-16">{children}</main>
+							<Footer />
+							<MobileNavBar
+								categories={categories}
+								isAdmin={isAdmin}
+								pendingBookings={pendingBookings}
+								pendingApplications={pendingApplications}
+							/>
+						</SidebarInset>
+					</ApplicationInitializer>
 					<CookieBanner />
 				</RootProvider>
 				<SpeedInsights />

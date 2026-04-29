@@ -765,6 +765,7 @@ function CategorySubcategorySelector({
 // ─── EquipmentSheet (main) ────────────────────────────────────────────────────
 
 type EquipmentFormState = DbEquipment & {
+	isFeatured: boolean;
 	relatedIds: string[];
 	videoUrls: string[];
 };
@@ -775,6 +776,8 @@ function buildInitialForm(
 	return {
 		id: equipment?.id ?? "",
 		isPrimary: equipment?.isPrimary ?? false,
+		isFeatured:
+			(equipment as unknown as { isFeatured?: boolean })?.isFeatured ?? false,
 		kit: equipment?.kit ?? "",
 		specifications: equipment?.specifications ?? {},
 		title: equipment?.title ?? "",
@@ -783,6 +786,7 @@ function buildInitialForm(
 		subcategoryId: equipment?.subcategoryId ?? "",
 		inventoryNumber: equipment?.inventoryNumber ?? "",
 		pricePerDay: equipment?.pricePerDay ?? 0,
+		priceStudio: equipment?.priceStudio ?? 0,
 		price4h: equipment?.price4h ?? 0,
 		price8h: equipment?.price8h ?? 0,
 		deposit: equipment?.deposit ?? 0,
@@ -906,6 +910,9 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 					subcategory: formData.subcategoryId || null,
 					inventoryNumber: formData.inventoryNumber || undefined,
 					pricePerDay: Number(formData.pricePerDay),
+					priceStudio: formData.priceStudio
+						? Number(formData.priceStudio)
+						: undefined,
 					price4h: formData.price4h ? Number(formData.price4h) : undefined,
 					price8h: formData.price8h ? Number(formData.price8h) : undefined,
 					deposit: formData.deposit ? Number(formData.deposit) : undefined,
@@ -920,7 +927,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 					ownershipType: formData.ownershipType,
 					partnerName: formData.partnerName || undefined,
 					specifications: specs,
-					relatedIds: formData.relatedIds, // передаем связи при создании
+					relatedIds: formData.relatedIds,
 					videoUrls: formData.videoUrls ?? [],
 				};
 				const result = await createEquipmentAction(payload);
@@ -935,6 +942,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 			} else {
 				await updateEquipment(equipment.id, {
 					...formData,
+					isFeatured: formData.isFeatured,
 					ownershipType: formData.ownershipType,
 					status: formData.status as unknown as EquipmentStatus,
 					pricePerDay: Number(formData.pricePerDay) || 0,
@@ -1113,13 +1121,33 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 										className="w-4 h-4 rounded border-white/10 text-primary accent-primary"
 									/>
 									<div className="flex flex-col">
-										<span className="font-bold text-sm">
-											Показывать позицию в каталоге на сайте (isPrimary)
+										<span className="font-bold text-sm text-amber-500">
+											★ Показывать в каталоге на сайте
 										</span>
 										<span className="text-[11px] text-muted-foreground">
 											Если галочка не стоит, позиция будет доступна только
-											администраторам (например, как дубликат для учета
-											инвентаря)
+											администраторам
+										</span>
+									</div>
+								</Label>
+							</div>
+
+							{/* isFeatured Toggle */}
+							<div className="p-3 rounded-xl border border-violet-500/20 bg-violet-500/5">
+								<Label className="flex items-center gap-3 cursor-pointer">
+									<input
+										type="checkbox"
+										checked={formData.isFeatured}
+										onChange={(e) => set({ isFeatured: e.target.checked })}
+										className="w-4 h-4 rounded border-white/10 text-primary accent-violet-500"
+									/>
+									<div className="flex flex-col">
+										<span className="font-bold text-sm text-violet-300">
+											✦ Показывать на витрине главной страницы
+										</span>
+										<span className="text-[11px] text-muted-foreground">
+											Позиция будет отображаться в блоке «Популярное» на главной
+											странице сайта
 										</span>
 									</div>
 								</Label>
@@ -1295,7 +1323,8 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 											{[
 												{ label: "Цена 4ч", key: "price4h" as const },
 												{ label: "Цена 8ч", key: "price8h" as const },
-												{ label: "Цена/сутки *", key: "pricePerDay" as const },
+												{ label: "Цена сутки *", key: "pricePerDay" as const },
+												{ label: "Цена в студии", key: "priceStudio" as const },
 											].map(({ label, key }) => (
 												<div key={key} className="space-y-1.5">
 													<Label>{label}</Label>
@@ -1360,6 +1389,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 													</SelectContent>
 												</Select>
 											</div>
+											<div className="space-y-1.5"></div>
 										</div>
 									</div>
 								</div>
@@ -1423,62 +1453,6 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									)}
 								</div>
 							)}
-
-							{/* DEPOSIT / REPLACEMENT */}
-							{/* <div className="grid grid-cols-2 gap-4">
-								{[
-									{ label: "Депозит", key: "deposit" as const },
-									{
-										label: "Стоимость замены",
-										key: "replacementValue" as const,
-									},
-								].map(({ label, key }) => (
-									<div key={key} className="space-y-1.5">
-										<Label>{label}</Label>
-										<Input
-											type="number"
-											value={formData[key]}
-											onChange={(e) =>
-												set({
-													[key]:
-														e.target.value === "" ? "" : Number(e.target.value),
-												})
-											}
-										/>
-									</div>
-								))}
-							</div> */}
-
-							{/* COMMENTS */}
-							{/* <div className="space-y-1.5">
-								<Label className="flex items-center gap-2">
-									Комментарии для сотрудников
-									{comments.length > 0 && (
-										<span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-											{comments.length}
-										</span>
-									)}
-								</Label>
-								<CommentsBlock
-									comments={comments}
-									onAdd={(text) => {
-										const newComment: UserComment = {
-											id: crypto.randomUUID(),
-											text,
-											author: "admin",
-											createdAt: new Date().toISOString(),
-										};
-										const updated = [...comments, newComment];
-										setComments(updated);
-										markDirty();
-									}}
-									onRemove={(id) => {
-										const updated = comments.filter((c) => c.id !== id);
-										setComments(updated);
-										markDirty();
-									}}
-								/>
-							</div> */}
 						</div>
 					)}
 

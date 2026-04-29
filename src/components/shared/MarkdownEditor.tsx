@@ -223,14 +223,19 @@ export function MarkdownEditor({
 			<div className="flex items-center justify-between">
 				{label && <Label>{label}</Label>}
 				<div className="flex items-center gap-0.5 rounded-md border border-foreground/10 bg-foreground/10 p-0.5 ml-auto">
-					{(["write", "preview"] as const).map((t) => (
-						<Tooltip>
-							<TooltipTrigger>
+					{(["write", "preview"] as const).map((t: "write" | "preview", i) => (
+						<Tooltip key={`${t}` + `${i}`}>
+							<TooltipTrigger key={`${t}` + `${i}`}>
 								<Button
-									key={t}
+									asChild
+									key={`${t}` + `${i}`}
 									size="icon-xs"
 									variant="tab"
-									onClick={() => setTab(t)}
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										setTab(t);
+									}}
 									className={cn(
 										"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors hover:bg-muted-foreground/20",
 										tab === t

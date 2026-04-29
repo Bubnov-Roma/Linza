@@ -101,7 +101,7 @@ export default function AdminDocumentsPage() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-3xl font-black italic uppercase tracking-tight">
-						Шаблоны документов
+						Документы
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
 						Договоры, акты, счета · {templates.length} шаблонов
@@ -159,12 +159,12 @@ export default function AdminDocumentsPage() {
 							{TEMPLATE_VARIABLES.map((v) => (
 								<div
 									key={v.key}
-									className="flex items-start gap-2 p-2.5 rounded-lg bg-foreground/4 border border-foreground/8"
+									className="flex items-baseline justify-between gap-2 p-2.5 rounded-lg bg-foreground/15 border border-foreground/8"
 								>
-									<code className="text-[11px] font-mono text-primary shrink-0 mt-0.5 select-all">
+									<code className="text-xs px-1 font-mono text-primary-accent shrink-0 mt-0.5 select-all bg-background rounded">
 										{`{{${v.key}}}`}
 									</code>
-									<div className="min-w-0">
+									<div className="min-w-0 text-end">
 										<p className="text-xs font-medium">{v.label}</p>
 										<p className="text-[10px] text-muted-foreground truncate">
 											{v.example}

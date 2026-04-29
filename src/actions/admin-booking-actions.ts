@@ -634,6 +634,7 @@ export async function searchEquipmentAction(query: string): Promise<
 		pricePerDay: number;
 		price4h: number;
 		price8h: number;
+		priceStudio: number;
 		deposit: number;
 		replacementValue: number;
 	}[]
@@ -652,6 +653,7 @@ export async function searchEquipmentAction(query: string): Promise<
 				pricePerDay: true,
 				price4h: true,
 				price8h: true,
+				priceStudio: true,
 				deposit: true,
 				replacementValue: true,
 			},
@@ -673,6 +675,7 @@ export async function adminSaveCompleteBookingAction(
 	}
 ) {
 	try {
+		await requireAdmin();
 		await prisma.$transaction(async (tx) => {
 			await tx.booking.update({
 				where: { id: bookingId },
@@ -787,12 +790,17 @@ export async function adminDeleteBookingCommentAction(
 }
 
 export async function getAdminBookingCommentsAction(bookingId: string) {
-	const notes = await prisma.bookingAdminNote.findMany({
-		where: { bookingId },
-		include: { author: { select: { name: true } } },
-		orderBy: { createdAt: "desc" },
-	});
-	return { success: true, data: notes };
+	try {
+		await requireAdmin();
+		const notes = await prisma.bookingAdminNote.findMany({
+			where: { bookingId },
+			include: { author: { select: { name: true } } },
+			orderBy: { createdAt: "desc" },
+		});
+		return { success: true, data: notes };
+	} catch (e) {
+		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
+	}
 }
 
 export async function writeBookingAuditLog(
@@ -808,6 +816,7 @@ export async function writeBookingAuditLog(
 	}
 ) {
 	try {
+		await requireAdmin();
 		const model = prisma.userAuditLog;
 		if (!model) return;
 

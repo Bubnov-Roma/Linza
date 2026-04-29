@@ -65,6 +65,7 @@ interface EquipmentSearchResult {
 	pricePerDay: number;
 	price4h: number;
 	price8h: number;
+	priceStudio: number;
 	deposit: number;
 	replacementValue: number;
 }
@@ -79,6 +80,7 @@ interface DraftItem {
 	price4h: number;
 	price8h: number;
 	pricePerDay: number;
+	priceStudio: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -104,6 +106,7 @@ function calcDraftTotal(
 	return items.reduce((sum, item) => {
 		const price = calculateItemPrice(
 			{
+				priceStudio: item.priceStudio,
 				price4h: item.price4h,
 				price8h: item.price8h,
 				pricePerDay: item.pricePerDay,
@@ -129,6 +132,7 @@ function calcDraftTotal(
 				slug: "",
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				isFeatured: false,
 			},
 			hours
 		);
@@ -296,6 +300,7 @@ export function CreateBookingSheet({
 					replacementValuePerUnit: eq.replacementValue,
 					price4h: eq.price4h,
 					price8h: eq.price8h,
+					priceStudio: eq.priceStudio,
 					pricePerDay: eq.pricePerDay,
 				},
 			];
@@ -585,6 +590,7 @@ export function CreateBookingSheet({
 											price4h: item.price4h,
 											price8h: item.price8h,
 											pricePerDay: item.pricePerDay,
+											priceStudio: item.priceStudio,
 											id: "",
 											title: "",
 											description: null,
@@ -607,6 +613,7 @@ export function CreateBookingSheet({
 											slug: "",
 											createdAt: new Date(),
 											updatedAt: new Date(),
+											isFeatured: false,
 										},
 										hours
 									);

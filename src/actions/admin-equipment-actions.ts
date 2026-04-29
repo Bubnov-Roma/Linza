@@ -22,6 +22,7 @@ export type CreateEquipmentData = {
 	category: string;
 	subcategory?: string | null;
 	inventoryNumber?: string | undefined;
+	priceStudio?: number | undefined;
 	pricePerDay: number;
 	price4h?: number | undefined;
 	price8h?: number | undefined;
@@ -413,6 +414,26 @@ export async function toggleEquipmentPrimaryAction(
 	}
 }
 
+export async function toggleEquipmentFeaturedAction(
+	id: string,
+	isFeatured: boolean
+) {
+	try {
+		await prisma.equipment.update({
+			where: { id },
+			data: { isFeatured },
+		});
+		revalidatePath("/admin/equipment");
+		revalidatePath("/");
+		return { success: true };
+	} catch (e) {
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : "Ошибка обновления",
+		};
+	}
+}
+
 export async function updateEquipment(
 	id: string,
 	updates: Partial<DbEquipment>
@@ -685,7 +706,6 @@ export async function checkInventoryNumberUniqueAction(
 	return { isUnique: !found };
 }
 
-// TODO: используется на клиенте
 // ─── CATALOG FETCH (Cached) ─────────────────────────────────────────────────
 
 const fetchEquipmentCached = cache(
@@ -730,7 +750,20 @@ const fetchEquipmentCached = cache(
 	}
 );
 
-// TODO: используется на клиенте
+export async function getFeaturedEquipment(): Promise<GroupedEquipment[]> {
+	const data = await prisma.equipment.findMany({
+		where: { isFeatured: true, isAvailable: true },
+		include: {
+			equipmentImageLinks: {
+				include: { image: true },
+				orderBy: { orderIndex: "asc" },
+			},
+		},
+		orderBy: { updatedAt: "desc" },
+	});
+	return groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+}
+
 export async function getEquipment(filters: {
 	categorySlug?: string;
 	subcategorySlug?: string | undefined;
@@ -743,7 +776,6 @@ export async function getEquipment(filters: {
 	);
 }
 
-// TODO: используется на клиенте
 export async function getEquipmentBySlug(
 	slug: string
 ): Promise<GroupedEquipment | null> {

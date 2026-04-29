@@ -141,7 +141,7 @@ export async function Footer() {
 									<span className={footerLinkClass}>linzarental@yandex.ru</span>
 								</li>
 								<li className="flex items-start gap-3">
-									<MapPinIcon weight="duotone" size={20} className="shrink-0" />
+									<MapPinIcon weight="fill" size={20} className="shrink-0" />
 									<span className={footerLinkClass}>{support.address}</span>
 								</li>
 							</ul>

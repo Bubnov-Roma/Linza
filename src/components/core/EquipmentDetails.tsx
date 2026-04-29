@@ -165,8 +165,8 @@ function VideoReviews({ urls }: { urls: string[] }) {
 // ─── Info tabs ────────────────────────────────────────────────────────────────
 const INFO_TABS = [
 	{ id: "description", label: "Описание", icon: InfoIcon },
-	{ id: "specs", label: "Характеристики", icon: LightningIcon },
-	{ id: "kit", label: "Комплктация", icon: BriefcaseMetalIcon },
+	// { id: "specs", label: "Характеристики", icon: LightningIcon },
+	{ id: "kit", label: "Комплект", icon: BriefcaseMetalIcon },
 	{ id: "reviews", label: "Обзоры", icon: VideoIcon },
 ] as const;
 
@@ -443,23 +443,23 @@ export default function EquipmentDetails({
 		toast.success("Ссылка скопирована");
 	};
 
-	const specEntries = useMemo(() => {
-		const s = equipment.specifications;
-		if (!s || typeof s !== "object") return [];
-		return Object.entries(s as Record<string, string>).filter(
-			([k]) => k !== "description"
-		);
-	}, [equipment.specifications]);
+	// const specEntries = useMemo(() => {
+	// 	const s = equipment.specifications;
+	// 	if (!s || typeof s !== "object") return [];
+	// 	return Object.entries(s as Record<string, string>).filter(
+	// 		([k]) => k !== "description"
+	// 	);
+	// }, [equipment.specifications]);
 
-	const specDesc =
-		typeof (equipment.specifications as Record<string, string>)?.description ===
-		"string"
-			? (equipment.specifications as Record<string, string>).description
-			: null;
+	// const specDesc =
+	// 	typeof (equipment.specifications as Record<string, string>)?.description ===
+	// 	"string"
+	// 		? (equipment.specifications as Record<string, string>).description
+	// 		: null;
 
 	const visibleTabs = INFO_TABS.filter((tab) => {
 		if (tab.id === "description") return !!equipment.description;
-		if (tab.id === "specs") return specEntries.length > 0 || !!specDesc;
+		// if (tab.id === "specs") return specEntries.length > 0 || !!specDesc;
 		if (tab.id === "kit") return !!equipment.kit;
 		if (tab.id === "reviews") return equipment.videoUrls.length > 0;
 		return true;
@@ -617,20 +617,24 @@ export default function EquipmentDetails({
 							/>
 						</div>
 						<div className="hidden lg:block pt-4">
-							<div className="flex overflow-x-auto no-scrollbar border-b border-foreground/5 pb-0.5">
+							<div className="flex overflow-x-auto no-scrollbar pb-0.5">
 								{visibleTabs.map(({ id, label, icon: Icon }) => (
 									<button
 										key={id}
 										type="button"
 										onClick={() => setActiveInfoTab(id)}
 										className={cn(
-											"flex items-center gap-2 px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
+											"flex cursor-pointer items-center gap-2 px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
 											activeInfoTab === id
 												? "text-primary"
 												: "text-foreground/50 hover:text-foreground"
 										)}
 									>
-										<Icon size={16} /> {label}
+										<Icon
+											size={16}
+											weight={activeInfoTab === id ? "fill" : "regular"}
+										/>{" "}
+										{label}
 										{activeInfoTab === id && (
 											<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
 										)}
@@ -643,7 +647,7 @@ export default function EquipmentDetails({
 										<MD>{equipment.description}</MD>
 									</div>
 								)}
-								{activeInfoTab === "specs" &&
+								{/* {activeInfoTab === "specs" &&
 									(specEntries.length > 0 ? (
 										<dl className="divide-y divide-foreground/5 max-w-2xl">
 											{specEntries.map(([key, val]) => (
@@ -664,7 +668,7 @@ export default function EquipmentDetails({
 									<div className="max-w-3xl text-sm leading-relaxed">
 										<MD>{equipment.kit}</MD>
 									</div>
-								)}
+								)} */}
 								{activeInfoTab === "reviews" &&
 									equipment.videoUrls.length > 0 && (
 										<VideoReviews
@@ -817,20 +821,23 @@ export default function EquipmentDetails({
 				{/* ── Tabs (описание, характеристики, обзоры) — полная ширина ── */}
 				<div className="mt-8 px-0 sm:hidden">
 					{/* Навигация вкладок */}
-					<div className="flex overflow-x-auto no-scrollbar">
+					<div className="flex overflow-x-auto no-scrollbar justify-center">
 						{visibleTabs.map(({ id, label, icon: Icon }) => (
 							<button
 								key={id}
 								type="button"
 								onClick={() => setActiveInfoTab(id)}
 								className={cn(
-									"flex items-center gap-2 px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
+									"flex flex-1 items-center justify-center gap-2 px-2 md:px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
 									activeInfoTab === id
 										? "text-primary"
 										: "text-foreground/50 hover:text-foreground"
 								)}
 							>
-								<Icon size={14} />
+								<Icon
+									size={14}
+									weight={activeInfoTab === id ? "fill" : "regular"}
+								/>
 								{label}
 								{activeInfoTab === id && (
 									<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
@@ -846,7 +853,7 @@ export default function EquipmentDetails({
 								<MD>{equipment.description}</MD>
 							</div>
 						)}
-						{activeInfoTab === "specs" &&
+						{/* {activeInfoTab === "specs" &&
 							(specEntries.length > 0 ? (
 								<dl className="divide-y divide-foreground/5 max-w-2xl">
 									{specEntries.map(([key, val]) => (
@@ -867,7 +874,7 @@ export default function EquipmentDetails({
 							<VideoReviews
 								urls={(equipment.videoUrls as string[] | undefined) ?? []}
 							/>
-						)}
+						)} */}
 					</div>
 				</div>
 			</div>

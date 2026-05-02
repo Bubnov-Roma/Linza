@@ -37,7 +37,9 @@ export interface ClientStudioBookingRow {
 
 /**
  * Проверяет, свободна ли студия в заданный период.
- * Учитываются только активные брони (не отменённые, не истёкшие).
+ * Учитываются только брони со статусами WAIT_PAYMENT, READY_TO_RENT, ACTIVE.
+ * PENDING_REVIEW намеренно НЕ блокирует слот — это «ожидание проверки»,
+ * которое не гарантирует занятость.
  */
 export async function checkStudioAvailabilityAction(
 	startDate: Date,
@@ -46,9 +48,10 @@ export async function checkStudioAvailabilityAction(
 ): Promise<StudioAvailabilityResult> {
 	const conflict = await prisma.studioBooking.findFirst({
 		where: {
-			id: excludeBookingId ? { not: excludeBookingId } : "",
+			// Исправлен баг: пустая строка в where.id была некорректна
+			...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
 			status: {
-				in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
+				in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
 			},
 			// Перекрытие: существующая бронь начинается до конца нашей И заканчивается после начала нашей
 			startDate: { lt: endDate },
@@ -82,7 +85,7 @@ export async function getStudioBusyPeriodsAction(
 	const bookings = await prisma.studioBooking.findMany({
 		where: {
 			status: {
-				in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
+				in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
 			},
 			startDate: { lt: to },
 			endDate: { gt: from },
@@ -98,12 +101,15 @@ export async function getStudioBusyPeriodsAction(
 
 /**
  * Возвращает технику доступную для добавления к аренде студии.
- * Фильтр: isAvailable=true, studioAvailable=true, priceStudio > 0
- * и НЕ занятую в других активных заказах студии в указанный период.
+ * Фильтр: studioAvailable=true, priceStudio > 0
+ * isAvailable намеренно НЕ проверяется — студийная техника может сдаваться
+ * вне зависимости от статуса аренды основного оборудования.
+ * Проверяется только пересечение с другими студийными заказами в тот же период.
  */
 export async function getStudioAvailableEquipmentAction(
 	startDate: Date,
-	endDate: Date
+	endDate: Date,
+	excludeBookingId?: string
 ): Promise<
 	{
 		id: string;
@@ -117,8 +123,10 @@ export async function getStudioAvailableEquipmentAction(
 	const busyItems = await prisma.studioBookingItem.findMany({
 		where: {
 			studioBooking: {
+				// Исключаем текущий заказ при редактировании
+				...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
 				status: {
-					in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
+					in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
 				},
 				startDate: { lt: endDate },
 				endDate: { gt: startDate },
@@ -131,10 +139,9 @@ export async function getStudioAvailableEquipmentAction(
 
 	const equipments = await prisma.equipment.findMany({
 		where: {
-			isAvailable: true,
 			studioAvailable: true,
 			priceStudio: { gt: 0 },
-			id: busyIds.length > 0 ? { notIn: busyIds } : "",
+			...(busyIds.length > 0 ? { id: { notIn: busyIds } } : {}),
 		},
 		select: {
 			id: true,
@@ -148,6 +155,72 @@ export async function getStudioAvailableEquipmentAction(
 			},
 		},
 		orderBy: { title: "asc" },
+	});
+
+	return equipments.map((eq) => ({
+		id: eq.id,
+		title: eq.title,
+		priceStudio: eq.priceStudio,
+		imageUrl: eq.equipmentImageLinks[0]?.image.url ?? null,
+		categoryName: eq.category.name,
+	}));
+}
+
+/**
+ * Поиск студийной техники по названию (для добавления в существующий заказ).
+ * Возвращает только studioAvailable=true позиции.
+ */
+export async function searchStudioEquipmentAction(
+	query: string,
+	excludeBookingId?: string,
+	startDate?: Date,
+	endDate?: Date
+): Promise<
+	{
+		id: string;
+		title: string;
+		priceStudio: number;
+		imageUrl: string | null;
+		categoryName: string;
+	}[]
+> {
+	// Если переданы даты — проверяем занятость
+	let busyIds: string[] = [];
+	if (startDate && endDate) {
+		const busyItems = await prisma.studioBookingItem.findMany({
+			where: {
+				studioBooking: {
+					...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+					status: { in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"] },
+					startDate: { lt: endDate },
+					endDate: { gt: startDate },
+				},
+			},
+			select: { equipmentId: true },
+		});
+		busyIds = busyItems.map((i) => i.equipmentId);
+	}
+
+	const equipments = await prisma.equipment.findMany({
+		where: {
+			studioAvailable: true,
+			priceStudio: { gt: 0 },
+			title: { contains: query, mode: "insensitive" },
+			...(busyIds.length > 0 ? { id: { notIn: busyIds } } : {}),
+		},
+		select: {
+			id: true,
+			title: true,
+			priceStudio: true,
+			category: { select: { name: true } },
+			equipmentImageLinks: {
+				take: 1,
+				orderBy: { orderIndex: "asc" },
+				include: { image: { select: { url: true } } },
+			},
+		},
+		orderBy: { title: "asc" },
+		take: 20,
 	});
 
 	return equipments.map((eq) => ({
@@ -177,7 +250,7 @@ export async function submitStudioBookingAction(
 			return { success: false, error: "Минимальная аренда — 1 час" };
 		}
 
-		// Проверяем доступность
+		// Проверяем доступность (только WAIT_PAYMENT, READY_TO_RENT, ACTIVE блокируют)
 		const availability = await checkStudioAvailabilityAction(
 			input.startDate,
 			input.endDate
@@ -197,7 +270,7 @@ export async function submitStudioBookingAction(
 			return { success: false, error: "Тариф не найден или недоступен" };
 		}
 
-		// Техника
+		// Техника (только studioAvailable=true, isAvailable не проверяем)
 		let equipmentTotal = 0;
 		const equipmentItems: { equipmentId: string; priceAtBooking: number }[] =
 			[];
@@ -206,7 +279,6 @@ export async function submitStudioBookingAction(
 			const equipments = await prisma.equipment.findMany({
 				where: {
 					id: { in: input.equipmentIds },
-					isAvailable: true,
 					studioAvailable: true,
 				},
 				select: { id: true, priceStudio: true },
@@ -255,6 +327,69 @@ export async function submitStudioBookingAction(
 	} catch (e) {
 		console.error("submitStudioBookingAction:", e);
 		return { success: false, error: "Ошибка при создании заказа" };
+	}
+}
+
+// ─── Auto-expire overdue bookings ────────────────────────────────────────────
+
+/**
+ * Автоматически переводит просроченные заказы студии в статус EXPIRED.
+ * Затрагивает заказы в статусах PENDING_REVIEW, WAIT_PAYMENT, READY_TO_RENT
+ * у которых startDate уже прошёл.
+ * Вызывается из cron/route или вручную.
+ */
+export async function autoExpireStudioBookingsAction(): Promise<{
+	success: boolean;
+	expiredCount?: number;
+	error?: string;
+}> {
+	try {
+		const now = new Date();
+
+		const overdueBookings = await prisma.studioBooking.findMany({
+			where: {
+				status: { in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT"] },
+				startDate: { lt: now },
+			},
+			select: { id: true, status: true },
+		});
+
+		if (overdueBookings.length === 0) {
+			return { success: true, expiredCount: 0 };
+		}
+
+		const overdueIds = overdueBookings.map((b) => b.id);
+
+		await prisma.$transaction([
+			prisma.studioBooking.updateMany({
+				where: { id: { in: overdueIds } },
+				data: { status: "EXPIRED", expiredAt: now },
+			}),
+			// Создаём аудит-записи для каждого просроченного заказа
+			...overdueBookings.map((b) =>
+				prisma.studioBookingAuditLog.create({
+					data: {
+						studioBookingId: b.id,
+						authorId: null,
+						authorName: "Система",
+						action: "STATUS_CHANGED",
+						fieldName: "status",
+						valueBefore: b.status,
+						valueAfter: "EXPIRED",
+						meta: { auto: true, reason: "startDate прошёл" },
+					},
+				})
+			),
+		]);
+
+		revalidatePath("/admin/studio");
+		return { success: true, expiredCount: overdueIds.length };
+	} catch (e) {
+		console.error("autoExpireStudioBookingsAction:", e);
+		return {
+			success: false,
+			error: "Ошибка автоматического истечения заказов",
+		};
 	}
 }
 

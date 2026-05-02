@@ -13,9 +13,7 @@ interface ProfileViewClientProps {
 	userId?: string;
 }
 
-export const ProfileViewClient: React.FC<ProfileViewClientProps> = ({
-	support,
-}) => {
+export const ProfileViewClient = ({ support }: ProfileViewClientProps) => {
 	const applicationData = useApplicationStore((state) => state.applicationData);
 	const status = useApplicationStore((state) => state.status);
 

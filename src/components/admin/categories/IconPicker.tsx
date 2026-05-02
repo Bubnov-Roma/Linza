@@ -36,12 +36,12 @@ export function IconPicker({
 	}, [open]);
 
 	return (
-		<div className="relative" ref={ref}>
+		<div className="relative w-full" ref={ref}>
 			{/* Trigger */}
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}
-				className="flex items-center gap-2 h-9 px-3 rounded-xl border border-foreground/10 bg-foreground/5 text-sm hover:border-primary/40 transition-colors"
+				className="flex flex-1 items-center gap-2 h-9 px-3 rounded-xl border border-foreground/10 bg-foreground/5 text-sm hover:border-primary/40 transition-colors w-full cursor-pointer"
 			>
 				<SelectedIcon
 					size={16}

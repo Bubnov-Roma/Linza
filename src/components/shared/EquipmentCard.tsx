@@ -34,7 +34,7 @@ export function EquipmentCard({
 }: EquipmentCardProps) {
 	const [isCopied, setIsCopied] = useState(false);
 	const imageRef = useRef<HTMLDivElement>(null);
-	const slug = slugify(item.title);
+	const slug = item.slug || slugify(item.title);
 	const isFav = variant === "favorites";
 
 	const { isFavorite, toggle: toggleFavorite } = useFavorite(item.id);

@@ -342,9 +342,9 @@ export default function UsersTable({
 	return (
 		<>
 			{/* ── Header ── */}
-			<div className="px-3 pt-6 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
 				<div className="flex items-center gap-2.5">
-					<UserIcon size={20} className="text-primary" weight="duotone" />
+					<UserIcon size={20} weight="duotone" />
 					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
 						Клиенты
 					</h1>
@@ -361,15 +361,14 @@ export default function UsersTable({
 					className="h-9 gap-2 font-bold"
 					onClick={() => setCreateOpen(true)}
 				>
-					<PlusIcon size={14} />
-					Создать
+					<PlusIcon size={14} weight="bold" />
 				</Button>
 			</div>
 
-			<div className="p-3">
+			<div className="space-y-4 relative p-2">
 				{/* Controls */}
-				<Card>
-					<CardContent className="p-0 space-y-3">
+				<Card className="p-2">
+					<CardContent className="p-0">
 						<div className="flex flex-col sm:flex-row gap-3">
 							{/* Search */}
 							<div className="relative flex-1">
@@ -569,7 +568,7 @@ export default function UsersTable({
 				</Card>
 
 				{/* Summary strip */}
-				<div className="flex items-center gap-4 text-sm text-muted-foreground p-2">
+				<div className="flex items-center gap-4 text-sm text-muted-foreground">
 					<span>
 						Найдено: <strong className="text-foreground">{totalCount}</strong>
 					</span>

@@ -3,11 +3,6 @@
 import { SidebarSimpleIcon, SquaresFourIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	getPendingApplicationsCountAction,
-	getPendingCount,
-} from "@/actions/client-booking-actions";
 import { Logo } from "@/components/icons/Logo";
 import { CategoryNavItem } from "@/components/layouts/AppSidebar/CategoryNavItem";
 import { menuBtnClass } from "@/components/layouts/AppSidebar/menuBtnClass";
@@ -28,28 +23,14 @@ import {
 import { ADMIN_NAV } from "@/constants/navigation";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
+import { useAdminNotificationsStore } from "@/store";
 
 interface Props {
 	isAdmin: boolean;
 	categories: DbCategory[];
-	initialPendingBookings?: number;
-	initialPendingApplications?: number;
 }
 
-export function AppSidebarClient({
-	isAdmin,
-	categories,
-	initialPendingBookings = 0,
-	initialPendingApplications = 0,
-}: Props) {
-	const [pendingBookings, setPendingBookings] = useState(
-		initialPendingBookings
-	);
-	const [pendingApps, setPendingApps] = useState(initialPendingApplications);
-	const prevBookingsRef = useRef(initialPendingBookings);
-	const prevAppsRef = useRef(initialPendingApplications);
-	const isFirstRunRef = useRef(true);
-
+export function AppSidebarClient({ isAdmin, categories }: Props) {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const currentCategory = searchParams.get("category");
@@ -60,64 +41,9 @@ export function AppSidebarClient({
 	const { state, isMobile, toggleSidebar } = useSidebar();
 	const isCollapsed = state === "collapsed" && !isMobile;
 
-	const playSound = useCallback(() => {
-		try {
-			const ctx = new (
-				window.AudioContext ||
-				(window as unknown as { webkitAudioContext: typeof AudioContext })
-					.webkitAudioContext
-			)();
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.connect(gain);
-			gain.connect(ctx.destination);
-			osc.frequency.value = 880;
-			osc.type = "sine";
-			gain.gain.setValueAtTime(0.3, ctx.currentTime);
-			gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-			osc.start(ctx.currentTime);
-			osc.stop(ctx.currentTime + 0.4);
-		} catch {
-			/* AudioContext недоступен */
-		}
-	}, []);
-
-	useEffect(() => {
-		if (!isAdmin) return;
-
-		async function poll() {
-			const [bCount, appResult] = await Promise.all([
-				getPendingCount(),
-				getPendingApplicationsCountAction(),
-			]);
-			const aCount = appResult.count;
-
-			if (isFirstRunRef.current) {
-				prevBookingsRef.current = bCount;
-				prevAppsRef.current = aCount;
-				setPendingBookings(bCount);
-				setPendingApps(aCount);
-				isFirstRunRef.current = false;
-				return;
-			}
-
-			if (bCount > prevBookingsRef.current) {
-				playSound();
-			}
-			if (aCount > prevAppsRef.current) {
-				playSound();
-			}
-
-			prevBookingsRef.current = bCount;
-			prevAppsRef.current = aCount;
-			setPendingBookings(bCount);
-			setPendingApps(aCount);
-		}
-
-		poll(); // сразу
-		const id = setInterval(poll, 15_000);
-		return () => clearInterval(id);
-	}, [isAdmin, playSound]);
+	const pendingBookings = useAdminNotificationsStore((s) => s.pendingBookings);
+	const pendingApps = useAdminNotificationsStore((s) => s.pendingApps);
+	const pendingStudio = useAdminNotificationsStore((s) => s.pendingStudio);
 
 	return (
 		<>
@@ -271,6 +197,10 @@ export function AppSidebarClient({
 											: undefined;
 									if (href === "/admin/users")
 										return pendingApps > 0 ? String(pendingApps) : undefined;
+									if (href === "/admin/studio")
+										return pendingStudio > 0
+											? String(pendingStudio)
+											: undefined;
 									return undefined;
 								};
 								return (

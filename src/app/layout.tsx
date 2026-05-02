@@ -12,7 +12,9 @@ import type { Metadata } from "next";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
+import { AdminNotificationsPoller } from "@/components/shared";
 import CookieBanner from "@/components/shared/CookieBanner";
+import { YandexMetrika } from "@/components/shared/YandexMetrika";
 import { prisma } from "@/lib/prisma";
 import type { ClientFormValues } from "@/schemas";
 import type { ClientApplication } from "@/types";
@@ -73,6 +75,7 @@ export default async function RootLayout({
 
 	let pendingBookings = 0;
 	let pendingApplications = 0;
+	let pendingStudio = 0;
 
 	const typedInitialApp: ClientApplication | null = initialApp
 		? {
@@ -84,14 +87,15 @@ export default async function RootLayout({
 	const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
 	if (isAdmin) {
-		const [bookingCount, appCount] = await Promise.all([
+		const [bookingCount, appCount, studioCount] = await Promise.all([
 			prisma.booking.count({ where: { status: "PENDING_REVIEW" } }),
 			prisma.clientApplication.count({ where: { status: "PENDING" } }),
+			prisma.studioBooking.count({ where: { status: "PENDING_REVIEW" } }), // Пример
 		]);
 		pendingBookings = bookingCount;
 		pendingApplications = appCount;
+		pendingStudio = studioCount;
 	}
-
 	return (
 		<html lang="ru" suppressHydrationWarning>
 			<head>
@@ -103,6 +107,13 @@ export default async function RootLayout({
 			<body suppressHydrationWarning>
 				<NextTopLoader color="#3b82f6" showSpinner={false} />
 				<RootProvider session={session}>
+					{isAdmin && (
+						<AdminNotificationsPoller
+							initialBookings={pendingBookings}
+							initialApps={pendingApplications}
+							initialStudio={pendingStudio}
+						/>
+					)}
 					<ApplicationInitializer
 						userId={session?.user?.id ?? null}
 						initialData={typedInitialApp}
@@ -115,18 +126,14 @@ export default async function RootLayout({
 								support={support}
 							/>
 							<main className="flex-1 pt-16">{children}</main>
-							<Footer />
-							<MobileNavBar
-								categories={categories}
-								isAdmin={isAdmin}
-								pendingBookings={pendingBookings}
-								pendingApplications={pendingApplications}
-							/>
+							<Footer support={support} />
+							<MobileNavBar categories={categories} isAdmin={isAdmin} />
 						</SidebarInset>
 					</ApplicationInitializer>
 					<CookieBanner />
 				</RootProvider>
 				<SpeedInsights />
+				<YandexMetrika />
 			</body>
 		</html>
 	);

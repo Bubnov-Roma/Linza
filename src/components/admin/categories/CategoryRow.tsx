@@ -139,7 +139,7 @@ export function CategoryRow({
 
 	return (
 		<Card
-			className="card-surface rounded-2xl border overflow-hidden"
+			className="card-surface rounded-2xl border overflow-hidden px-2 hover:shadow-md transition-shadow group"
 			draggable
 			onDragStart={dragHandleProps.onDragStart}
 			onDragOver={dragHandleProps.onDragOver}

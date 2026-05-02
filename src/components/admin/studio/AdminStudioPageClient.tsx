@@ -47,15 +47,15 @@ export function AdminStudioPageClient({
 	return (
 		<div className="flex flex-col h-full min-h-0">
 			{/* ── Header ── */}
-			<div className="px-6 pt-6 pb-4 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
 				<div>
 					<div className="flex items-center gap-2.5">
-						<VideoIcon size={20} className="text-primary" weight="duotone" />
+						<VideoIcon size={20} weight="duotone" />
 						<h1 className="text-2xl font-black italic uppercase tracking-tighter">
 							Студия
 						</h1>
 						{pendingCount > 0 && (
-							<Badge className="h-5 px-2 text-[10px] font-bold bg-primary text-primary-foreground animate-pulse">
+							<Badge className="h-5 px-2 text-[10px] font-bold bg-primary text-primary-foreground">
 								{pendingCount} новых
 							</Badge>
 						)}
@@ -70,7 +70,7 @@ export function AdminStudioPageClient({
 					asChild
 				>
 					<a href="/studio" target="_blank" rel="noopener noreferrer">
-						Страница студии ↗
+						Страница студии
 					</a>
 				</Button>
 			</div>
@@ -85,11 +85,11 @@ export function AdminStudioPageClient({
 						className={cn(
 							"flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
 							activeTab === id
-								? "text-primary"
-								: "text-foreground/50 hover:text-foreground"
+								? "text-foreground"
+								: "text-foreground/50 hover:text-foreground/80"
 						)}
 					>
-						<Icon size={15} />
+						<Icon size={15} weight={activeTab === id ? "fill" : "regular"} />
 						{label}
 						{id === "bookings" && pendingCount > 0 && (
 							<span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground px-1">
@@ -97,7 +97,7 @@ export function AdminStudioPageClient({
 							</span>
 						)}
 						{activeTab === id && (
-							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground rounded-t-full" />
 						)}
 					</button>
 				))}
@@ -106,7 +106,7 @@ export function AdminStudioPageClient({
 			{/* ── Tab content ── */}
 			<div className="flex-1 min-h-0 overflow-auto">
 				{activeTab === "bookings" && (
-					<div className="p-2 xs:p-6">
+					<div className="p-2">
 						<StudioBookingTable tariffs={tariffs} isAdmin={isAdmin} />
 					</div>
 				)}

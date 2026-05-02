@@ -27,7 +27,7 @@ export const ADMIN_NAV: NavItem[] = [
 		icon: UserIcon,
 	},
 	{
-		title: "Аренда",
+		title: "Заказы",
 		href: "/admin/bookings",
 		icon: PackageIcon,
 	},

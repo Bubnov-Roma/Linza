@@ -24,7 +24,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
 			<div className="absolute top-0 right-0 left-0 inset-0 bg-linear-to-bl from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0" />
 			<div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent pointer-events-none z-0" />
 			{/* 3. Контентная часть (z-10, чтобы быть выше шума) */}
-			<div className="relative flex flex-col h-full rounded-2xl p-2">
+			<div className="relative flex flex-col h-full rounded-2xl">
 				{props.children}
 			</div>
 		</div>

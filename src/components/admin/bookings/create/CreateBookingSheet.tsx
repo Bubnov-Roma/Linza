@@ -47,7 +47,12 @@ import type {
 	AdminBookingRow,
 	BookingStatus,
 } from "@/core/domain/entities/Booking";
-import { calculateItemPrice, cn, combineDateAndTime } from "@/lib/utils";
+import {
+	calculateItemPrice,
+	cn,
+	combineDateAndTime,
+	fmtRub,
+} from "@/lib/utils";
 import { useSiteSettingsStore } from "@/store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -86,10 +91,6 @@ interface DraftItem {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const ALL_STATUSES = Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[];
-
-function fmtRub(n: number) {
-	return `${n.toLocaleString("ru-RU")} ₽`;
-}
 
 function calcDraftTotal(
 	items: DraftItem[],

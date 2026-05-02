@@ -205,7 +205,13 @@ export default function CheckoutPage() {
 	};
 
 	// ── Success screen ─────────────────────────────────────────────────────
-	if (bookingId) return <BookingSuccessScreen bookingId={bookingId} />;
+	if (bookingId)
+		return (
+			<BookingSuccessScreen
+				bookingId={bookingId}
+				redirectUrl={`/dashboard/bookings/${bookingId}`}
+			/>
+		);
 	if (!hydrated) return <CheckoutSkeleton />;
 	if (items.length === 0) {
 		return (

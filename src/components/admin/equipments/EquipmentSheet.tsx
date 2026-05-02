@@ -768,6 +768,7 @@ type EquipmentFormState = DbEquipment & {
 	isFeatured: boolean;
 	relatedIds: string[];
 	videoUrls: string[];
+	studioAvailable: boolean;
 };
 
 function buildInitialForm(
@@ -778,6 +779,9 @@ function buildInitialForm(
 		isPrimary: equipment?.isPrimary ?? false,
 		isFeatured:
 			(equipment as unknown as { isFeatured?: boolean })?.isFeatured ?? false,
+		studioAvailable:
+			(equipment as unknown as { studioAvailable?: boolean })
+				?.studioAvailable ?? true,
 		kit: equipment?.kit ?? "",
 		specifications: equipment?.specifications ?? {},
 		title: equipment?.title ?? "",
@@ -1110,48 +1114,73 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									редактирование
 								</div>
 							)}
-
-							{/* isPrimary Toggle */}
-							<div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-								<Label className="flex items-center gap-3 cursor-pointer">
-									<input
-										type="checkbox"
-										checked={formData.isPrimary}
-										onChange={(e) => set({ isPrimary: e.target.checked })}
-										className="w-4 h-4 rounded border-white/10 text-primary accent-primary"
-									/>
-									<div className="flex flex-col">
-										<span className="font-bold text-sm text-amber-500">
-											★ Показывать в каталоге на сайте
-										</span>
-										<span className="text-[11px] text-muted-foreground">
-											Если галочка не стоит, позиция будет доступна только
-											администраторам
-										</span>
+							{formData.isAvailable ? (
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-baseline">
+									{/* isPrimary Toggle */}
+									<div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+										<Label className="flex items-center gap-3 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={formData.isPrimary}
+												onChange={(e) => set({ isPrimary: e.target.checked })}
+												className="w-4 h-4 rounded border-white/10 text-primary accent-primary"
+											/>
+											<div className="flex flex-col">
+												<span
+													className={cn(
+														"font-bold text-sm",
+														formData.isPrimary && "text-amber-500"
+													)}
+												>
+													{isPrimary
+														? "★ Основной экземпляр"
+														: "Дополнительный экземпляр"}
+												</span>
+												<span className="text-[11px] text-muted-foreground">
+													{isPrimary
+														? "На сайте как основной экземпляр"
+														: "На сайте при аренде нескольких штук"}
+												</span>
+											</div>
+										</Label>
 									</div>
-								</Label>
-							</div>
 
-							{/* isFeatured Toggle */}
-							<div className="p-3 rounded-xl border border-violet-500/20 bg-violet-500/5">
-								<Label className="flex items-center gap-3 cursor-pointer">
-									<input
-										type="checkbox"
-										checked={formData.isFeatured}
-										onChange={(e) => set({ isFeatured: e.target.checked })}
-										className="w-4 h-4 rounded border-white/10 text-primary accent-violet-500"
-									/>
-									<div className="flex flex-col">
-										<span className="font-bold text-sm text-violet-300">
-											✦ Показывать на витрине главной страницы
-										</span>
-										<span className="text-[11px] text-muted-foreground">
-											Позиция будет отображаться в блоке «Популярное» на главной
-											странице сайта
-										</span>
+									{/* isFeatured Toggle */}
+									<div className="p-3 rounded-xl border border-violet-500/20 bg-violet-500/5">
+										<Label className="flex items-center gap-3 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={formData.isFeatured}
+												onChange={(e) => set({ isFeatured: e.target.checked })}
+												className="w-4 h-4 rounded border-white/10 text-primary accent-violet-500"
+											/>
+											<div className="flex flex-col">
+												<span
+													className={cn(
+														"font-bold text-sm",
+														formData.isFeatured && "text-violet-300"
+													)}
+												>
+													{formData.isFeatured
+														? `✦ "Популярная" позиция`
+														: "Обычная позиция"}
+												</span>
+												<span className="text-[11px] text-muted-foreground">
+													{formData.isFeatured
+														? "В блоке «Популярное» на главной странице"
+														: "Не отображается на главной странице сайта"}
+												</span>
+											</div>
+										</Label>
 									</div>
-								</Label>
-							</div>
+								</div>
+							) : (
+								<div className="p-3 rounded-xl border border-gray-500/20 bg-gray-500/5">
+									<Label className="mx-auto text-xs text-center text-gray-400 font-mono uppercase select-none w-full">
+										Недоступно для аренды на сайте
+									</Label>
+								</div>
+							)}
 
 							{/* NAME */}
 							<div className="space-y-1.5">
@@ -1209,7 +1238,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 
 							{/* DESCRIPTION / KIT / VIDEO_URLS */}
 							{(!isEdit || isPrimary) && (
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-baseline">
+								<div className="grid grid-cols-1 gap-4 items-baseline">
 									<MarkdownEditor
 										label="Описание"
 										value={formData.description ?? ""}
@@ -1266,130 +1295,197 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 								{/* AVAILABILITY / OWNERSHIP / PRICES / DEPOSIT / REPLACEMENT / STATUS  */}
 								<div className="flex flex-col sm:flex-row w-full justify-between gap-4">
 									{/* AVAILABILITY / OWNERSHIP */}
-									<div className="flex flex-1 flex-col gap-4">
-										<div className="space-y-1.5 flex flex-1 flex-col">
-											<Label>Cдается в аренду</Label>
-											<Select
-												value={String(formData.isAvailable)}
-												onValueChange={(v) =>
-													set({ isAvailable: v === "true" })
-												}
-											>
-												<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="true">Да</SelectItem>
-													<SelectItem value="false">Нет</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-										<div className="space-y-1.5 flex flex-1 flex-col">
-											<Label>Субарендная позиция</Label>
-											<Select
-												value={formData.ownershipType}
-												onValueChange={(v) =>
-													set({
-														ownershipType: v as unknown as OwnershipType,
-														// Если меняем на Свое (INTERNAL), очищаем имя партнера
-														partnerName:
-															v === "INTERNAL" ? "" : formData.partnerName,
-													})
-												}
-											>
-												<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="SUBLEASE">Да</SelectItem>
-													<SelectItem value="INTERNAL">Нет</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-										<div className="space-y-1.5">
-											<Label>Владелец (Субаренда)</Label>
-											<Input
-												value={formData.partnerName ?? ""}
-												onChange={(e) => set({ partnerName: e.target.value })}
-												placeholder="Имя субарендатора"
-												disabled={formData.ownershipType !== "SUBLEASE"}
-												className="disabled:opacity-50 transition-opacity h-9"
-											/>
-										</div>
-									</div>
-									{/*  PRICES / DEPOSIT / REPLACEMENT / STATUS  */}
-									<div className="flex flex-1 gap-4">
-										<div className="flex flex-col gap-4">
-											{[
-												{ label: "Цена 4ч", key: "price4h" as const },
-												{ label: "Цена 8ч", key: "price8h" as const },
-												{ label: "Цена сутки *", key: "pricePerDay" as const },
-												{ label: "Цена в студии", key: "priceStudio" as const },
-											].map(({ label, key }) => (
-												<div key={key} className="space-y-1.5">
-													<Label>{label}</Label>
-													<Input
-														type="number"
-														className="h-9"
-														value={formData[key]}
-														onChange={(e) =>
-															set({
-																[key]:
-																	e.target.value === ""
-																		? ""
-																		: Number(e.target.value),
-															})
+									<div className="flex flex-1 flex-col gap-2">
+										<div className="space-y-3">
+											<div className="flex gap-2">
+												<div className="space-y-1 flex-1">
+													<Label>Cдается в аренду</Label>
+													<Select
+														value={String(formData.isAvailable)}
+														onValueChange={(v) =>
+															set({ isAvailable: v === "true" })
 														}
-													/>
+													>
+														<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl bg-background/50">
+															<SelectItem
+																value="true"
+																className="hover:bg-muted-foreground/10 cursor-pointer"
+															>
+																Да
+															</SelectItem>
+															<SelectItem
+																value="false"
+																className="hover:bg-muted-foreground/10 cursor-pointer"
+															>
+																Нет
+															</SelectItem>
+														</SelectContent>
+													</Select>
 												</div>
-											))}
-										</div>
-										<div className="flex flex-col gap-4">
-											{[
-												{ label: "Депозит", key: "deposit" as const },
-												{
-													label: "Стоимость",
-													key: "replacementValue" as const,
-												},
-											].map(({ label, key }) => (
-												<div key={key} className="space-y-1.5">
-													<Label>{label}</Label>
-													<Input
-														type="number"
-														className="h-9"
-														value={formData[key]}
-														onChange={(e) =>
-															set({
-																[key]:
-																	e.target.value === ""
-																		? ""
-																		: Number(e.target.value),
-															})
+												<div className="space-y-1 flex-1">
+													<Label>Cдается в студии</Label>
+													<Select
+														value={String(formData.studioAvailable)}
+														onValueChange={(v) =>
+															set({ studioAvailable: v === "true" })
 														}
-													/>
+													>
+														<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl bg-background/50">
+															<SelectItem
+																value="true"
+																className="hover:bg-muted-foreground/10 cursor-pointer"
+															>
+																Да
+															</SelectItem>
+															<SelectItem
+																value="false"
+																className="hover:bg-muted-foreground/10 cursor-pointer"
+															>
+																Нет
+															</SelectItem>
+														</SelectContent>
+													</Select>
 												</div>
-											))}
-											<div className="space-y-1.5">
-												<Label>Состояние</Label>
+											</div>
+											<div className="space-y-1">
+												<Label>Техническое состояние</Label>
 												<Select
 													value={formData.status}
 													onValueChange={(v: EquipmentStatus) =>
 														set({ status: v })
 													}
 												>
-													<SelectTrigger className="glass-input flex-1 w-full rounded-xl shadow-md shadow-muted-foreground/10">
+													<SelectTrigger className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl">
 														<SelectValue />
 													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="AVAILABLE">Исправно</SelectItem>
-														<SelectItem value="MAINTENACE">
+													<SelectContent className="glass-card w-full shadow-md shadow-muted-foreground/10 rounded-xl bg-background/50">
+														<SelectItem
+															value="AVAILABLE"
+															className="hover:bg-muted-foreground/10 cursor-pointer"
+														>
+															Исправно
+														</SelectItem>
+														<SelectItem
+															value="MAINTENACE"
+															className="hover:bg-muted-foreground/10 cursor-pointer"
+														>
 															В ремонте
 														</SelectItem>
-														<SelectItem value="BROKEN">Неисправно</SelectItem>
+														<SelectItem
+															value="BROKEN"
+															className="hover:bg-muted-foreground/10 cursor-pointer"
+														>
+															Неисправно
+														</SelectItem>
 													</SelectContent>
 												</Select>
 											</div>
-											<div className="space-y-1.5"></div>
+											<div className="flex gap-1">
+												<div className="space-y-1">
+													<Label>Субаренда</Label>
+													<Select
+														value={formData.ownershipType}
+														onValueChange={(v) =>
+															set({
+																ownershipType: v as unknown as OwnershipType,
+																// Если меняем на Свое (INTERNAL), очищаем имя партнера
+																partnerName:
+																	v === "INTERNAL" ? "" : formData.partnerName,
+															})
+														}
+													>
+														<SelectTrigger className="glass-card w-auto shadow-md shadow-muted-foreground/10 rounded-xl">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent className="glass-card w-auto shadow-md shadow-muted-foreground/10 rounded-xl bg-background/50">
+															<SelectItem
+																value="SUBLEASE"
+																className="hover:bg-muted-foreground/10 cursor-pointer"
+															>
+																Да
+															</SelectItem>
+															<SelectItem
+																value="INTERNAL"
+																className="hover:bg-muted-foreground/10 cursor-pointer"
+															>
+																Нет
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
+												<div className="space-y-1 flex-1">
+													<Label>Владелец</Label>
+													<Input
+														value={formData.partnerName ?? ""}
+														onChange={(e) =>
+															set({ partnerName: e.target.value })
+														}
+														placeholder="Имя субарендатора"
+														disabled={formData.ownershipType !== "SUBLEASE"}
+														className="glass-card shadow-md shadow-muted-foreground/10 w-full flex-1 rounded-xl disabled:opacity-50 transition-opacity h-9"
+													/>
+												</div>
+											</div>
+										</div>
+									</div>
+									{/*  PRICES / DEPOSIT / REPLACEMENT / STATUS  */}
+									<div className="flex gap-2">
+										<div className="flex flex-col space-y-3">
+											{[
+												{ label: "Цена сутки *", key: "pricePerDay" as const },
+												{ label: "Цена 8ч", key: "price8h" as const },
+												{ label: "Цена 4ч", key: "price4h" as const },
+											].map(({ label, key }) => (
+												<div key={key} className="space-y-1">
+													<Label>{label}</Label>
+													<Input
+														type="number"
+														className="h-9"
+														value={formData[key]}
+														onChange={(e) =>
+															set({
+																[key]:
+																	e.target.value === ""
+																		? ""
+																		: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+											))}
+										</div>
+										<div className="flex flex-col space-y-3">
+											{[
+												{ label: "Цена в студии", key: "priceStudio" as const },
+												{ label: "Залог", key: "deposit" as const },
+												{
+													label: "Стоимость",
+													key: "replacementValue" as const,
+												},
+											].map(({ label, key }) => (
+												<div key={key} className="space-y-1">
+													<Label>{label}</Label>
+													<Input
+														type="number"
+														className="h-9"
+														value={formData[key]}
+														onChange={(e) =>
+															set({
+																[key]:
+																	e.target.value === ""
+																		? ""
+																		: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+											))}
 										</div>
 									</div>
 								</div>

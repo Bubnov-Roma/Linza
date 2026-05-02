@@ -27,10 +27,6 @@ import {
 import { BookingDetailSheet } from "@/components/admin/bookings/BookingDetailSheet";
 import { CreateBookingSheet } from "@/components/admin/bookings/create/CreateBookingSheet";
 import {
-	PAYMENT_STATUS_CONFIG,
-	type PaymentStatus,
-} from "@/components/admin/bookings/PaymentsPanel";
-import {
 	Badge,
 	Button,
 	Card,
@@ -56,10 +52,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui";
-import { BOOKING_STATUS_CONFIG } from "@/constants";
+import { BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG } from "@/constants";
 import type {
 	AdminBookingRow,
 	BookingStatus,
+	PaymentStatus,
 } from "@/core/domain/entities/Booking";
 import { useAdminBookingPolling } from "@/hooks/use-admin-booking-polling";
 import { cn } from "@/lib/utils";
@@ -195,6 +192,7 @@ function InlinePaymentChanger({
 		label: status,
 		color: "bg-foreground/8 text-foreground/50",
 		dot: "bg-foreground/30",
+		bar: "bg-foreground/30",
 	};
 
 	return (
@@ -539,11 +537,11 @@ export default function AdminBookingsTable({
 	return (
 		<>
 			{/* ── Header ── */}
-			<div className="px-3 pt-6 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
 				<div className="flex items-center gap-2.5">
-					<PackageIcon size={20} className="text-primary" weight="duotone" />
+					<PackageIcon size={20} weight="duotone" />
 					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
-						Аренда
+						Заказы
 					</h1>
 					{pendingCount > 0 && (
 						<Badge className="h-5 px-2 text-[10px] font-bold bg-primary text-primary-foreground">
@@ -558,13 +556,12 @@ export default function AdminBookingsTable({
 					className="h-9 gap-2 font-bold"
 					onClick={() => setCreateOpen(true)}
 				>
-					<PlusIcon size={14} />
-					Создать
+					<PlusIcon size={14} weight="bold" />
 				</Button>
 			</div>
 			<div className="p-3">
 				{/* Controls */}
-				<Card>
+				<Card className="p-2">
 					<CardContent className="space-y-3 p-0">
 						<div className="flex flex-col sm:flex-row gap-3">
 							{/* Search */}

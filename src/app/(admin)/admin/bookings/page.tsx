@@ -3,7 +3,10 @@ export const revalidate = 0;
 
 import type { AdminBookingRow } from "@/components/admin/bookings/AdminBookingsTable";
 import AdminBookingsTable from "@/components/admin/bookings/AdminBookingsTable";
-import type { AdminBookingItemSnippet } from "@/core/domain/entities/Booking";
+import type {
+	AdminBookingItemSnippet,
+	PaymentMethod,
+} from "@/core/domain/entities/Booking";
 import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 
@@ -16,9 +19,11 @@ export default async function AdminBookingsPage() {
 					name: true,
 					email: true,
 					phone: true,
+					balance: true,
 					clientApplication: { select: { adminOverrides: true } },
 				},
 			},
+			payments: { include: { author: { select: { name: true } } } },
 			bookingItems: {
 				select: {
 					equipmentId: true,
@@ -81,6 +86,18 @@ export default async function AdminBookingsPage() {
 			equipmentTitles: equipmentTitles,
 			itemCount: row.bookingItems.length,
 			bookingItems,
+			payments: row.payments.map((p) => ({
+				id: p.id,
+				amount: p.amount,
+				method: p.method as PaymentMethod,
+				note: p.note,
+				paidAt: p.paidAt.toISOString(),
+				createdAt: p.createdAt.toISOString(),
+				authorName: p.author?.name ?? "Система",
+			})),
+			user: {
+				balance: row.user?.balance ?? 0,
+			},
 		};
 	});
 

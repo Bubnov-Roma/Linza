@@ -678,10 +678,10 @@ function PortalTimeDropdown({
 	return (
 		<div
 			className={cn(
-				"overflow-y-auto overscroll-contain bg-background py-1 custom-scrollbar",
+				"overflow-y-scroll bg-background py-1",
 				isMobile
 					? "w-full max-h-[50vh] px-2"
-					: "max-h-56 w-28 rounded-2xl border border-foreground/10 shadow-2xl"
+					: "max-h-56 w-30 rounded-2xl border border-foreground/10 shadow-2xl custom-scrollbar always-show-scrollbar overscroll-contain"
 			)}
 		>
 			{slots.map((slot) => (
@@ -691,12 +691,12 @@ function PortalTimeDropdown({
 					type="button"
 					onClick={() => onSelect(slot)}
 					className={cn(
-						"px-4 font-mono transition-colors flex items-center",
+						"px-4 font-mono transition-colors flex items-center cursor-pointer",
 						isMobile
 							? "h-14 w-full justify-center text-lg rounded-xl mb-1"
-							: "h-9 w-full text-sm text-left hover:bg-black/8 dark:hover:bg-white/8",
+							: "h-9 w-full text-sm text-left hover:bg-foreground/8",
 						slot === value
-							? "bg-(--brand-color)/15 text-(--brand-color) font-bold"
+							? "bg-(--brand-color)/10 text-(--brand-color) font-bold"
 							: "text-foreground"
 					)}
 				>

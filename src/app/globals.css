@@ -292,6 +292,29 @@
     padding: 0.875rem 1.25rem;
   }
 
+  .custom-scrollbar {
+      overflow-y: scroll;
+  }
+  
+  /* Стилизация для Webkit (Chrome, Safari, Edge) */
+  .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      always-show-scrollbar: true;
+      display: block;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color:  rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
+  }
+  
+  /* Для Firefox */
+  .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: oklch(from var(--muted-foreground) l c h / 0.5) transparent;
+  }
+
+
   /*
     .interactive-accent
     ────────────────────────────────────────────────────────────────────────────

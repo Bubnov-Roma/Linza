@@ -52,7 +52,7 @@ import {
 } from "@/components/ui";
 import { BOOKING_STATUS_CONFIG } from "@/constants";
 import type { BookingStatus } from "@/core/domain/entities/Booking";
-import { cn, combineDateAndTime } from "@/lib/utils";
+import { cn, combineDateAndTime, fmtRub } from "@/lib/utils";
 import { useSiteSettingsStore } from "@/store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -72,10 +72,6 @@ interface StudioEquipmentItem {
 }
 
 const ALL_STATUSES = Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[];
-
-function fmtRub(n: number) {
-	return `${n.toLocaleString("ru-RU")} ₽`;
-}
 
 function SectionTitle({
 	icon: Icon,
@@ -315,7 +311,7 @@ export function CreateStudioBookingSheet({
 			<SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
 				<SheetHeader className="px-5 py-4 border-b border-foreground/5 shrink-0">
 					<SheetTitle className="text-lg font-black italic uppercase tracking-tighter flex items-center gap-2">
-						<VideoIcon size={18} className="text-primary" />
+						<VideoIcon size={18} weight="duotone" />
 						Новый заказ — студия
 					</SheetTitle>
 				</SheetHeader>
@@ -351,7 +347,7 @@ export function CreateStudioBookingSheet({
 							<div className="relative">
 								<MagnifyingGlassIcon
 									size={13}
-									className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+									className="z-1 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 								/>
 								<Input
 									placeholder="Поиск по имени, email, телефону..."

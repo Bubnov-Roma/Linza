@@ -10,11 +10,13 @@ interface BookingSuccessScreenProps {
 	bookingId: string;
 	/** Pass server-loaded telegram url if you have it */
 	telegramUrl?: string;
+	redirectUrl?: string;
 }
 
 export function BookingSuccessScreen({
 	bookingId,
 	// telegramUrl = TG_BOT_LINK,
+	redirectUrl = `/dashboard/bookings/${bookingId}`,
 }: BookingSuccessScreenProps) {
 	const shortId = bookingId.split("-")[0]?.toUpperCase() ?? bookingId;
 
@@ -48,13 +50,13 @@ export function BookingSuccessScreen({
 				{/* ── What's next hint ── */}
 				<div>
 					<p className="text-[10px] pl-8 font-bold uppercase tracking-widest text-muted-foreground/50">
-						Что будет дальше
+						Что дальше
 					</p>
 					<ol className="hidden md:flex flex-col items-start gap-4 px-5 py-4 rounded-2xl border border-foreground/5 bg-card/40 space-y-2 transition-colors group">
 						{[
-							"Менеджер проверит и подготовит технику для вашего заказа",
-							"Мы свяжемся с вами по телефону или email для подтверждения аренды",
-							"После внесения предоплаты статус вашего заказа обновится на - 'Готов к выдаче'",
+							"Проверим и подготовим всё для вашего заказа",
+							"Свяжемся по телефону или email для подтверждения аренды",
+							"После внесения предоплаты статус обновиься на 'Готов к аренде'",
 						].map((step, i) => (
 							<li
 								key={`${step}` + `${i}`}
@@ -92,7 +94,7 @@ export function BookingSuccessScreen({
 				{/* ── Navigation buttons ── */}
 				<div className="grid grid-cols-2 gap-3">
 					<Link
-						href={`/dashboard/bookings/${bookingId}`}
+						href={redirectUrl}
 						className="flex flex-col items-center gap-2 px-4 py-4 rounded-2xl border border-foreground/10 bg-secondary/50 hover:bg-foreground/5 transition-colors text-center group"
 					>
 						<Package

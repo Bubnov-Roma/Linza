@@ -2,6 +2,11 @@
 
 import type { BookingStatus, PaymentMethod, PaymentType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import {
+	computePaymentStatus,
+	type RecordPaymentPayload,
+	type RecordPaymentResult,
+} from "@/actions/admin-booking-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -252,6 +257,7 @@ export interface StudioBookingRow {
 }
 
 export interface StudioBookingDetail extends StudioBookingRow {
+	userBalance: number;
 	items: {
 		id: string;
 		equipmentId: string;
@@ -283,10 +289,10 @@ export interface StudioBookingDetail extends StudioBookingRow {
 export interface StudioBookingFilters {
 	status?: BookingStatus | "ALL";
 	paymentStatus?: "UNPAID" | "PARTIAL" | "PAID" | "OVERPAID" | "ALL";
-	search?: string;
-	dateFrom?: Date;
-	dateTo?: Date;
-	tariffId?: string;
+	search?: string | "ALL";
+	dateFrom?: Date | undefined;
+	dateTo?: Date | undefined;
+	tariffId?: string | undefined;
 }
 
 function calcPaymentStatus(
@@ -404,7 +410,7 @@ export async function getStudioBookingDetailAction(
 	const b = await prisma.studioBooking.findUnique({
 		where: { id },
 		include: {
-			user: { select: { name: true, email: true, phone: true } },
+			user: { select: { name: true, email: true, phone: true, balance: true } },
 			tariff: { select: { name: true } },
 			_count: { select: { items: true } },
 			payments: {
@@ -440,6 +446,7 @@ export async function getStudioBookingDetailAction(
 
 	return {
 		...row,
+		userBalance: b.user.balance ?? 0,
 		items: b.items.map((item) => ({
 			id: item.id,
 			equipmentId: item.equipmentId,
@@ -531,86 +538,272 @@ export async function updateStudioBookingStatusAction(
 	}
 }
 
-// ─── Payments ─────────────────────────────────────────────────────────────────
+// ─── Full booking update (admin) ──────────────────────────────────────────────
 
-export async function addStudioBookingPaymentAction(input: {
-	studioBookingId: string;
-	amount: number;
-	method: PaymentMethod;
-	type?: PaymentType;
+export interface UpdateStudioBookingInput {
+	bookingId: string;
+	userId?: string;
+	tariffId?: string;
+	startDate?: Date;
+	endDate?: Date;
+	totalAmount?: number;
+	/** Полный список ID техники (replaces existing) */
+	equipmentIds?: string[];
 	note?: string;
-	paidAt?: Date;
-}): Promise<{ success: boolean; error?: string }> {
-	try {
-		const session = await requireAdminOrManager();
-
-		if (input.amount <= 0)
-			return { success: false, error: "Сумма должна быть > 0" };
-
-		await prisma.studioBookingPayment.create({
-			data: {
-				studioBookingId: input.studioBookingId,
-				authorId: session?.user?.id ?? null,
-				amount: input.amount,
-				method: input.method,
-				type: input.type ?? "PAYMENT",
-				note: input.note?.trim() || null,
-				paidAt: input.paidAt ?? new Date(),
-			},
-		});
-
-		await prisma.studioBookingAuditLog.create({
-			data: {
-				studioBookingId: input.studioBookingId,
-				authorId: session?.user?.id ?? null,
-				authorName: session?.user?.name ?? null,
-				action: "PAYMENT_ADDED",
-				fieldName: "payment",
-				valueAfter: String(input.amount),
-				meta: { method: input.method, type: input.type ?? "PAYMENT" },
-			},
-		});
-
-		revalidatePath("/admin/studio");
-		return { success: true };
-	} catch (e) {
-		console.error("addStudioBookingPaymentAction:", e);
-		return { success: false, error: "Ошибка добавления платежа" };
-	}
 }
 
-export async function deleteStudioBookingPaymentAction(
-	paymentId: string,
-	studioBookingId: string
+/**
+ * Полное редактирование заказа студии администратором.
+ * Позволяет изменить клиента, тариф, период, технику и сумму.
+ */
+export async function updateStudioBookingFullAction(
+	input: UpdateStudioBookingInput
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const session = await requireAdminOrManager();
+		const authorId = session?.user?.id ?? null;
+		const authorName = session?.user?.name ?? null;
 
-		const payment = await prisma.studioBookingPayment.findUnique({
-			where: { id: paymentId },
-			select: { amount: true, method: true },
-		});
-		if (!payment) return { success: false, error: "Платёж не найден" };
-
-		await prisma.studioBookingPayment.delete({ where: { id: paymentId } });
-
-		await prisma.studioBookingAuditLog.create({
-			data: {
-				studioBookingId,
-				authorId: session?.user?.id ?? null,
-				authorName: session?.user?.name ?? null,
-				action: "PAYMENT_DELETED",
-				fieldName: "payment",
-				valueBefore: String(payment.amount),
-				meta: { method: payment.method },
+		const existing = await prisma.studioBooking.findUnique({
+			where: { id: input.bookingId },
+			include: {
+				items: { select: { equipmentId: true, priceAtBooking: true } },
+				tariff: true,
 			},
 		});
+		if (!existing) return { success: false, error: "Заказ не найден" };
+
+		const newStartDate = input.startDate ?? existing.startDate;
+		const newEndDate = input.endDate ?? existing.endDate;
+		const newTariffId = input.tariffId ?? existing.tariffId;
+		const newUserId = input.userId ?? existing.userId;
+
+		// Проверка пересечений если изменилось время
+		const timeChanged =
+			input.startDate !== undefined || input.endDate !== undefined;
+		if (timeChanged) {
+			const conflict = await prisma.studioBooking.findFirst({
+				where: {
+					id: { not: input.bookingId },
+					status: { in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"] },
+					startDate: { lt: newEndDate },
+					endDate: { gt: newStartDate },
+				},
+				select: { id: true, startDate: true, endDate: true },
+			});
+
+			if (conflict) {
+				const fmt = (d: Date) =>
+					d.toLocaleString("ru-RU", {
+						day: "numeric",
+						month: "short",
+						hour: "2-digit",
+						minute: "2-digit",
+					});
+				return {
+					success: false,
+					error: `Студия занята: ${fmt(conflict.startDate)} — ${fmt(conflict.endDate)}`,
+				};
+			}
+		}
+
+		// Пересчёт длительности
+		const durationMs = newEndDate.getTime() - newStartDate.getTime();
+		const durationHours = Math.max(1, durationMs / (1000 * 60 * 60));
+
+		// Новый тариф
+		let tariffPriceAtBooking = existing.tariffPriceAtBooking;
+		if (input.tariffId && input.tariffId !== existing.tariffId) {
+			const tariff = await prisma.studioTariff.findUnique({
+				where: { id: input.tariffId },
+			});
+			if (!tariff) return { success: false, error: "Тариф не найден" };
+			tariffPriceAtBooking = tariff.pricePerHour;
+		}
+
+		// Пересчёт техники
+		let equipmentItems: { equipmentId: string; priceAtBooking: number }[] = [];
+		let equipmentTotal = 0;
+
+		if (input.equipmentIds !== undefined) {
+			// Полная замена списка техники
+			if (input.equipmentIds.length > 0) {
+				const equipments = await prisma.equipment.findMany({
+					where: { id: { in: input.equipmentIds }, studioAvailable: true },
+					select: { id: true, priceStudio: true },
+				});
+				for (const eq of equipments) {
+					equipmentItems.push({
+						equipmentId: eq.id,
+						priceAtBooking: eq.priceStudio,
+					});
+					equipmentTotal += eq.priceStudio;
+				}
+			}
+		} else {
+			// Оставляем старую технику
+			equipmentItems = existing.items.map((i) => ({
+				equipmentId: i.equipmentId,
+				priceAtBooking: i.priceAtBooking,
+			}));
+			equipmentTotal = existing.items.reduce((s, i) => s + i.priceAtBooking, 0);
+		}
+
+		// Итоговая сумма
+		const autoTotal = tariffPriceAtBooking * durationHours + equipmentTotal;
+		const newTotalAmount = input.totalAmount ?? autoTotal;
+
+		// Аудит-лог изменений
+		const changes: string[] = [];
+		if (input.userId && input.userId !== existing.userId) {
+			const newUser = await prisma.user.findUnique({
+				where: { id: input.userId },
+				select: { name: true },
+			});
+			changes.push(`Клиент → ${newUser?.name ?? input.userId}`);
+		}
+		if (input.tariffId && input.tariffId !== existing.tariffId) {
+			const newTariff = await prisma.studioTariff.findUnique({
+				where: { id: input.tariffId },
+				select: { name: true },
+			});
+			changes.push(`Тариф → ${newTariff?.name ?? input.tariffId}`);
+		}
+		if (timeChanged) {
+			changes.push(
+				`Период → ${newStartDate.toLocaleString("ru-RU")} – ${newEndDate.toLocaleString("ru-RU")}`
+			);
+		}
+		if (input.equipmentIds !== undefined) {
+			changes.push(`Техника обновлена (${equipmentItems.length} позиц.)`);
+		}
+		if (
+			input.totalAmount !== undefined &&
+			Math.abs(input.totalAmount - existing.totalAmount) > 0.01
+		) {
+			changes.push(`Сумма: ${existing.totalAmount} ₽ → ${input.totalAmount} ₽`);
+		}
+
+		await prisma.$transaction([
+			// Удаляем старую технику если меняем список
+			...(input.equipmentIds !== undefined
+				? [
+						prisma.studioBookingItem.deleteMany({
+							where: { studioBookingId: input.bookingId },
+						}),
+					]
+				: []),
+			// Обновляем заказ
+			prisma.studioBooking.update({
+				where: { id: input.bookingId },
+				data: {
+					...(newUserId !== existing.userId && { userId: newUserId }),
+					...(newTariffId !== existing.tariffId && { tariffId: newTariffId }),
+					startDate: newStartDate,
+					endDate: newEndDate,
+					durationHours,
+					tariffPriceAtBooking,
+					totalAmount: newTotalAmount,
+					// Создаём новую технику если меняем список
+					...(input.equipmentIds !== undefined && {
+						items: { create: equipmentItems },
+					}),
+				},
+			}),
+			// Аудит
+			prisma.studioBookingAuditLog.create({
+				data: {
+					studioBookingId: input.bookingId,
+					authorId,
+					authorName,
+					action: "BOOKING_UPDATED",
+					fieldName: null,
+					valueBefore: null,
+					valueAfter: changes.join("; ") || "Изменения сохранены",
+					meta: {
+						...(input.note && { note: input.note }),
+						changes,
+					},
+				},
+			}),
+		]);
 
 		revalidatePath("/admin/studio");
 		return { success: true };
 	} catch (e) {
-		console.error("deleteStudioBookingPaymentAction:", e);
-		return { success: false, error: "Ошибка удаления платежа" };
+		console.error("updateStudioBookingFullAction:", e);
+		return { success: false, error: "Ошибка обновления заказа" };
+	}
+}
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+/**
+ * Вернуть переплату по аренде студии на баланс клиента.
+ */
+export async function refundStudioToBalanceAction(
+	studioBookingId: string,
+	amount: number
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await requireAdminOrManager();
+		const authorId = session?.user?.id ?? null;
+		const authorName = session?.user?.name ?? null;
+
+		const booking = await prisma.studioBooking.findUnique({
+			where: { id: studioBookingId },
+			select: { userId: true },
+		});
+		if (!booking) return { success: false, error: "Заказ не найден" };
+
+		await prisma.$transaction([
+			// Пополняем баланс клиента
+			prisma.user.update({
+				where: { id: booking.userId },
+				data: { balance: { increment: amount } },
+			}),
+			// Транзакция баланса (REFUND)
+			prisma.balanceTransaction.create({
+				data: {
+					userId: booking.userId,
+					bookingId: null,
+					type: "REFUND",
+					amount,
+					description: `Возврат переплаты за студию (заказ …${studioBookingId.slice(-6).toUpperCase()})`,
+					authorId,
+				},
+			}),
+			// Отрицательный платёж в заказе для выравнивания
+			prisma.studioBookingPayment.create({
+				data: {
+					studioBookingId,
+					authorId,
+					amount: -amount,
+					method: "TRANSFER",
+					type: "PAYMENT",
+					note: "Возврат переплаты на баланс клиента",
+					paidAt: new Date(),
+				},
+			}),
+			// Аудит
+			prisma.studioBookingAuditLog.create({
+				data: {
+					studioBookingId,
+					authorId,
+					authorName,
+					action: "REFUND_TO_BALANCE",
+					fieldName: "payment",
+					valueAfter: `+${amount} на баланс`,
+				},
+			}),
+		]);
+
+		revalidatePath("/admin/studio");
+		revalidatePath("/admin/users");
+		return { success: true };
+	} catch (e) {
+		console.error("refundStudioToBalanceAction:", e);
+		return { success: false, error: "Ошибка возврата на баланс" };
 	}
 }
 
@@ -631,18 +824,12 @@ export async function createStudioBookingByAdminAction(input: {
 		const durationMs = input.endDate.getTime() - input.startDate.getTime();
 		const durationHours = Math.max(1, durationMs / (1000 * 60 * 60));
 
-		// Проверяем конфликт по времени
+		// Проверяем конфликт по времени (только WAIT_PAYMENT, READY_TO_RENT, ACTIVE)
 		const conflict = await prisma.studioBooking.findFirst({
 			where: {
-				status: {
-					in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
-				},
-				OR: [
-					{
-						startDate: { lt: input.endDate },
-						endDate: { gt: input.startDate },
-					},
-				],
+				status: { in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"] },
+				startDate: { lt: input.endDate },
+				endDate: { gt: input.startDate },
 			},
 		});
 		if (conflict) {
@@ -657,7 +844,7 @@ export async function createStudioBookingByAdminAction(input: {
 		});
 		if (!tariff) return { success: false, error: "Тариф не найден" };
 
-		// Стоимость техники
+		// Стоимость техники (только studioAvailable=true)
 		let equipmentTotal = 0;
 		const equipmentItems: { equipmentId: string; priceAtBooking: number }[] =
 			[];
@@ -735,5 +922,221 @@ export async function deleteStudioBookingAction(
 	} catch (e) {
 		console.error("deleteStudioBookingAction:", e);
 		return { success: false, error: "Ошибка удаления" };
+	}
+}
+
+// ─── Studio Payments API (for PaymentsPanel) ──────────────────────────────────
+
+/**
+ * Получить все платежи по заказу студии
+ */
+export async function getStudioPaymentsAction(bookingId: string) {
+	try {
+		await requireAdminOrManager();
+
+		const booking = await prisma.studioBooking.findUnique({
+			where: { id: bookingId },
+			select: { totalAmount: true },
+		});
+		if (!booking) return { success: false, error: "Заказ не найден" };
+
+		const payments = await prisma.studioBookingPayment.findMany({
+			where: { studioBookingId: bookingId },
+			orderBy: { paidAt: "desc" },
+			include: { author: { select: { name: true } } },
+		});
+
+		const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+		const paymentStatus = await computePaymentStatus(
+			totalPaid,
+			booking.totalAmount
+		);
+
+		return {
+			success: true,
+			payments: payments.map((p) => ({
+				id: p.id,
+				amount: p.amount,
+				method: p.method,
+				note: p.note,
+				paidAt: p.paidAt.toISOString(),
+				createdAt: p.paidAt.toISOString(), // Приводим к ожидаемому формату дат
+				authorName: p.author?.name ?? null,
+			})),
+			totalPaid,
+			paymentStatus,
+			totalAmount: booking.totalAmount,
+		};
+	} catch (e) {
+		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
+	}
+}
+
+/**
+ * Зафиксировать платёж по заказу студии (в т.ч. с баланса)
+ */
+export async function recordStudioPaymentAction(
+	payload: RecordPaymentPayload
+): Promise<RecordPaymentResult> {
+	try {
+		const session = await requireAdminOrManager();
+		const userId = session?.user?.id;
+		const name = session?.user?.name;
+
+		if (!userId) throw new Error("Не авторизован");
+
+		const booking = await prisma.studioBooking.findUnique({
+			where: { id: payload.bookingId },
+			select: {
+				userId: true,
+				totalAmount: true,
+				status: true,
+				payments: { select: { amount: true } },
+			},
+		});
+		if (!booking) return { success: false, error: "Заказ не найден" };
+
+		let payment: {
+			id: string;
+			amount: number;
+			method: PaymentMethod;
+			type: string;
+			note: string | null;
+			paidAt: Date;
+			createdAt: Date;
+			author: { name: string | null } | null;
+		};
+
+		if (payload.method === "BALANCE") {
+			const balanceDelta = -payload.amount;
+			const txType = balanceDelta > 0 ? "REFUND" : "DEBIT";
+			const txDesc =
+				balanceDelta > 0
+					? `Возврат средств на баланс по студии ${payload.bookingId.slice(0, 8)}`
+					: `Списание с баланса в счет студии ${payload.bookingId.slice(0, 8)}`;
+
+			const [createdPayment] = await prisma.$transaction([
+				prisma.studioBookingPayment.create({
+					data: {
+						studioBookingId: payload.bookingId,
+						authorId: userId,
+						amount: payload.amount,
+						method: payload.method,
+						type: payload.type,
+						note: payload.note ?? null,
+						paidAt: new Date(),
+					},
+					include: { author: { select: { name: true } } },
+				}),
+				prisma.user.update({
+					where: { id: booking.userId },
+					data: { balance: { increment: balanceDelta } },
+				}),
+				prisma.balanceTransaction.create({
+					data: {
+						userId: booking.userId,
+						type: txType,
+						amount: balanceDelta,
+						description: txDesc,
+						authorId: userId,
+					},
+				}),
+			]);
+			payment = createdPayment;
+		} else {
+			payment = await prisma.studioBookingPayment.create({
+				data: {
+					studioBookingId: payload.bookingId,
+					authorId: userId,
+					amount: payload.amount,
+					method: payload.method,
+					type: payload.type,
+					note: payload.note ?? null,
+					paidAt: new Date(),
+				},
+				include: { author: { select: { name: true } } },
+			});
+		}
+
+		const prevPaid = booking.payments.reduce((s, p) => s + p.amount, 0);
+		const newTotalPaid = prevPaid + payload.amount;
+		const paymentStatus = await computePaymentStatus(
+			newTotalPaid,
+			booking.totalAmount
+		);
+
+		// Аудит лог
+		await prisma.studioBookingAuditLog.create({
+			data: {
+				studioBookingId: payload.bookingId,
+				authorId: userId,
+				authorName: name ?? "Admin",
+				action: payload.amount > 0 ? "PAYMENT_ADDED" : "REFUND_TO_BALANCE",
+				fieldName: "payment",
+				valueAfter: `Оплачено: ${newTotalPaid.toLocaleString("ru-RU")} ₽`,
+				meta: { method: payload.method, note: payload.note, paymentStatus },
+			},
+		});
+
+		revalidatePath("/admin/studio");
+		revalidatePath("/admin/users");
+
+		return {
+			success: true,
+			payment: {
+				id: payment.id,
+				amount: payment.amount,
+				method: payment.method,
+				note: payment.note,
+				paidAt: payment.paidAt.toISOString(),
+				createdAt: payment.paidAt.toISOString(),
+				authorName: payment.author?.name ?? null,
+			},
+			newTotalPaid,
+			paymentStatus,
+			totalAmount: booking.totalAmount,
+		};
+	} catch (e) {
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : "Ошибка записи платежа",
+		};
+	}
+}
+
+/**
+ * Удалить платёж (только для ADMIN)
+ */
+export async function deleteStudioPaymentAction(
+	bookingId: string,
+	paymentId: string
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await requireAdminOrManager();
+
+		const payment = await prisma.studioBookingPayment.findUnique({
+			where: { id: paymentId },
+			select: { amount: true, method: true },
+		});
+		if (!payment) return { success: false, error: "Платёж не найден" };
+
+		await prisma.studioBookingPayment.delete({ where: { id: paymentId } });
+
+		await prisma.studioBookingAuditLog.create({
+			data: {
+				studioBookingId: bookingId,
+				authorId: session?.user?.id ?? null,
+				authorName: session?.user?.name ?? null,
+				action: "PAYMENT_DELETED",
+				fieldName: "payment",
+				valueBefore: String(payment.amount),
+				meta: { method: payment.method },
+			},
+		});
+
+		revalidatePath("/admin/studio");
+		return { success: true };
+	} catch {
+		return { success: false, error: "Ошибка удаления платежа" };
 	}
 }

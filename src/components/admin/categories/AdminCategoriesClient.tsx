@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	FolderIcon,
 	FolderOpenIcon,
 	type Icon,
 	PlusIcon,
@@ -21,12 +22,13 @@ import {
 } from "@/actions/admin-category-actions";
 import { CategoryRow } from "@/components/admin/categories/CategoryRow";
 import { IconPicker } from "@/components/admin/categories/IconPicker";
-import { Button, Input, Label } from "@/components/ui";
+import { Badge, Button, Input, Label } from "@/components/ui";
 import { PHOSPHOR_ICON_MAP } from "@/constants/phosphor-icon-client.config";
 import type {
 	DbCategory,
 	DbSubcategory,
 } from "@/core/domain/entities/Equipment";
+import { cn } from "@/lib/utils";
 
 export default function AdminCategoriesClient({
 	initialCategories,
@@ -139,28 +141,33 @@ export default function AdminCategoriesClient({
 	const IconComp = (PHOSPHOR_ICON_MAP[newCatIcon] ||
 		PHOSPHOR_ICON_MAP.Package) as Icon;
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-black uppercase italic tracking-tight flex items-center gap-2">
-						Категории
-					</h1>
+		<div className="space-y-6 px-3 md:px-6">
+			<div className="py-4 flex items-start justify-between gap-4">
+				<div className="flex-col">
+					<div className="flex items-center gap-2.5">
+						<FolderIcon size={20} weight="duotone" />
+						<h1 className="text-2xl font-black italic uppercase tracking-tighter">
+							Категории
+						</h1>
+						{categories.length > 0 && (
+							<Badge className="h-5 px-2 text-[10px] font-bold bg-muted-foreground/20 text-foreground shadow-xs shadow-muted-foreground/40">
+								{categories.length}
+							</Badge>
+						)}
+					</div>
 					<p className="text-sm text-muted-foreground mt-1">
-						{categories.length} категорий · Перетащите для изменения порядка
+						Перетаскиваются для изменения порядка
 					</p>
 				</div>
 				<Button
 					onClick={() => setShowAddForm((s) => !s)}
-					className="gap-2"
+					variant="ghost"
 					size="sm"
+					className="h-9 gap-2 font-bold"
 				>
 					{showAddForm ? <XIcon size={16} /> : <PlusIcon size={16} />}
-					<span className="hidden sm:inline">
-						{showAddForm ? "Отмена" : "Добавить"}
-					</span>
 				</Button>
 			</div>
-
 			{showAddForm && (
 				<div className="p-4 rounded-2xl border border-primary/20 bg-primary/5 space-y-3 animate-in slide-in-from-top-2 duration-200">
 					<div className="flex items-center gap-2">
@@ -168,9 +175,10 @@ export default function AdminCategoriesClient({
 						<p className="text-sm font-bold">Новая категория</p>
 					</div>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-						<div className="space-y-1.5 md:col-span-2">
+						<div className="space-y-1.5 flex-col flex-1">
 							<Label className="text-xs">Название</Label>
 							<Input
+								className="h-9"
 								value={newCatName}
 								onChange={(e) => setNewCatName(e.target.value)}
 								placeholder="Например: Мониторы"
@@ -178,12 +186,30 @@ export default function AdminCategoriesClient({
 								onKeyDown={(e) => e.key === "Enter" && handleCreateCat()}
 							/>
 						</div>
-						<div className="space-y-1.5">
-							<Label className="text-xs">Иконка</Label>
-							<IconPicker value={newCatIcon} onChange={setNewCatIcon} />
+						<div className="flex flex-1 gap-4 items-baseline">
+							<div className="space-y-1.5 flex-col flex-1">
+								<Label className="text-xs">Иконка</Label>
+								<IconPicker value={newCatIcon} onChange={setNewCatIcon} />
+							</div>
+							<Button
+								size="md"
+								disabled={!newCatName.trim() || isPending}
+								variant={
+									!newCatName.trim() || isPending ? "outline" : "default"
+								}
+								onClick={handleCreateCat}
+								className={cn(
+									"h-9 mt-auto flex-1",
+									!newCatName.trim() || isPending
+										? "cursor-not-allowed"
+										: "font-bold"
+								)}
+							>
+								Добавить <PlusIcon size={16} />
+							</Button>
 						</div>
 					</div>
-					<div className="flex items-center gap-3">
+					{/* <div className="flex items-center gap-3">
 						<label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
 							<input
 								type="checkbox"
@@ -193,15 +219,7 @@ export default function AdminCategoriesClient({
 							/>
 							Модульная (комплект из разных категорий)
 						</label>
-						<Button
-							size="sm"
-							className="ml-auto"
-							disabled={!newCatName.trim() || isPending}
-							onClick={handleCreateCat}
-						>
-							Создать
-						</Button>
-					</div>
+					</div> */}
 				</div>
 			)}
 

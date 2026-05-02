@@ -273,25 +273,83 @@ export async function recordBookingPaymentAction(
 		const booking = await prisma.booking.findUnique({
 			where: { id: payload.bookingId },
 			select: {
+				userId: true, // ВАЖНО: Достаем ID клиента для работы с балансом
 				totalAmount: true,
 				status: true,
-				payments: { select: { amount: true } }, // "payments" — relation field в schema.prisma
+				payments: { select: { amount: true } },
 			},
 		});
 		if (!booking) return { success: false, error: "Заказ не найден" };
 
-		const payment = await prisma.bookingPayment.create({
-			data: {
-				bookingId: payload.bookingId,
-				authorId: userId,
-				amount: payload.amount,
-				method: payload.method,
-				type: payload.type,
-				note: payload.note ?? null,
-				paidAt: new Date(), // дата фиксируется по акту транзакции
-			},
-			include: { author: { select: { name: true } } },
-		});
+		let payment: {
+			id: string;
+			amount: number;
+			method: string;
+			type: string;
+			note: string | null;
+			paidAt: Date;
+			createdAt: Date;
+			author: { name: string | null } | null;
+		};
+
+		// Если операция связана с балансом, обновляем и заказ, и кошелек клиента
+		if (payload.method === "BALANCE") {
+			// Если Расход (amount < 0) -> возвращаем на баланс (delta > 0)
+			// Если Приход (amount > 0) -> списываем с баланса (delta < 0)
+			const balanceDelta = -payload.amount;
+			const txType = balanceDelta > 0 ? "REFUND" : "DEBIT";
+			const txDesc =
+				balanceDelta > 0
+					? `Возврат средств на баланс по заказу ${payload.bookingId.slice(0, 8)}`
+					: `Списание с баланса в счет заказа ${payload.bookingId.slice(0, 8)}`;
+
+			const [createdPayment] = await prisma.$transaction([
+				// 1. Создаем платеж в самом заказе
+				prisma.bookingPayment.create({
+					data: {
+						bookingId: payload.bookingId,
+						authorId: userId,
+						amount: payload.amount,
+						method: payload.method,
+						type: payload.type,
+						note: payload.note ?? null,
+						paidAt: new Date(),
+					},
+					include: { author: { select: { name: true } } },
+				}),
+				// 2. Обновляем реальный баланс клиента
+				prisma.user.update({
+					where: { id: booking.userId },
+					data: { balance: { increment: balanceDelta } },
+				}),
+				// 3. Записываем историю изменения баланса
+				prisma.balanceTransaction.create({
+					data: {
+						userId: booking.userId,
+						bookingId: payload.bookingId,
+						type: txType,
+						amount: balanceDelta,
+						description: txDesc,
+						authorId: userId,
+					},
+				}),
+			]);
+			payment = createdPayment;
+		} else {
+			// Стандартный сценарий (Наличные, Карта и т.д.)
+			payment = await prisma.bookingPayment.create({
+				data: {
+					bookingId: payload.bookingId,
+					authorId: userId,
+					amount: payload.amount,
+					method: payload.method,
+					type: payload.type,
+					note: payload.note ?? null,
+					paidAt: new Date(),
+				},
+				include: { author: { select: { name: true } } },
+			});
+		}
 
 		const prevPaid = booking.payments.reduce((s, p) => s + p.amount, 0);
 		const newTotalPaid = prevPaid + payload.amount;
@@ -314,7 +372,7 @@ export async function recordBookingPaymentAction(
 			valueBefore: `Оплачено: ${prevPaid.toLocaleString("ru-RU")} ₽`,
 			valueAfter: `Оплачено: ${newTotalPaid.toLocaleString("ru-RU")} ₽ (${
 				payload.amount > 0 ? "+" : ""
-			}${payload.amount.toLocaleString("ru-RU")} ₽ · ${PAYMENT_METHOD_LABELS[payload.method]})`,
+			}${payload.amount.toLocaleString("ru-RU")} ₽ · ${PAYMENT_METHOD_LABELS[payload.method] || payload.method})`,
 			meta: { method: payload.method, note: payload.note, paymentStatus },
 		});
 
@@ -651,9 +709,9 @@ export async function searchEquipmentAction(query: string): Promise<
 				id: true,
 				title: true,
 				pricePerDay: true,
+				priceStudio: true,
 				price4h: true,
 				price8h: true,
-				priceStudio: true,
 				deposit: true,
 				replacementValue: true,
 			},

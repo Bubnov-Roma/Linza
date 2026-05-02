@@ -170,6 +170,10 @@ export interface AdminBookingRow {
 	paymentStatus?: PaymentStatus;
 	totalPaid?: number;
 	labelTexts?: string[];
+	payments?: BookingPaymentRow[];
+	user?: {
+		balance: number;
+	};
 }
 
 export interface BookingLabel {

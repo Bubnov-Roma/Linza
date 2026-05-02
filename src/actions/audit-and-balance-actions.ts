@@ -2,6 +2,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { computePaymentStatus } from "@/actions/admin-booking-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -367,7 +368,6 @@ export async function applyBalanceToBookingAction(
 ): Promise<{
 	success: boolean;
 	newBalance?: number;
-	newTotal?: number;
 	error?: string;
 }> {
 	try {
@@ -380,7 +380,8 @@ export async function applyBalanceToBookingAction(
 			}),
 			prisma.booking.findUnique({
 				where: { id: bookingId },
-				select: { totalAmount: true },
+				// Запрашиваем платежи, чтобы посчитать текущую оплаченную сумму
+				select: { totalAmount: true, payments: { select: { amount: true } } },
 			}),
 		]);
 
@@ -391,22 +392,36 @@ export async function applyBalanceToBookingAction(
 				success: false,
 				error: `Недостаточно средств на балансе (есть ${user.balance} ₽)`,
 			};
-		if (amount > booking.totalAmount)
-			return { success: false, error: "Нельзя списать больше суммы заказа" };
 
-		const newTotal = booking.totalAmount - amount;
+		const prevPaid = booking.payments.reduce((s, p) => s + p.amount, 0);
+		const remaining = booking.totalAmount - prevPaid;
 
-		const [updatedUser, updatedBooking] = await prisma.$transaction([
+		if (amount > remaining)
+			return {
+				success: false,
+				error: "Нельзя списать больше суммы остатка к оплате",
+			};
+
+		const [updatedUser] = await prisma.$transaction([
+			// 1. Списываем средства с баланса пользователя
 			prisma.user.update({
 				where: { id: userId },
 				data: { balance: { decrement: amount } },
 				select: { balance: true },
 			}),
-			prisma.booking.update({
-				where: { id: bookingId },
-				data: { totalAmount: newTotal },
-				select: { totalAmount: true },
+			// 2. ИСПРАВЛЕНИЕ: Создаем платеж в заказе! Стоимость заказа (totalAmount) не трогаем.
+			prisma.bookingPayment.create({
+				data: {
+					bookingId,
+					authorId,
+					amount: amount,
+					method: "BALANCE", // Указываем, что оплачено с баланса
+					type: "PAYMENT", // Или другой тип по умолчанию
+					note: "Оплата заказа с баланса клиента",
+					paidAt: new Date(),
+				},
 			}),
+			// 3. Записываем историю транзакций баланса
 			prisma.balanceTransaction.create({
 				data: {
 					userId,
@@ -419,20 +434,28 @@ export async function applyBalanceToBookingAction(
 			}),
 		]);
 
+		const newTotalPaid = prevPaid + amount;
+
+		const paymentStatus = await computePaymentStatus(
+			newTotalPaid,
+			booking.totalAmount
+		);
+
 		// Лог в историю заказа
 		await writeAuditLog(bookingId, authorId, authorName, {
-			action: "Применён баланс клиента",
-			fieldName: "totalAmount",
-			valueBefore: `${booking.totalAmount} ₽`,
-			valueAfter: `${newTotal} ₽ (−${amount} ₽ с баланса)`,
+			action: "Оплата с баланса",
+			fieldName: "payments",
+			valueBefore: `Оплачено: ${prevPaid.toLocaleString("ru-RU")} ₽`,
+			valueAfter: `Оплачено: ${newTotalPaid.toLocaleString("ru-RU")} ₽ (+${amount} ₽ с баланса)`,
+			meta: { paymentStatus },
 		});
 
 		revalidatePath("/admin/bookings");
 		revalidatePath("/admin/users");
+
 		return {
 			success: true,
 			newBalance: updatedUser.balance,
-			newTotal: updatedBooking.totalAmount,
 		};
 	} catch (e) {
 		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };

@@ -352,7 +352,10 @@ export function StudioBookingSheet({
 	// ── Success screen ─────────────────────────────────────────────────────────
 	const successContent = bookingId ? (
 		<div className="flex flex-col items-center justify-center min-h-75 gap-4 p-6">
-			<BookingSuccessScreen bookingId={bookingId} />
+			<BookingSuccessScreen
+				bookingId={bookingId}
+				redirectUrl={`/dashboard/studio-bookings/${bookingId}`}
+			/>
 		</div>
 	) : null;
 

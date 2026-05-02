@@ -152,9 +152,9 @@ export function ImageCell({
 		<div className="space-y-3">
 			{/* Ряд всех загруженных фото с drag & drop */}
 
-			<div className="flex flex-wrap gap-2">
+			<div className="flex flex-wrap gap-2 items-center justify-start">
 				{images.length > 0 && (
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-wrap gap-2 items-center justify-between">
 						{images.map((img, index) => (
 							<Card
 								key={img.id}

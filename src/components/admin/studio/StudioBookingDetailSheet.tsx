@@ -1,297 +1,394 @@
 "use client";
 
 import {
-	CalendarBlankIcon,
-	CaretDownIcon,
+	CalendarIcon,
 	ClockIcon,
-	CurrencyRubIcon,
-	ListIcon,
 	UserIcon,
-	WarningCircleIcon,
+	VideoIcon,
 } from "@phosphor-icons/react";
-import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type {
-	StudioBookingDetail,
-	StudioBookingRow,
-} from "@/actions/admin-studio-actions";
+import type { StudioBookingDetail } from "@/actions/admin-studio-actions";
 import {
+	deleteStudioPaymentAction,
 	getStudioBookingDetailAction,
+	getStudioPaymentsAction,
+	recordStudioPaymentAction,
+	refundStudioToBalanceAction,
 	updateStudioBookingStatusAction,
 } from "@/actions/admin-studio-actions";
-import { PAYMENT_STATUS_CONFIG } from "@/components/admin/bookings/PaymentsPanel";
-import { StudioPaymentsPanel } from "@/components/admin/studio/StudioPaymentsPanel";
+import { getUserBalanceAction } from "@/actions/audit-and-balance-actions";
+import { PaymentsPanel } from "@/components/admin/bookings/PaymentsPanel";
 import {
 	Badge,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Sheet,
 	SheetContent,
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui";
-import { BOOKING_STATUS_CONFIG } from "@/constants";
+import { BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG } from "@/constants";
 import type { BookingStatus } from "@/core/domain/entities/Booking";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDateTime(d: Date) {
+function fmtDateTime(d: Date | string) {
 	return new Date(d).toLocaleString("ru-RU", {
 		day: "numeric",
 		month: "short",
+		year: "numeric",
 		hour: "2-digit",
 		minute: "2-digit",
 	});
 }
 
-function fmtRub(n: number) {
-	return `${n.toLocaleString("ru-RU")} ₽`;
-}
+type TabId = "info" | "payments" | "history";
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-
-type TabId = "info" | "payments" | "log";
-
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-	{ id: "info", label: "Детали", icon: ListIcon },
-	{ id: "payments", label: "Платежи", icon: CurrencyRubIcon },
-	{ id: "log", label: "История", icon: ClockIcon },
+const TABS: { id: TabId; label: string }[] = [
+	{ id: "info", label: "Детали" },
+	{ id: "payments", label: "Платежи" },
+	{ id: "history", label: "История" },
 ];
 
-// ─── StatusChanger ────────────────────────────────────────────────────────────
+// ─── InfoTab ──────────────────────────────────────────────────────────────────
 
-function StatusChanger({
-	bookingId,
-	status,
+function InfoTab({
+	booking,
 	onRefresh,
 }: {
-	bookingId: string;
-	status: BookingStatus;
+	booking: StudioBookingDetail;
 	onRefresh: () => void;
 }) {
-	const [open, setOpen] = useState(false);
-	const [loading, setLoading] = useState<BookingStatus | null>(null);
-	const cfg = BOOKING_STATUS_CONFIG[status] ?? {
-		label: status,
-		color: "bg-foreground/8 text-foreground/50",
-		dot: "bg-foreground/30",
-	};
+	const [isChangingStatus, startStatusChange] = useTransition();
+	const statusCfg = BOOKING_STATUS_CONFIG[booking.status];
+	const psCfg = PAYMENT_STATUS_CONFIG[booking.paymentStatus];
+	const start = new Date(booking.startDate);
+	const end = new Date(booking.endDate);
 
 	return (
-		<DropdownMenu open={open} onOpenChange={setOpen}>
-			<DropdownMenuTrigger asChild>
+		<div className="space-y-5">
+			{/* Status selector */}
+			<div className="flex items-center gap-3 p-4 rounded-2xl border border-foreground/8 bg-foreground/3">
 				<Badge
 					variant="outline"
 					className={cn(
-						"text-xs gap-1.5 border font-semibold cursor-pointer hover:opacity-80 select-none rounded-2xl px-3 py-1.5",
-						cfg.color
+						"text-[11px] gap-1.5 font-semibold rounded-2xl shrink-0",
+						statusCfg?.color
 					)}
 				>
-					<span className={cn("w-2 h-2 rounded-full", cfg.dot)} />
-					{cfg.label}
-					<CaretDownIcon size={10} className="opacity-60" />
+					<span className={cn("w-1.5 h-1.5 rounded-full", statusCfg?.dot)} />
+					{statusCfg?.label ?? booking.status}
 				</Badge>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-48 rounded-2xl">
-				{(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[])
-					.filter((s) => s !== status)
-					.map((s) => {
-						const scfg = BOOKING_STATUS_CONFIG[s];
-						return (
-							<DropdownMenuItem
-								key={s}
-								disabled={loading !== null}
-								className={cn(
-									"text-xs gap-2 rounded-full",
-									s === "CANCELLED" && "text-red-500 focus:text-red-500"
-								)}
-								onClick={async () => {
-									setLoading(s);
-									const r = await updateStudioBookingStatusAction(bookingId, s);
-									setLoading(null);
-									setOpen(false);
-									if (r.success) {
-										onRefresh();
-										toast.success(`Статус → ${scfg.label}`);
-									} else {
-										toast.error(r.error ?? "Ошибка");
-									}
-								}}
+				<Select
+					disabled={isChangingStatus}
+					onValueChange={(v) => {
+						startStatusChange(async () => {
+							const r = await updateStudioBookingStatusAction(
+								booking.id,
+								v as BookingStatus
+							);
+							if (r.success) {
+								toast.success(
+									`Статус → ${BOOKING_STATUS_CONFIG[v as BookingStatus]?.label}`
+								);
+								onRefresh();
+							} else toast.error(r.error ?? "Ошибка");
+						});
+					}}
+				>
+					<SelectTrigger className="h-7 text-xs flex-1 max-w-44 border-dashed">
+						<SelectValue placeholder="Сменить статус…" />
+					</SelectTrigger>
+					<SelectContent>
+						{(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[])
+							.filter((s) => s !== booking.status)
+							.map((s) => (
+								<SelectItem key={s} value={s} className="text-xs">
+									{BOOKING_STATUS_CONFIG[s]?.label}
+								</SelectItem>
+							))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			{/* Client */}
+			<div className="space-y-1">
+				<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+					<UserIcon size={11} /> Клиент
+				</p>
+				<div className="flex items-start justify-between gap-2">
+					<div>
+						<p className="font-bold">{booking.userName || "Без имени"}</p>
+						<p className="text-sm text-muted-foreground">
+							{booking.userEmail || "—"}
+						</p>
+						{booking.userPhone && (
+							<p className="text-sm text-muted-foreground">
+								{booking.userPhone}
+							</p>
+						)}
+					</div>
+					{/* Баланс клиента — чип рядом с клиентом */}
+					{booking.userBalance > 0 && (
+						<span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-violet-500/10 text-violet-600 border border-violet-500/20 dark:text-violet-400 shrink-0">
+							Баланс: {fmtRub(booking.userBalance)}
+						</span>
+					)}
+				</div>
+			</div>
+
+			{/* Tariff + period */}
+			<div className="space-y-2">
+				<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+					<VideoIcon size={11} /> Аренда студии
+				</p>
+				<div className="rounded-xl border border-foreground/8 bg-foreground/3 p-3 space-y-2">
+					<div className="flex items-center justify-between">
+						<span className="text-sm font-bold">{booking.tariffName}</span>
+						<span className="text-sm font-black text-primary">
+							{fmtRub(booking.tariffPriceAtBooking)}
+							<span className="text-xs text-muted-foreground font-normal">
+								/ч
+							</span>
+						</span>
+					</div>
+					<p className="text-xs text-muted-foreground flex items-center gap-1.5">
+						<CalendarIcon size={11} />
+						{start.toLocaleDateString("ru-RU", {
+							day: "numeric",
+							month: "short",
+							year: "numeric",
+						})}
+						{" · "}
+						{start.toLocaleTimeString("ru-RU", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+						{" → "}
+						{end.toLocaleTimeString("ru-RU", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+						{start.toDateString() !== end.toDateString() && (
+							<>
+								{" "}
+								(
+								{end.toLocaleDateString("ru-RU", {
+									day: "numeric",
+									month: "short",
+								})}
+								)
+							</>
+						)}
+					</p>
+					<p className="text-xs text-muted-foreground flex items-center gap-1.5">
+						<ClockIcon size={11} />
+						{booking.durationHours % 1 === 0
+							? `${booking.durationHours} ч`
+							: `${booking.durationHours.toFixed(1)} ч`}
+					</p>
+				</div>
+			</div>
+
+			{/* Extra equipment */}
+			{booking.items.length > 0 && (
+				<div className="space-y-2">
+					<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+						Доп. оборудование ({booking.items.length})
+					</p>
+					<div className="space-y-1.5">
+						{booking.items.map((item) => (
+							<div
+								key={item.id}
+								className="flex items-center gap-2 px-3 py-2 rounded-xl border border-foreground/8 bg-foreground/3"
 							>
-								<span
-									className={cn("w-1.5 h-1.5 rounded-full shrink-0", scfg.dot)}
-								/>
-								{scfg.label}
-								{loading === s && (
-									<span className="ml-auto w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-								)}
-							</DropdownMenuItem>
-						);
-					})}
-			</DropdownMenuContent>
-		</DropdownMenu>
+								<span className="flex-1 text-sm truncate">
+									{item.equipmentTitle}
+								</span>
+								<span className="text-sm font-bold text-primary shrink-0">
+									+ {fmtRub(item.priceAtBooking)}
+								</span>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Financial summary */}
+			<div className="rounded-xl border border-foreground/8 bg-foreground/3 p-3 space-y-2">
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-muted-foreground">Итого</span>
+					<span className="font-black text-base">
+						{fmtRub(booking.totalAmount)}
+					</span>
+				</div>
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-muted-foreground">Оплачено</span>
+					<span
+						className={cn(
+							"font-bold",
+							booking.totalPaid >= booking.totalAmount
+								? "text-emerald-500"
+								: "text-amber-500"
+						)}
+					>
+						{fmtRub(booking.totalPaid)}
+					</span>
+				</div>
+				{booking.paymentStatus === "OVERPAID" && (
+					<div className="flex items-center justify-between text-sm">
+						<span className="text-blue-400">Переплата</span>
+						<span className="font-bold text-blue-400">
+							{fmtRub(booking.totalPaid - booking.totalAmount)}
+						</span>
+					</div>
+				)}
+				<div className="pt-1 border-t border-foreground/8">
+					<Badge
+						variant="outline"
+						className={cn("text-[10px] gap-1.5 rounded-2xl", psCfg?.color)}
+					>
+						<span className={cn("w-1.5 h-1.5 rounded-full", psCfg?.dot)} />
+						{psCfg?.label}
+					</Badge>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ─── HistoryTab ───────────────────────────────────────────────────────────────
+
+function HistoryTab({ booking }: { booking: StudioBookingDetail }) {
+	const ACTION_LABELS: Record<string, string> = {
+		CREATED: "Заказ создан",
+		STATUS_CHANGED: "Статус изменён",
+		PAYMENT_ADDED: "Платёж добавлен",
+		PAYMENT_DELETED: "Платёж удалён",
+		REFUND_TO_BALANCE: "Возврат на баланс",
+		CANCELLED: "Заказ отменён",
+	};
+
+	if (booking.auditLogs.length === 0) {
+		return (
+			<p className="text-center text-sm text-muted-foreground py-8 italic">
+				История изменений пуста
+			</p>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{booking.auditLogs.map((log) => (
+				<div
+					key={log.id}
+					className="flex gap-3 px-3 py-2.5 rounded-xl border border-foreground/8 bg-foreground/3"
+				>
+					<div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0 mt-1.5" />
+					<div className="flex-1 min-w-0">
+						<p className="text-sm font-medium">
+							{ACTION_LABELS[log.action] ?? log.action}
+						</p>
+						{log.fieldName === "status" &&
+							log.valueBefore &&
+							log.valueAfter && (
+								<p className="text-[11px] text-muted-foreground mt-0.5">
+									{BOOKING_STATUS_CONFIG[log.valueBefore as BookingStatus]
+										?.label ?? log.valueBefore}
+									{" → "}
+									{BOOKING_STATUS_CONFIG[log.valueAfter as BookingStatus]
+										?.label ?? log.valueAfter}
+								</p>
+							)}
+						{log.fieldName === "payment" && log.valueAfter && (
+							<p className="text-[11px] text-muted-foreground">
+								{fmtRub(Number(log.valueAfter))}
+							</p>
+						)}
+						<p className="text-[10px] text-muted-foreground/50 mt-1">
+							{log.authorName && <span>{log.authorName} · </span>}
+							{fmtDateTime(log.createdAt)}
+						</p>
+					</div>
+				</div>
+			))}
+		</div>
 	);
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-interface StudioBookingDetailSheetProps {
-	booking: StudioBookingRow | null;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onStatusUpdate?: () => void;
-}
-
 export function StudioBookingDetailSheet({
-	booking,
+	bookingId,
 	open,
 	onOpenChange,
 	onStatusUpdate,
-}: StudioBookingDetailSheetProps) {
+}: {
+	bookingId: string | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onStatusUpdate?: () => void;
+}) {
+	const [booking, setBooking] = useState<StudioBookingDetail | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 	const [activeTab, setActiveTab] = useState<TabId>("info");
-	const [detail, setDetail] = useState<StudioBookingDetail | null>(null);
-	const [isLoadingDetail, startLoadTransition] = useTransition();
 
-	// Load full detail when opening
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
+	const loadBooking = useCallback(async (id: string) => {
+		setIsLoading(true);
+		const data = await getStudioBookingDetailAction(id);
+		setBooking(data);
+		setIsLoading(false);
+	}, []);
+
 	useEffect(() => {
-		if (!open || !booking) return;
-		setDetail(null);
-		setActiveTab("info");
-		startLoadTransition(async () => {
-			const d = await getStudioBookingDetailAction(booking.id);
-			setDetail(d);
-		});
-	}, [open, booking?.id]);
+		if (open && bookingId) loadBooking(bookingId);
+		if (!open)
+			setTimeout(() => {
+				setBooking(null);
+				setActiveTab("info");
+			}, 300);
+	}, [open, bookingId, loadBooking]);
 
-	const refreshDetail = () => {
-		if (!booking) return;
-		startLoadTransition(async () => {
-			const d = await getStudioBookingDetailAction(booking.id);
-			setDetail(d);
-			onStatusUpdate?.();
-		});
-	};
-
-	const payStatus = detail?.paymentStatus ?? booking?.paymentStatus;
-	const payCfg = payStatus ? PAYMENT_STATUS_CONFIG[payStatus] : null;
-
-	const durationHours = booking?.durationHours ?? 0;
-	const durationLabel =
-		durationHours % 1 === 0
-			? `${durationHours} ч`
-			: `${durationHours.toFixed(1)} ч`;
+	const handleRefresh = useCallback(() => {
+		if (bookingId) loadBooking(bookingId);
+		onStatusUpdate?.();
+	}, [bookingId, loadBooking, onStatusUpdate]);
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0 overflow-hidden">
-				{/* ── Header ── */}
-				<SheetHeader className="px-6 py-5 border-b border-foreground/5 shrink-0">
-					<div className="flex items-start justify-between gap-3">
-						<div className="min-w-0">
-							<SheetTitle className="text-base font-black italic uppercase tracking-tighter truncate">
-								{booking?.tariffName ?? "Аренда студии"}
-							</SheetTitle>
-							<p className="text-xs text-muted-foreground mt-0.5 truncate">
-								{booking?.userName || "Без имени"} ·{" "}
-								{booking?.id.slice(0, 8).toUpperCase()}
-							</p>
-						</div>
-						<div className="flex flex-col items-end gap-1.5 shrink-0">
-							{booking && (
-								<StatusChanger
-									bookingId={booking.id}
-									status={booking.status}
-									onRefresh={refreshDetail}
-								/>
-							)}
-							{payCfg && (
-								<Badge
-									variant="outline"
-									className={cn(
-										"text-[10px] gap-1 border rounded-xl",
-										payCfg.color
-									)}
-								>
-									<span
-										className={cn("w-1.5 h-1.5 rounded-full", payCfg.dot)}
-									/>
-									{payCfg.label}
-								</Badge>
-							)}
-						</div>
+			<SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+				{/* Header */}
+				<SheetHeader className="px-5 py-4 border-b border-foreground/5 shrink-0">
+					<div className="flex items-center gap-2">
+						<VideoIcon size={16} weight="duotone" />
+						<SheetTitle className="text-base font-black italic uppercase tracking-tighter">
+							Аренда студии
+						</SheetTitle>
+						{booking && (
+							<span className="text-[10px] text-muted-foreground ml-1 font-mono select-all">
+								{booking.id.slice(-6).toUpperCase()}
+							</span>
+						)}
 					</div>
 				</SheetHeader>
 
-				{/* ── Quick summary bar ── */}
-				{booking && (
-					<div className="grid grid-cols-3 divide-x divide-foreground/5 border-b border-foreground/5 shrink-0">
-						<div className="px-4 py-3">
-							<p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-								Период
-							</p>
-							<p className="text-xs font-bold mt-0.5">
-								{new Date(booking.startDate).toLocaleDateString("ru-RU", {
-									day: "numeric",
-									month: "short",
-								})}
-							</p>
-							<p className="text-[10px] text-muted-foreground">
-								{new Date(booking.startDate).toLocaleTimeString("ru-RU", {
-									hour: "2-digit",
-									minute: "2-digit",
-								})}{" "}
-								—{" "}
-								{new Date(booking.endDate).toLocaleTimeString("ru-RU", {
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
-							</p>
-						</div>
-						<div className="px-4 py-3">
-							<p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-								Длительность
-							</p>
-							<p className="text-xs font-bold mt-0.5">{durationLabel}</p>
-							<p className="text-[10px] text-muted-foreground">
-								{fmtRub(booking.tariffPriceAtBooking)}/ч
-							</p>
-						</div>
-						<div className="px-4 py-3">
-							<p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-								Итого
-							</p>
-							<p className="text-sm font-black text-primary mt-0.5">
-								{fmtRub(booking.totalAmount)}
-							</p>
-							{booking.itemsCount > 0 && (
-								<p className="text-[10px] text-muted-foreground">
-									+ {booking.itemsCount} техника
-								</p>
-							)}
-						</div>
-					</div>
-				)}
-
-				{/* ── Tabs ── */}
-				<div className="flex border-b border-foreground/5 shrink-0">
-					{TABS.map(({ id, label, icon: Icon }) => (
+				{/* Tabs */}
+				<div className="flex border-b border-foreground/5 px-5 shrink-0">
+					{TABS.map(({ id, label }) => (
 						<button
 							key={id}
 							type="button"
 							onClick={() => setActiveTab(id)}
 							className={cn(
-								"flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-all relative",
+								"px-3 py-3 text-xs font-bold whitespace-nowrap transition-all relative",
 								activeTab === id
 									? "text-primary"
 									: "text-foreground/50 hover:text-foreground"
 							)}
 						>
-							<Icon size={13} />
 							{label}
 							{activeTab === id && (
 								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
@@ -300,206 +397,72 @@ export function StudioBookingDetailSheet({
 					))}
 				</div>
 
-				{/* ── Content ── */}
-				<div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5">
-					{isLoadingDetail && !detail ? (
-						<div className="space-y-3 animate-pulse">
-							{[1, 2, 3, 4].map((i) => (
-								<div key={i} className="h-12 rounded-xl bg-foreground/5" />
-							))}
-						</div>
-					) : (
-						<>
-							{/* ── INFO TAB ── */}
-							{activeTab === "info" && detail && (
-								<div className="space-y-5">
-									{/* Client */}
-									<section className="space-y-2">
-										<p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-											<UserIcon size={11} />
-											Клиент
-										</p>
-										<div className="rounded-xl border border-foreground/8 bg-foreground/3 p-3 space-y-1">
-											<p className="text-sm font-bold">
-												{detail.userName || "Без имени"}
-											</p>
-											{detail.userEmail && (
-												<p className="text-xs text-muted-foreground">
-													{detail.userEmail}
-												</p>
-											)}
-											{detail.userPhone && (
-												<p className="text-xs text-muted-foreground">
-													{detail.userPhone}
-												</p>
-											)}
-										</div>
-									</section>
+				{/* Body:
+				    - info + history: overflow-y-auto (всё скроллируется целиком)
+				    - payments: flex column, PaymentsPanel сам управляет скроллом истории
+				*/}
+				{isLoading ? (
+					<div className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+						{[60, 40, 80, 40, 55].map((w, i) => (
+							<div
+								key={i}
+								className="h-4 bg-foreground/5 rounded animate-pulse"
+								style={{ width: `${w}%` }}
+							/>
+						))}
+					</div>
+				) : !booking ? (
+					<div className="flex-1 flex items-center justify-center">
+						<p className="text-sm text-muted-foreground">Заказ не найден</p>
+					</div>
+				) : (
+					<>
+						{activeTab === "info" && (
+							<div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar">
+								<InfoTab booking={booking} onRefresh={handleRefresh} />
+							</div>
+						)}
 
-									{/* Tariff */}
-									<section className="space-y-2">
-										<p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-											<CalendarBlankIcon size={11} />
-											Тариф и период
-										</p>
-										<div className="rounded-xl border border-foreground/8 bg-foreground/3 p-3 space-y-2">
-											<div className="flex justify-between">
-												<span className="text-sm font-bold">
-													{detail.tariffName}
-												</span>
-												<span className="text-sm font-black text-primary">
-													{fmtRub(detail.tariffPriceAtBooking)}/ч
-												</span>
-											</div>
-											<div className="flex justify-between text-xs text-muted-foreground">
-												<span>
-													{fmtDateTime(detail.startDate)} —{" "}
-													{fmtDateTime(detail.endDate)}
-												</span>
-												<span className="font-medium">{durationLabel}</span>
-											</div>
-											<div className="flex justify-between text-xs border-t border-foreground/5 pt-2">
-												<span className="text-muted-foreground">
-													Стоимость тарифа
-												</span>
-												<span className="font-bold">
-													{fmtRub(detail.tariffPriceAtBooking * durationHours)}
-												</span>
-											</div>
-										</div>
-									</section>
-
-									{/* Equipment items */}
-									{detail.items.length > 0 && (
-										<section className="space-y-2">
-											<p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-												Дополнительное оборудование
-											</p>
-											<div className="space-y-1.5">
-												{detail.items.map((item) => (
-													<div
-														key={item.id}
-														className="flex items-center gap-2.5 rounded-xl border border-foreground/6 bg-foreground/2 px-3 py-2"
-													>
-														<div className="relative shrink-0 w-8 h-8 rounded-lg overflow-hidden bg-foreground/5">
-															{item.equipmentImageUrl ? (
-																<Image
-																	src={item.equipmentImageUrl}
-																	alt={item.equipmentTitle}
-																	fill
-																	sizes="32px"
-																	className="object-cover"
-																/>
-															) : null}
-														</div>
-														<span className="flex-1 text-xs font-medium truncate">
-															{item.equipmentTitle}
-														</span>
-														<span className="text-xs font-bold text-primary shrink-0">
-															{fmtRub(item.priceAtBooking)}
-														</span>
-													</div>
-												))}
-											</div>
-										</section>
-									)}
-
-									{/* Total */}
-									<div className="rounded-xl bg-primary/5 border border-primary/15 px-4 py-3 flex justify-between items-center">
-										<span className="text-sm font-bold text-muted-foreground">
-											Итого
-										</span>
-										<span className="text-xl font-black text-primary">
-											{fmtRub(detail.totalAmount)}
-										</span>
-									</div>
-
-									{/* Cancellation */}
-									{detail.cancellationReason && (
-										<div className="flex items-start gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3">
-											<WarningCircleIcon
-												size={14}
-												className="text-red-400 shrink-0 mt-0.5"
-											/>
-											<div>
-												<p className="text-xs font-bold text-red-400">
-													Причина отмены
-												</p>
-												<p className="text-xs text-red-400/80 mt-0.5">
-													{detail.cancellationReason}
-												</p>
-											</div>
-										</div>
-									)}
-								</div>
-							)}
-
-							{/* ── PAYMENTS TAB ── */}
-							{activeTab === "payments" && booking && (
-								<StudioPaymentsPanel
-									studioBookingId={booking.id}
+						{activeTab === "payments" && (
+							// Payments tab: фиксированный верх (summary + форма) + скроллируемая история
+							<div className="flex-1 flex flex-col min-h-0 px-5 py-5">
+								<PaymentsPanel
+									key={booking?.id}
+									bookingId={booking.id} // Передаем ID вместо массива payments
 									totalAmount={booking.totalAmount}
-									currentStatus={booking.status}
-									onStatusChangeNeeded={() => setActiveTab("info")}
+									userId={booking?.userId ?? ""}
+									// userBalance={booking.userBalance}
+									showOpType={false}
+									// canRefundToBalance={booking.totalPaid > booking.totalAmount}
+									bookingStatus={booking.status}
+									// onRefresh={handleRefresh}
+									actions={{
+										getPayments: getStudioPaymentsAction,
+										recordPayment: recordStudioPaymentAction,
+										deletePayment: deleteStudioPaymentAction,
+										getUserBalance: getUserBalanceAction,
+										refundToBalance: async (id, amount) =>
+											refundStudioToBalanceAction(id, amount),
+										applyBalance: async (id, amount) =>
+											recordStudioPaymentAction({
+												bookingId: id,
+												amount: Number(amount),
+												method: "BALANCE",
+												type: "PAYMENT",
+												note: "Оплата с баланса",
+											}),
+									}}
 								/>
-							)}
+							</div>
+						)}
 
-							{/* ── LOG TAB ── */}
-							{activeTab === "log" && detail && (
-								<div className="space-y-2">
-									{detail.auditLogs.length === 0 ? (
-										<p className="text-xs text-muted-foreground/40 italic text-center py-8">
-											История изменений пуста
-										</p>
-									) : (
-										detail.auditLogs.map((log) => (
-											<div
-												key={log.id}
-												className="flex items-start gap-2.5 py-2 border-b border-foreground/5 last:border-0"
-											>
-												<div className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-1.5 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<div className="flex items-baseline justify-between gap-2">
-														<p className="text-xs font-semibold truncate">
-															{log.action === "CREATED" && "Заказ создан"}
-															{log.action === "STATUS_CHANGED" &&
-																`Статус: ${BOOKING_STATUS_CONFIG[log.valueBefore as BookingStatus]?.label ?? log.valueBefore} → ${BOOKING_STATUS_CONFIG[log.valueAfter as BookingStatus]?.label ?? log.valueAfter}`}
-															{log.action === "PAYMENT_ADDED" &&
-																`Платёж: +${fmtRub(Number(log.valueAfter))}`}
-															{log.action === "PAYMENT_DELETED" &&
-																`Платёж удалён: ${fmtRub(Number(log.valueBefore))}`}
-															{log.action === "CANCELLED" && "Заказ отменён"}
-															{![
-																"CREATED",
-																"STATUS_CHANGED",
-																"PAYMENT_ADDED",
-																"PAYMENT_DELETED",
-																"CANCELLED",
-															].includes(log.action) && log.action}
-														</p>
-														<span className="text-[10px] text-muted-foreground/50 shrink-0">
-															{new Date(log.createdAt).toLocaleString("ru-RU", {
-																day: "numeric",
-																month: "short",
-																hour: "2-digit",
-																minute: "2-digit",
-															})}
-														</span>
-													</div>
-													{log.authorName && (
-														<p className="text-[10px] text-muted-foreground/50 mt-0.5">
-															{log.authorName}
-														</p>
-													)}
-												</div>
-											</div>
-										))
-									)}
-								</div>
-							)}
-						</>
-					)}
-				</div>
+						{activeTab === "history" && (
+							<div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar">
+								<HistoryTab booking={booking} />
+							</div>
+						)}
+					</>
+				)}
 			</SheetContent>
 		</Sheet>
 	);

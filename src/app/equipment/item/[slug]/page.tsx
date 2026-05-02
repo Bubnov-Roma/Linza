@@ -41,7 +41,7 @@ export default async function EquipmentDetailsPage({
 				sku={equipment.id}
 				price={equipment.pricePerDay}
 				priceCurrency="RUB"
-				url={`https://linzarental.ru/catalog/item/${equipment.slug}`}
+				url={`https://linzarental.ru/equipment/item/${equipment.slug}`}
 				availability={
 					equipment.isAvailable
 						? "https://schema.org/InStock"

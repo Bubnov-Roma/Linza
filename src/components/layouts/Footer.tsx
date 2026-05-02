@@ -5,13 +5,11 @@ import {
 	TelegramLogoIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { Logo } from "@/components/icons/Logo";
+import type { SupportInfo } from "@/constants";
 import { cn } from "@/lib/utils";
 
-export async function Footer() {
-	const support = await getSupportInfo();
-
+export async function Footer({ support }: { support: SupportInfo }) {
 	const footerLinkClass =
 		"text-sm text-muted-foreground hover:text-primary transition-colors duration-200";
 	const sectionTitleClass =

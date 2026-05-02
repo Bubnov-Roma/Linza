@@ -34,6 +34,7 @@ import { MOBILE_NAV } from "@/constants/navigation";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { useAdminNotificationsStore } from "@/store";
 import { useAuthModalStore } from "@/store/auth-modal.store";
 import { useCartStore } from "@/store/use-cart.store";
 import { MobileSearch, type MobileSearchHandle } from "./MobileSearch";
@@ -103,16 +104,9 @@ function TabBtn({
 interface MobileNavBarProps {
 	categories: DbCategory[];
 	isAdmin: boolean;
-	pendingBookings: number;
-	pendingApplications: number;
 }
 
-export function MobileNavBar({
-	categories,
-	isAdmin,
-	pendingBookings = 0,
-	pendingApplications = 0,
-}: MobileNavBarProps) {
+export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 	const cartCount = useCartStore((s) =>
 		s.items.reduce((sum, i) => sum + i.quantity, 0)
 	);
@@ -132,6 +126,10 @@ export function MobileNavBar({
 	const name =
 		profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0];
 
+	const pendingBookings = useAdminNotificationsStore((s) => s.pendingBookings);
+	const pendingApps = useAdminNotificationsStore((s) => s.pendingApps);
+	const pendingStudio = useAdminNotificationsStore((s) => s.pendingStudio);
+
 	// Формируем список навигации на основе роли
 	const navItems = isAdmin
 		? [
@@ -142,20 +140,21 @@ export function MobileNavBar({
 					badge: pendingBookings > 0 ? pendingBookings : undefined,
 				},
 				{
+					title: "Студия",
+					href: "/admin/studio",
+					icon: VideoIcon,
+					badge: pendingStudio > 0 ? pendingStudio : undefined,
+				},
+				{
 					title: "Клиенты",
 					href: "/admin/users",
 					icon: UserIcon,
-					badge: pendingApplications > 0 ? pendingApplications : undefined,
+					badge: pendingApps > 0 ? pendingApps : undefined,
 				},
 				{
 					title: "Техника",
 					href: "/admin/equipment",
 					icon: CameraIcon,
-				},
-				{
-					title: "Студия",
-					href: "/admin/studio",
-					icon: VideoIcon,
 				},
 			]
 		: [

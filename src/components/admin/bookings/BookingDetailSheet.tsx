@@ -36,13 +36,15 @@ import {
 	adminChangeBookingClientAction,
 	adminDeleteBookingCommentAction,
 	adminForceSetBookingStatusAction,
-	adminSaveCompleteBookingAction,
 	adminUpdateBookingDatesAction,
 	adminUpdateBookingItemsAction,
 	adminUpdateBookingPricingAction,
+	deleteBookingPaymentAction,
 	getAdminBookingCommentsAction,
+	getBookingPaymentsAction,
 	type PriceAdjustment,
 	type PriceAdjustmentType,
+	recordBookingPaymentAction,
 	searchEquipmentAction,
 	searchUsersAction,
 } from "@/actions/admin-booking-actions";
@@ -53,6 +55,7 @@ import {
 	getBookingAuditLogAction,
 	getBookingLabelsAction,
 	getUserBalanceAction,
+	refundToBalanceAction,
 	removeBookingLabelAction,
 } from "@/actions/audit-and-balance-actions";
 import { DocumentsPanel } from "@/components/admin/bookings/documents/DocumentsPanel";
@@ -95,7 +98,12 @@ import type {
 	EquipmentSearchResult,
 	UserSearchResult,
 } from "@/core/domain/entities/Booking";
-import { calculateItemPrice, cn, combineDateAndTime } from "@/lib/utils";
+import {
+	calculateItemPrice,
+	cn,
+	combineDateAndTime,
+	fmtRub,
+} from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,10 +139,6 @@ function periodFromBooking(
 		startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`,
 		endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
 	};
-}
-
-function fmtRub(n: number) {
-	return `${n.toLocaleString("ru-RU")} ₽`;
 }
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
@@ -1297,7 +1301,7 @@ function BalanceSection({
 			);
 			if (r.success) {
 				setBalance(r.newBalance ?? 0);
-				onApplied(r.newTotal ?? booking.totalAmount);
+				onApplied(r.newBalance ?? booking.totalAmount);
 				setApplyAmount("");
 				toast.success(`Списано ${amount} ₽ с баланса клиента`);
 			} else {
@@ -1445,13 +1449,6 @@ export function BookingDetailSheet({
 		}
 	}, [open, localBooking?.id]);
 
-	const totalDeposit = useMemo(() => {
-		return localBooking?.bookingItems.reduce(
-			(acc, item) => acc + (item.depositAtBooking || 0),
-			0
-		);
-	}, [localBooking?.bookingItems]);
-
 	const loadPersistedData = async (bookingId: string) => {
 		const [labelsResult, auditResult, commentsResult] = await Promise.all([
 			getBookingLabelsAction(bookingId),
@@ -1552,48 +1549,6 @@ export function BookingDetailSheet({
 		},
 		{ id: "docs", label: "Документы", icon: FileTextIcon },
 	];
-
-	const handleSaveChanges = () => {
-		startTransition(async () => {
-			try {
-				// Собираем единый payload, который ожидает adminSaveCompleteBookingAction
-				const payload = {
-					// Строки дат из стейта нужно превратить в объекты Date
-					startDate: new Date(localBooking.startDate),
-					endDate: new Date(localBooking.endDate),
-					totalAmount: localBooking.totalAmount,
-					totalReplacementValue: localBooking.totalReplacementValue ?? 0,
-
-					// Собираем массив позиций (если позиции лежат в отдельном стейте localItems, используй его вместо localBooking.bookingItems)
-					items: localBooking.bookingItems.map((item) => ({
-						equipmentId: item.equipmentId,
-						priceAtBooking: item.priceAtBooking,
-						// Убедись, что эти поля тоже передаются, если ты обновил тип в самом экшене
-						depositAtBooking: item.depositAtBooking ?? 0,
-						replacementValueAtBooking: item.replacementValueAtBooking ?? 0,
-					})),
-				};
-
-				// Вызываем один общий транзакционный экшен
-				const result = await adminSaveCompleteBookingAction(
-					localBooking.id,
-					payload
-				);
-
-				if (result.success) {
-					toast.success("Бронирование успешно обновлено");
-					if (onStatusUpdate) {
-						onStatusUpdate(localBooking.id, localBooking.status);
-					}
-				} else {
-					toast.error(result.error || "Не удалось сохранить изменения");
-				}
-			} catch (error) {
-				toast.error("Произошла непредвиденная ошибка");
-				console.error("Save error:", error);
-			}
-		});
-	};
 
 	const handleAddLabel = async (
 		label: Omit<BookingLabel, "id" | "createdAt" | "author">
@@ -1839,18 +1794,41 @@ export function BookingDetailSheet({
 					)}
 
 					{activeTab === "payments" && (
-						<div className="px-6 py-4">
+						<div className="flex-1 flex flex-col min-h-0 px-5 py-5">
 							<PaymentsPanel
-								bookingId={localBooking.id}
-								totalAmount={localBooking.totalAmount}
-								currentStatus={localBooking.status}
-								totalDeposit={totalDeposit || 0}
-								userId={localBooking.clientId}
-								onStatusChangeNeeded={() => setActiveTab("info")}
+								key={localBooking?.id}
+								bookingId={localBooking?.id ?? ""}
+								userId={localBooking?.clientId ?? ""}
+								totalAmount={localBooking?.totalAmount ?? 0}
+								totalDeposit={localBooking?.totalReplacementValue ?? 0}
+								bookingStatus={localBooking?.status ?? "PENDING_REVIEW"}
+								showOpType={true}
+								onStatusChangeNeeded={() =>
+									handleForceStatusChange("READY_TO_RENT")
+								}
+								actions={{
+									getPayments: getBookingPaymentsAction,
+									recordPayment: recordBookingPaymentAction,
+									deletePayment: deleteBookingPaymentAction,
+									getUserBalance: getUserBalanceAction,
+									refundToBalance: refundToBalanceAction,
+									applyBalance: applyBalanceToBookingAction,
+								}}
 							/>
+							{/* <PaymentsPanel
+								key={localBooking?.id}
+								bookingId={localBooking?.id ?? ""}
+								userId={localBooking?.clientId ?? ""}
+								totalAmount={localBooking?.totalAmount ?? 0}
+								totalDeposit={localBooking?.totalReplacementValue ?? 0}
+								bookingStatus={localBooking?.status ?? "PENDING_REVIEW"}
+								showOpType={true}
+								onStatusChangeNeeded={() =>
+									handleForceStatusChange("READY_TO_RENT")
+								}
+							/> */}
 						</div>
 					)}
-
 					{activeTab === "labels" && (
 						<div className="px-6 py-4 space-y-4">
 							<LabelsBlock
@@ -1905,38 +1883,6 @@ export function BookingDetailSheet({
 							<DocumentsPanel bookingId={localBooking.id} />
 						</div>
 					)}
-				</div>
-
-				{/* Footer */}
-				<div className="px-6 py-4 border-t border-foreground/8 flex gap-2 shrink-0 bg-background">
-					<Button
-						variant="outline"
-						size="sm"
-						className="flex-1 text-xs"
-						onClick={() => onOpenChange(false)}
-					>
-						Закрыть
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						className="flex-1 text-xs"
-						onClick={handleSaveChanges}
-					>
-						Сохранить изменения
-					</Button>
-					{localBooking.status !== "CANCELLED" &&
-						localBooking.status !== "COMPLETED" && (
-							<Button
-								variant="outline"
-								size="sm"
-								className="text-red-500 border-red-500/30 hover:bg-red-500/10 text-xs gap-1"
-								onClick={() => handleForceStatusChange("CANCELLED")}
-								disabled={isPending}
-							>
-								<ProhibitIcon size={11} /> Отменить
-							</Button>
-						)}
 				</div>
 			</SheetContent>
 		</Sheet>

@@ -11,7 +11,6 @@ import {
 	PlusIcon,
 	ProhibitIcon,
 	UploadSimpleIcon,
-	VideoIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +26,6 @@ import {
 	getStudioBookingsAction,
 	updateStudioBookingStatusAction,
 } from "@/actions/admin-studio-actions";
-import { PAYMENT_STATUS_CONFIG } from "@/components/admin/bookings/PaymentsPanel";
 import {
 	Badge,
 	Button,
@@ -51,7 +49,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui";
-import { BOOKING_STATUS_CONFIG } from "@/constants";
+import { BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG } from "@/constants";
 import type { BookingStatus } from "@/core/domain/entities/Booking";
 import { cn } from "@/lib/utils";
 import { CreateStudioBookingSheet } from "./CreateStudioBookingSheet";
@@ -304,9 +302,9 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 		search: debouncedSearch || "",
 		status: statusFilter === "all" ? "ALL" : statusFilter,
 		paymentStatus: paymentFilter === "all" ? "ALL" : paymentFilter,
-		tariffId: tariffFilter === "all" ? "" : tariffFilter,
-		dateFrom: dateFrom ? new Date(dateFrom) : new Date(),
-		dateTo: dateTo ? new Date(dateTo) : new Date(),
+		tariffId: tariffFilter === "all" ? undefined : tariffFilter,
+		dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+		dateTo: dateTo ? new Date(dateTo) : undefined,
 	};
 
 	// ── Query ──────────────────────────────────────────────────────────────────
@@ -450,8 +448,8 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 	return (
 		<div className="space-y-4 relative">
 			{/* ── Controls ── */}
-			<Card>
-				<CardContent className="p-3 space-y-3">
+			<Card className="p-2">
+				<CardContent className="p-0 space-y-3">
 					<div className="flex flex-col sm:flex-row gap-3">
 						{/* Search */}
 						<div className="relative flex-1">
@@ -474,48 +472,51 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 						</div>
 
 						{/* Status filter */}
-						<Select
-							value={statusFilter}
-							onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
-						>
-							<SelectTrigger className="h-9 w-44">
-								<SelectValue placeholder="Все статусы" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Все статусы</SelectItem>
-								{(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[]).map(
-									(s) => (
-										<SelectItem key={s} value={s}>
-											{BOOKING_STATUS_CONFIG[s].label}
+						<div className="flex gap-3">
+							<Select
+								value={statusFilter}
+								onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+							>
+								<SelectTrigger className="h-9 w-44">
+									<SelectValue placeholder="Все статусы" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">Все статусы</SelectItem>
+									{(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[]).map(
+										(s) => (
+											<SelectItem key={s} value={s}>
+												{BOOKING_STATUS_CONFIG[s].label}
+											</SelectItem>
+										)
+									)}
+								</SelectContent>
+							</Select>
+
+							{/* Payment filter */}
+							<Select
+								value={paymentFilter}
+								onValueChange={(v) =>
+									setPaymentFilter(v as typeof paymentFilter)
+								}
+							>
+								<SelectTrigger className="h-9 w-44">
+									<SelectValue placeholder="Все оплаты" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">Все оплаты</SelectItem>
+									{(
+										Object.entries(PAYMENT_STATUS_CONFIG) as [
+											PaymentStatus,
+											{ label: string },
+										][]
+									).map(([k, v]) => (
+										<SelectItem key={k} value={k}>
+											{v.label}
 										</SelectItem>
-									)
-								)}
-							</SelectContent>
-						</Select>
-
-						{/* Payment filter */}
-						<Select
-							value={paymentFilter}
-							onValueChange={(v) => setPaymentFilter(v as typeof paymentFilter)}
-						>
-							<SelectTrigger className="h-9 w-44">
-								<SelectValue placeholder="Все оплаты" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Все оплаты</SelectItem>
-								{(
-									Object.entries(PAYMENT_STATUS_CONFIG) as [
-										PaymentStatus,
-										{ label: string },
-									][]
-								).map(([k, v]) => (
-									<SelectItem key={k} value={k}>
-										{v.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						{/* Action buttons */}
 						<div className="flex gap-2 shrink-0">
 							<Button
@@ -668,7 +669,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 			</div>
 
 			{/* ── Table ── */}
-			<Card className="overflow-hidden relative">
+			<Card className="overflow-hidden relative p-0">
 				{/* Loading bar */}
 				<div
 					className={cn(
@@ -790,10 +791,6 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 												</TableCell>
 												<TableCell>
 													<div className="flex items-center gap-1.5">
-														<VideoIcon
-															size={13}
-															className="text-primary/60 shrink-0"
-														/>
 														<span className="text-sm truncate max-w-28">
 															{booking.tariffName}
 														</span>
@@ -910,7 +907,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 
 			{/* Detail Sheet */}
 			<StudioBookingDetailSheet
-				booking={(activeBooking?.id as unknown as StudioBookingRow) ?? null}
+				bookingId={activeBooking?.id ?? null}
 				open={sheetOpen}
 				onOpenChange={(open) => {
 					setSheetOpen(open);

@@ -234,3 +234,10 @@ export function adjustEndTime(
 
 	return adjusted;
 }
+
+/**
+ * форматирование ценников
+ */
+export function fmtRub(n: number): string {
+	return `${n.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ₽`;
+}

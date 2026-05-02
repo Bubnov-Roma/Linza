@@ -6,6 +6,7 @@ export const PLURAL_FORMS = {
 	unavailable: ["недоступен", "недоступны", "недоступны"],
 	users: ["пользователь", "пользователя", "пользователей"],
 	new: ["новый", "новых", "новых"],
+	category: ["категория", "категории", "категорий"],
 } as const;
 
 export type PluralType = keyof typeof PLURAL_FORMS;

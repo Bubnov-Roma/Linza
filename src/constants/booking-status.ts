@@ -1,6 +1,7 @@
 import type {
 	BookingStatus,
 	PaymentMethod,
+	PaymentStatus,
 } from "@/core/domain/entities/Booking";
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
@@ -68,7 +69,7 @@ export const BOOKING_STATUS_CONFIG: Record<
 		dot: "bg-blue-400",
 	},
 	READY_TO_RENT: {
-		label: "Готов к выдаче",
+		label: "Готов к аренде",
 		color: "bg-green-500/15 text-green-400 border-green-500/20",
 		dot: "bg-green-400",
 	},
@@ -139,6 +140,38 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 	CASH: "Наличные",
 	CARD: "Карта / терминал",
 	TRANSFER: "Перевод",
-	BALANCE: "С баланса",
+	BALANCE: "Баланс",
 	OTHER: "Иное",
 };
+
+export const PAYMENT_STATUS_CONFIG: Record<
+	PaymentStatus,
+	{ label: string; color: string; dot: string; bar: string }
+> = {
+	UNPAID: {
+		label: "Не оплачен",
+		color: "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
+		dot: "bg-red-500",
+		bar: "bg-red-500",
+	},
+	PARTIAL: {
+		label: "Частично оплачен",
+		color:
+			"bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+		dot: "bg-amber-500",
+		bar: "bg-amber-500",
+	},
+	PAID: {
+		label: "Полностью оплачен",
+		color:
+			"bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+		dot: "bg-green-500",
+		bar: "bg-green-500",
+	},
+	OVERPAID: {
+		label: "Переплата",
+		color: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+		dot: "bg-blue-500",
+		bar: "bg-blue-500",
+	},
+} as const;

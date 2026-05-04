@@ -33,6 +33,123 @@ export interface ClientStudioBookingRow {
 	createdAt: Date;
 }
 
+// ─── Client: booking detail ───────────────────────────────────────────────────
+
+export interface ClientStudioBookingDetail {
+	id: string;
+	tariffId: string;
+	tariffName: string;
+	tariffPriceAtBooking: number;
+	startDate: Date;
+	endDate: Date;
+	durationHours: number;
+	totalAmount: number;
+	status: BookingStatus;
+	cancellationReason: string | null;
+	cancelledAt: Date | null;
+	createdAt: Date;
+	items: {
+		id: string;
+		equipmentId: string;
+		equipmentTitle: string;
+		equipmentImageUrl: string | null;
+		priceAtBooking: number;
+	}[];
+	payments: {
+		id: string;
+		amount: number;
+		method: string;
+		type: string;
+		note: string | null;
+		paidAt: Date;
+	}[];
+	totalPaid: number;
+	paymentStatus: "UNPAID" | "PARTIAL" | "PAID" | "OVERPAID";
+}
+
+export async function getMyStudioBookingDetailAction(
+	bookingId: string
+): Promise<ClientStudioBookingDetail | null> {
+	const session = await auth();
+	if (!session?.user?.id) return null;
+
+	const b = await prisma.studioBooking.findUnique({
+		where: { id: bookingId, userId: session.user.id },
+		include: {
+			tariff: { select: { name: true } },
+			items: {
+				include: {
+					equipment: {
+						select: {
+							title: true,
+							equipmentImageLinks: {
+								take: 1,
+								orderBy: { orderIndex: "asc" },
+								include: { image: { select: { url: true } } },
+							},
+						},
+					},
+				},
+			},
+			payments: {
+				orderBy: { paidAt: "desc" },
+			},
+		},
+	});
+
+	if (!b) return null;
+
+	const totalPaid = b.payments
+		.filter((p) => p.type === "PAYMENT")
+		.reduce((s, p) => s + p.amount, 0);
+	const totalRefunded = b.payments
+		.filter((p) => p.type === "OTHER")
+		.reduce((s, p) => s + p.amount, 0);
+	const net = totalPaid - totalRefunded;
+
+	const paymentStatus: ClientStudioBookingDetail["paymentStatus"] =
+		net <= 0
+			? "UNPAID"
+			: net >= b.totalAmount
+				? net > b.totalAmount
+					? "OVERPAID"
+					: "PAID"
+				: "PARTIAL";
+
+	return {
+		id: b.id,
+		tariffId: b.tariffId,
+		tariffName: b.tariff.name,
+		tariffPriceAtBooking: b.tariffPriceAtBooking,
+		startDate: b.startDate,
+		endDate: b.endDate,
+		durationHours: b.durationHours,
+		totalAmount: b.totalAmount,
+		status: b.status,
+		cancellationReason: b.cancellationReason,
+		cancelledAt: b.cancelledAt,
+		createdAt: b.createdAt,
+		items: b.items.map((item) => ({
+			id: item.id,
+			equipmentId: item.equipmentId,
+			equipmentTitle: item.equipment.title,
+			equipmentImageUrl:
+				item.equipment.equipmentImageLinks[0]?.image.url ?? null,
+			priceAtBooking: item.priceAtBooking,
+		})),
+		payments: b.payments.map((p) => ({
+			id: p.id,
+			amount: p.amount,
+			method: p.method,
+			type: p.type,
+			note: p.note,
+			paidAt: p.paidAt,
+		})),
+		totalPaid: net,
+		paymentStatus,
+	};
+}
+
 // ─── Availability ─────────────────────────────────────────────────────────────
 
 /**
@@ -480,5 +597,202 @@ export async function cancelMyStudioBookingAction(
 	} catch (e) {
 		console.error("cancelMyStudioBookingAction:", e);
 		return { success: false, error: "Ошибка отмены" };
+	}
+}
+
+// ─── Client: update booking dates ────────────────────────────────────────────
+
+export async function updateStudioBookingDatesAction(
+	bookingId: string,
+	startDate: string,
+	endDate: string
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
+
+		const booking = await prisma.studioBooking.findUnique({
+			where: { id: bookingId },
+			select: { userId: true, status: true },
+		});
+
+		if (!booking || booking.userId !== session.user.id)
+			return { success: false, error: "Заказ не найден" };
+
+		const editableStatuses: BookingStatus[] = [
+			"PENDING_REVIEW",
+			"WAIT_PAYMENT",
+			"READY_TO_RENT",
+		];
+		if (!editableStatuses.includes(booking.status))
+			return {
+				success: false,
+				error: "Нельзя изменить даты на данном этапе",
+			};
+
+		const newStart = new Date(startDate);
+		const newEnd = new Date(endDate);
+		const durationMs = newEnd.getTime() - newStart.getTime();
+
+		if (durationMs < 3_600_000)
+			return { success: false, error: "Минимальная аренда — 1 час" };
+
+		// Проверяем конфликт
+		const conflict = await prisma.studioBooking.findFirst({
+			where: {
+				id: { not: bookingId },
+				status: { in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"] },
+				startDate: { lt: newEnd },
+				endDate: { gt: newStart },
+			},
+			select: { startDate: true, endDate: true },
+		});
+
+		if (conflict)
+			return {
+				success: false,
+				error: "Студия занята в выбранный период",
+			};
+
+		const durationHours = durationMs / 3_600_000;
+
+		// Пересчёт суммы с актуальным тарифом
+		const existing = await prisma.studioBooking.findUnique({
+			where: { id: bookingId },
+			include: { items: { select: { priceAtBooking: true } } },
+		});
+		if (!existing) return { success: false, error: "Заказ не найден" };
+
+		const equipTotal = existing.items.reduce((s, i) => s + i.priceAtBooking, 0);
+		const newTotal = existing.tariffPriceAtBooking * durationHours + equipTotal;
+
+		await prisma.studioBooking.update({
+			where: { id: bookingId },
+			data: {
+				startDate: newStart,
+				endDate: newEnd,
+				durationHours,
+				totalAmount: newTotal,
+				status: "PENDING_REVIEW",
+			},
+		});
+
+		await prisma.studioBookingAuditLog.create({
+			data: {
+				studioBookingId: bookingId,
+				authorId: session.user.id,
+				authorName: session.user.name ?? null,
+				action: "BOOKING_UPDATED",
+				fieldName: "period",
+				valueBefore: `${existing.startDate.toLocaleString("ru-RU")} – ${existing.endDate.toLocaleString("ru-RU")}`,
+				valueAfter: `${newStart.toLocaleString("ru-RU")} – ${newEnd.toLocaleString("ru-RU")}`,
+				meta: { source: "client", newTotal },
+			},
+		});
+
+		revalidatePath("/studio");
+		revalidatePath("/dashboard/studio-bookings");
+		return { success: true };
+	} catch (e) {
+		console.error("updateStudioBookingDatesAction:", e);
+		return { success: false, error: "Ошибка обновления дат" };
+	}
+}
+
+// ─── Client: update booking tariff + equipment ────────────────────────────────
+
+export async function updateStudioBookingTariffAction(input: {
+	bookingId: string;
+	tariffId: string;
+	equipmentIds: string[];
+}): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
+
+		const booking = await prisma.studioBooking.findUnique({
+			where: { id: input.bookingId },
+			select: {
+				userId: true,
+				status: true,
+				startDate: true,
+				endDate: true,
+				durationHours: true,
+				tariffId: true,
+				tariffPriceAtBooking: true,
+			},
+		});
+
+		if (!booking || booking.userId !== session.user.id)
+			return { success: false, error: "Заказ не найден" };
+
+		const editableStatuses: BookingStatus[] = [
+			"PENDING_REVIEW",
+			"WAIT_PAYMENT",
+			"READY_TO_RENT",
+		];
+		if (!editableStatuses.includes(booking.status))
+			return {
+				success: false,
+				error: "Нельзя изменить заказ на данном этапе",
+			};
+
+		// Загружаем тариф
+		const tariff = await prisma.studioTariff.findUnique({
+			where: { id: input.tariffId, isActive: true },
+		});
+		if (!tariff) return { success: false, error: "Тариф не найден" };
+
+		// Загружаем технику (только studioAvailable)
+		const equipments =
+			input.equipmentIds.length > 0
+				? await prisma.equipment.findMany({
+						where: { id: { in: input.equipmentIds }, studioAvailable: true },
+						select: { id: true, priceStudio: true },
+					})
+				: [];
+
+		const equipTotal = equipments.reduce((s, e) => s + e.priceStudio, 0);
+		const newTotal = tariff.pricePerHour * booking.durationHours + equipTotal;
+
+		await prisma.$transaction([
+			prisma.studioBookingItem.deleteMany({
+				where: { studioBookingId: input.bookingId },
+			}),
+			prisma.studioBooking.update({
+				where: { id: input.bookingId },
+				data: {
+					tariffId: input.tariffId,
+					tariffPriceAtBooking: tariff.pricePerHour,
+					totalAmount: newTotal,
+					status: "PENDING_REVIEW",
+					items: {
+						create: equipments.map((e) => ({
+							equipmentId: e.id,
+							priceAtBooking: e.priceStudio,
+						})),
+					},
+				},
+			}),
+			prisma.studioBookingAuditLog.create({
+				data: {
+					studioBookingId: input.bookingId,
+					authorId: session.user.id,
+					authorName: session.user.name ?? null,
+					action: "BOOKING_UPDATED",
+					fieldName: "tariff",
+					valueBefore: null,
+					valueAfter: `Тариф: ${tariff.name}, техника: ${equipments.length} поз., сумма: ${newTotal} ₽`,
+					meta: { source: "client", equipmentCount: equipments.length },
+				},
+			}),
+		]);
+
+		revalidatePath("/studio");
+		revalidatePath("/dashboard/studio-bookings");
+		return { success: true };
+	} catch (e) {
+		console.error("updateStudioBookingTariffAction:", e);
+		return { success: false, error: "Ошибка обновления заказа" };
 	}
 }

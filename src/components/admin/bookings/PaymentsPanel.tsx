@@ -15,9 +15,11 @@ import {
 	VaultIcon,
 	WalletIcon,
 	WarningCircleIcon,
+	XIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { recordStudioPaymentAction } from "@/actions/admin-studio-actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -27,10 +29,14 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
+	Badge,
 	Button,
 	Input,
 	Label,
 	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@/components/ui";
 import { PAYMENT_STATUS_CONFIG } from "@/constants";
 import type {
@@ -125,6 +131,7 @@ interface PaymentsPanelProps {
 	showOpType?: boolean;
 	onStatusChangeNeeded?: () => void;
 	actions: PaymentsPanelActions;
+	isStudioBooking?: boolean;
 }
 
 export function PaymentsPanel({
@@ -134,6 +141,7 @@ export function PaymentsPanel({
 	totalDeposit = 0,
 	bookingStatus,
 	// showOpType = true,
+	isStudioBooking = false,
 	onStatusChangeNeeded,
 	actions,
 }: PaymentsPanelProps) {
@@ -308,11 +316,22 @@ export function PaymentsPanel({
 			return;
 
 		startApplyBalance(async () => {
-			const result = await actions.applyBalance(
-				userId,
-				bookingId,
-				amountToApply
-			);
+			// biome-ignore lint/suspicious/noImplicitAnyLet: <>
+			let result;
+
+			// Разделяем логику в зависимости от типа заказа
+			if (isStudioBooking) {
+				result = await recordStudioPaymentAction({
+					bookingId,
+					amount: amountToApply,
+					method: "BALANCE",
+					type: "PAYMENT",
+					note: "Оплата заказа студии с баланса клиента",
+				});
+			} else {
+				result = await actions.applyBalance(userId, bookingId, amountToApply);
+			}
+
 			if (!result.success) toast.error(result.error ?? "Ошибка списания");
 			else {
 				toast.success(`Списано ${fmtRub(amountToApply)} с баланса`);
@@ -324,8 +343,9 @@ export function PaymentsPanel({
 		bookingId,
 		userBalance,
 		remaining,
+		isStudioBooking,
 		loadData,
-		actions.applyBalance,
+		actions,
 	]);
 
 	// ─── Рендер ───────────────────────────────────────────────────────────────────
@@ -339,9 +359,6 @@ export function PaymentsPanel({
 
 	const MethodSelector = () => (
 		<div className="space-y-2">
-			{/* <Label className="text-[11px] uppercase tracking-wider text-muted-foreground ml-1">
-				Способ оплаты
-			</Label> */}
 			<div className="flex flex-wrap gap-1 bg-muted-foreground/20 p-2 rounded-lg">
 				{methodOptions.map((opt) => {
 					const isActive = newMethod === opt.value;
@@ -374,39 +391,48 @@ export function PaymentsPanel({
 	return (
 		<div className="flex flex-col h-full min-h-0">
 			<div className="shrink-0 space-y-3 pb-3 backdrop-blur-2xl ">
-				<div className="rounded-xl border border-foreground/8 overflow-hidden">
+				<div className="rounded-xl border border-foreground/8 overflow-hidden card-surface">
 					{/* Шапка прогресса */}
-					<div className="px-4 pt-4 pb-3 flex items-center justify-between gap-3">
-						<div className="flex items-center gap-2 flex-wrap">
-							<span
+					<div className="px-3 py-2 flex items-center justify-between gap-3 relative">
+						<div className="flex items-center gap-2 flex-wrap z-2">
+							<Badge
 								className={cn(
-									"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border",
-									psCfg.color
+									"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-background/60 shadow-md shadow-muted-foreground/40 backdrop-blur-2xl text-foreground"
 								)}
 							>
 								<span className={cn("w-1.5 h-1.5 rounded-full", psCfg.dot)} />
 								{psCfg.label}
-							</span>
+							</Badge>
 							{userBalance > 0 && (
-								<span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-violet-500/10 text-violet-600 border border-violet-500/20 dark:text-violet-400">
-									<WalletIcon size={11} /> Баланс: {fmtRub(userBalance)}
-								</span>
+								<Badge className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-background/60 shadow-md shadow-muted-foreground/40 backdrop-blur-2xl">
+									<WalletIcon
+										size={11}
+										weight="fill"
+										className="text-violet-600 dark:text-violet-400 bg-none"
+									/>{" "}
+									Баланс: {fmtRub(userBalance)}
+								</Badge>
 							)}
 						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-8 text-xs gap-1.5 shrink-0"
-							onClick={() => setShowAddForm((v) => !v)}
-						>
-							<PlusIcon size={12} /> Платёж
-						</Button>
-					</div>
-
-					<div className="h-1.5 bg-foreground/5 mx-4 rounded-full overflow-hidden mb-3">
+						<Tooltip>
+							<TooltipTrigger className="z-2">
+								<Button
+									asChild
+									variant="outline"
+									size="icon"
+									className="text-xs p-2 rounded-full"
+									onClick={() => setShowAddForm((v) => !v)}
+								>
+									{showAddForm ? <XIcon size={15} /> : <PlusIcon size={15} />}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="left" className="text-xs">
+								{showAddForm ? <p>Закрыть форму</p> : <p>Добавить платеж</p>}
+							</TooltipContent>
+						</Tooltip>
 						<div
 							className={cn(
-								"h-full rounded-full transition-all duration-700",
+								"h-full transition-all duration-700 absolute left-0 top-0 right-0 z-0",
 								psCfg.bar
 							)}
 							style={{ width: `${progressPct}%` }}
@@ -510,9 +536,9 @@ export function PaymentsPanel({
 					<div className="rounded-xl border border-primary/20 bg-primary/3 p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
 						<div className="flex items-center gap-4 flex-wrap">
 							<div className="flex flex-col gap-1 flex-1">
-								<Label className="text-xs">
+								{/* <Label className="text-xs">
 									<HandCoinsIcon size={11} /> Новый платёж
-								</Label>
+								</Label> */}
 								<div className="flex w-full gap-1 p-1 rounded-lg bg-foreground/5 h-10">
 									{[false, true].map((exp) => (
 										<button
@@ -543,24 +569,13 @@ export function PaymentsPanel({
 							</div>
 						</div>
 
-						<MethodSelector />
+						<div className="flex flex-col gap-1 flex-1 relative items-baseline pt-2">
+							{/* <Label className="opacity-0 text-xs pb-2 md:block">
+								Сумма, ₽
+							</Label> */}
 
-						<div className="flex flex-col gap-1 flex-1 relative items-baseline pt-4">
-							<Label className="text-xs pb-2">Сумма, ₽</Label>
-							<Input
-								type="number"
-								placeholder="0"
-								value={newAmount}
-								onChange={(e) => setNewAmount(e.target.value)}
-								className={cn(
-									"h-9 text-sm font-semibold tabular-nums glass-input",
-									isExpense ? "text-red-600" : "text-green-600"
-								)}
-								autoFocus
-								min={0}
-							/>
 							{!isExpense && remaining > 0 && (
-								<div className="flex gap-2 flex-wrap items-center absolute top-3 right-0">
+								<div className="flex gap-2 flex-wrap items-center">
 									{[50, 100].map((pct) => {
 										const amt = Math.round((currentTotalAmount * pct) / 100);
 										return (
@@ -583,7 +598,21 @@ export function PaymentsPanel({
 									</button>
 								</div>
 							)}
+							<Input
+								type="number"
+								placeholder="Сумма в ₽"
+								value={newAmount}
+								onChange={(e) => setNewAmount(e.target.value)}
+								className={cn(
+									"h-9 mt-2 text-sm font-semibold tabular-nums glass-input",
+									isExpense ? "text-red-600" : "text-green-600"
+								)}
+								autoFocus
+								min={0}
+							/>
 						</div>
+
+						<MethodSelector />
 
 						<div className="space-y-1">
 							<Label className="text-xs">Комментарий (необязательно)</Label>

@@ -39,6 +39,14 @@ export interface UpdateTariffInput extends Partial<CreateTariffInput> {
 	id: string;
 }
 
+export interface StudioEquipmentSearchResult {
+	id: string;
+	title: string;
+	priceStudio: number;
+	categoryName: string;
+	imageUrl: string | null;
+}
+
 // ─── Guards ───────────────────────────────────────────────────────────────────
 
 async function requireAdminOrManager() {
@@ -926,6 +934,76 @@ export async function deleteStudioBookingAction(
 }
 
 // ─── Studio Payments API (for PaymentsPanel) ──────────────────────────────────
+
+// ─── ДОБАВИТЬ В src/actions/admin-studio-actions.ts ──────────────────────────
+
+// ─── Admin: search studio equipment ──────────────────────────────────────────
+
+/**
+ * Поиск студийной техники для редактирования заказа администратором.
+ * В отличие от клиентского searchStudioEquipmentAction не фильтрует по занятости —
+ * админ видит всё studioAvailable оборудование.
+ */
+export async function searchStudioEquipmentAdminAction(
+	query: string,
+	excludeBookingId?: string,
+	startDate?: Date,
+	endDate?: Date
+): Promise<StudioEquipmentSearchResult[]> {
+	try {
+		await requireAdminOrManager();
+		if (!query.trim()) return [];
+
+		// Если переданы даты — вычисляем занятую технику (исключая текущий заказ)
+		let busyIds: string[] = [];
+		if (startDate && endDate) {
+			const busyItems = await prisma.studioBookingItem.findMany({
+				where: {
+					studioBooking: {
+						...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+						status: { in: ["WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"] },
+						startDate: { lt: endDate },
+						endDate: { gt: startDate },
+					},
+				},
+				select: { equipmentId: true },
+			});
+			busyIds = busyItems.map((i) => i.equipmentId);
+		}
+
+		const equipments = await prisma.equipment.findMany({
+			where: {
+				studioAvailable: true,
+				priceStudio: { gt: 0 },
+				title: { contains: query, mode: "insensitive" },
+				...(busyIds.length > 0 ? { id: { notIn: busyIds } } : {}),
+			},
+			select: {
+				id: true,
+				title: true,
+				priceStudio: true,
+				category: { select: { name: true } },
+				equipmentImageLinks: {
+					take: 1,
+					orderBy: { orderIndex: "asc" },
+					include: { image: { select: { url: true } } },
+				},
+			},
+			orderBy: { title: "asc" },
+			take: 20,
+		});
+
+		return equipments.map((eq) => ({
+			id: eq.id,
+			title: eq.title,
+			priceStudio: eq.priceStudio,
+			categoryName: eq.category.name,
+			imageUrl: eq.equipmentImageLinks[0]?.image.url ?? null,
+		}));
+	} catch {
+		return [];
+	}
+}
 
 /**
  * Получить все платежи по заказу студии

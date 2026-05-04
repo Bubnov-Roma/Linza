@@ -791,19 +791,6 @@ export default function EquipmentDetails({
 									/>
 								</div>
 							</div>
-
-							{/* Info Card */}
-							<div className="hidden lg:flex items-start gap-3 px-5 py-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-								<LightningIcon
-									className="text-amber-500 shrink-0 mt-0.5"
-									size={18}
-									weight="fill"
-								/>
-								<p className="text-xs font-medium text-amber-700 dark:text-amber-400 leading-relaxed">
-									Доступна быстрая бронь. Заказ будет передан менеджеру для
-									сборки сразу после оформления.
-								</p>
-							</div>
 						</div>
 					</div>
 				</div>

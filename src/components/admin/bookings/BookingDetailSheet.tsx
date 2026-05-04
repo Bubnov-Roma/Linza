@@ -1597,7 +1597,7 @@ export function BookingDetailSheet({
 			>
 				{/* Header */}
 				<SheetHeader className="px-6 py-4 border-b border-foreground/8 shrink-0">
-					<div className="flex items-start justify-between gap-3">
+					<div className="flex items-start justify-start gap-3">
 						<div>
 							<SheetTitle className="text-base font-bold">
 								Заказ #{localBooking.id.slice(0, 8).toUpperCase()}
@@ -1802,7 +1802,7 @@ export function BookingDetailSheet({
 								totalAmount={localBooking?.totalAmount ?? 0}
 								totalDeposit={localBooking?.totalReplacementValue ?? 0}
 								bookingStatus={localBooking?.status ?? "PENDING_REVIEW"}
-								showOpType={true}
+								isStudioBooking={false}
 								onStatusChangeNeeded={() =>
 									handleForceStatusChange("READY_TO_RENT")
 								}
@@ -1815,18 +1815,6 @@ export function BookingDetailSheet({
 									applyBalance: applyBalanceToBookingAction,
 								}}
 							/>
-							{/* <PaymentsPanel
-								key={localBooking?.id}
-								bookingId={localBooking?.id ?? ""}
-								userId={localBooking?.clientId ?? ""}
-								totalAmount={localBooking?.totalAmount ?? 0}
-								totalDeposit={localBooking?.totalReplacementValue ?? 0}
-								bookingStatus={localBooking?.status ?? "PENDING_REVIEW"}
-								showOpType={true}
-								onStatusChangeNeeded={() =>
-									handleForceStatusChange("READY_TO_RENT")
-								}
-							/> */}
 						</div>
 					)}
 					{activeTab === "labels" && (

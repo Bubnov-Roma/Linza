@@ -51,7 +51,7 @@ import {
 } from "@/components/ui";
 import { BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG } from "@/constants";
 import type { BookingStatus } from "@/core/domain/entities/Booking";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { CreateStudioBookingSheet } from "./CreateStudioBookingSheet";
 import { StudioBookingDetailSheet } from "./StudioBookingDetailSheet";
 
@@ -664,7 +664,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 					</span>
 				)}
 				<span className="ml-auto font-bold text-foreground">
-					{totalSum.toLocaleString("ru-RU")} ₽
+					{fmtRub(totalSum)}
 				</span>
 			</div>
 
@@ -805,7 +805,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 													<DurationCell booking={booking} />
 												</TableCell>
 												<TableCell className="font-bold text-sm whitespace-nowrap">
-													{booking.totalAmount.toLocaleString("ru-RU")} ₽
+													{fmtRub(booking.totalAmount)}
 												</TableCell>
 												<TableCell onClick={(e) => e.stopPropagation()}>
 													<PaymentBadge status={booking.paymentStatus} />

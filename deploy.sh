@@ -131,6 +131,10 @@ docker compose down --remove-orphans 2>/dev/null || true
 docker compose up -d
 echo "✅ Services started"
 
+echo "🧹 Cleaning up old Docker images..."
+docker image prune -f
+echo "✅ Cleanup done"
+
 echo "⏳ Waiting for health check (60s)..."
 sleep 10
 for i in \$(seq 1 10); do

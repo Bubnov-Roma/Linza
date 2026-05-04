@@ -29,9 +29,7 @@ export const StudioSection = () => {
 							size="lg"
 							className="bg-transparent border-background/30 text-background hover:bg-background/10 font-bold"
 						>
-							<Link href="/equipment?category=studio">
-								Студийное оборудование
-							</Link>
+							<Link href="/studio">Забронировать студию</Link>
 						</Button>
 					</div>
 				</div>

@@ -59,7 +59,7 @@ import type {
 	PaymentStatus,
 } from "@/core/domain/entities/Booking";
 import { useAdminBookingPolling } from "@/hooks/use-admin-booking-polling";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { useAdminTablesStore } from "@/store/admin-tables.store";
 import { formatPlural } from "@/utils";
 
@@ -311,7 +311,7 @@ function EquipmentCell({ booking }: { booking: AdminBookingRow }) {
 							)}
 						</div>
 						<span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap shrink-0">
-							{item.priceAtBooking.toLocaleString("ru-RU")} ₽
+							{fmtRub(item.priceAtBooking)}
 						</span>
 						{/* <span>{triggerText}</span> */}
 					</div>
@@ -743,7 +743,7 @@ export default function AdminBookingsTable({
 						</span>
 					)}
 					<span className="ml-auto font-bold text-foreground">
-						{totalAmountSum.toLocaleString("ru-RU")} ₽
+						{fmtRub(totalAmountSum)}
 					</span>
 				</div>
 
@@ -886,7 +886,7 @@ export default function AdminBookingsTable({
 												{startDate} — {endDate}
 											</TableCell>
 											<TableCell className="font-bold text-sm whitespace-nowrap">
-												{booking.totalAmount.toLocaleString("ru-RU")} ₽
+												{fmtRub(booking.totalAmount)}
 											</TableCell>
 											<TableCell onClick={(e) => e.stopPropagation()}>
 												<InlinePaymentChanger

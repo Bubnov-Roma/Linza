@@ -1,5 +1,6 @@
 "use client";
 
+import { TagChevronIcon } from "@phosphor-icons/react";
 import { differenceInHours, isWithinInterval, parseISO } from "date-fns";
 import { Package, X } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +21,7 @@ import type {
 	BookingStatus,
 	DashboardBooking,
 } from "@/core/domain/entities/Booking";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { BookingDetailDialog } from "./Bookingdetailsdialog";
 
 function getStatusLabel(status: string): string {
@@ -310,16 +311,20 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 										</TableCell>
 										{/* Order ID */}
 										<TableCell className="py-4">
-											<div className="font-mono text-sm font-bold">
-												№ {booking.id.split("-")[0]?.toUpperCase()}
+											<div className="font-black text-sm tabular-nums">
+												{fmtRub(booking.totalAmount)}
 											</div>
-											<div className="text-[11px] text-muted-foreground mt-0.5">
-												<ClientTime
-													iso={booking.createdAt}
-													fmt="full"
-													fallback="-"
-												/>
-											</div>
+											{booking.promoCode && (
+												<div className="flex items-center gap-1 mt-0.5">
+													<TagChevronIcon
+														size={9}
+														className="text-green-500 shrink-0"
+													/>
+													<span className="text-[10px] font-mono text-green-600 font-semibold">
+														{booking.promoCode}
+													</span>
+												</div>
+											)}
 										</TableCell>
 
 										{/* Dates */}
@@ -373,7 +378,7 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 										{/* Amount */}
 										<TableCell className="py-4">
 											<div className="font-black text-sm tabular-nums">
-												{booking.totalAmount.toLocaleString()} ₽
+												{fmtRub(booking.totalAmount)}
 											</div>
 										</TableCell>
 									</TableRow>

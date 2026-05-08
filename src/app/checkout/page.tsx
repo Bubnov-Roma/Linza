@@ -20,13 +20,21 @@ import {
 } from "@/actions/client-booking-actions";
 import { BookingSuccessScreen } from "@/components/dashboard/bookings/BookingSuccessScreen";
 import {
+	type AppliedPromo,
+	applyPromoDiscount,
 	BookingButton,
 	getDefaultRentalPeriod,
+	PromoCodeField,
 	RentalPeriod,
 } from "@/components/shared";
 import { Button } from "@/components/ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { calculateItemPrice, cn, combineDateAndTime } from "@/lib/utils";
+import {
+	calculateItemPrice,
+	cn,
+	combineDateAndTime,
+	fmtRub,
+} from "@/lib/utils";
 import { useSiteSettingsStore } from "@/store";
 import { useCartStore } from "@/store/use-cart.store";
 import { formatPlural } from "@/utils";
@@ -59,6 +67,7 @@ export default function CheckoutPage() {
 	const [busyIds, setBusyIds] = useState<string[]>([]);
 	const [bookingId, setBookingId] = useState<string | null>(null);
 	const [itemsExpanded, setItemsExpanded] = useState(false);
+	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
 	// -- Empty Cart -> top scroll -------------------------------------------
 	useEffect(() => {
@@ -159,6 +168,10 @@ export default function CheckoutPage() {
 		if (!isCanBook || !math.startFull || !math.endFull) return false;
 		setIsSubmitting(true);
 		try {
+			const { finalPrice: finalTotal, discountAmount } = applyPromoDiscount(
+				math.totalRental,
+				appliedPromo
+			);
 			const result = await submitBookingAction({
 				items: activeItems.map((i) => ({
 					id: i.equipment.id,
@@ -170,9 +183,11 @@ export default function CheckoutPage() {
 				})),
 				startDate: math.startFull.toISOString(),
 				endDate: math.endFull.toISOString(),
-				totalPrice: math.totalRental,
+				totalPrice: finalTotal,
 				hasInsurance: true,
 				totalReplacementValue: math.totalRV,
+				promoCode: appliedPromo?.code,
+				discountAmount,
 			});
 			if (result.success && result.bookingId) {
 				clearCart();
@@ -241,6 +256,42 @@ export default function CheckoutPage() {
 	// ── Total items count ──────────────────────────────────────────────────
 	const totalQty = activeItems.reduce((s, i) => s + i.quantity, 0);
 
+	const Subtotal = () => {
+		const { finalPrice, discountAmount: disc } = applyPromoDiscount(
+			math.totalRental,
+			appliedPromo
+		);
+		return (
+			<div className="px-5 py-3.5 bg-foreground/3 space-y-3">
+				{/* Promo field */}
+				{math.totalRental > 0 && (
+					<PromoCodeField
+						appliedPromo={appliedPromo}
+						onApply={setAppliedPromo}
+						onRemove={() => setAppliedPromo(null)}
+						originalPrice={math.totalRental}
+					/>
+				)}
+				{/* Итого */}
+				<div className="flex items-center justify-between">
+					<div className="space-y-0.5">
+						<span className="text-xs font-bold uppercase text-muted-foreground/50">
+							Итого
+						</span>
+						{disc > 0 && (
+							<p className="text-xs text-muted-foreground line-through tabular-nums">
+								{fmtRub(Math.round(math.totalRental))}
+							</p>
+						)}
+					</div>
+					<span className="text-lg font-black italic text-primary tabular-nums">
+						{fmtRub(Math.round(finalPrice))}
+					</span>
+				</div>
+			</div>
+		);
+	};
+
 	return (
 		<div className="min-h-screen pb-28 md:pb-12">
 			<div className="container mx-auto px-4 lg:px-6 pt-8 max-w-2xl">
@@ -305,7 +356,7 @@ export default function CheckoutPage() {
 									{formatPlural(totalQty, "equipment")}
 									<span className="text-muted-foreground/40 text-xs">·</span>
 									<span className="text-sm font-black text-primary">
-										{Math.round(math.totalRental).toLocaleString("ru")} ₽
+										{fmtRub(Math.round(math.totalRental))}
 									</span>
 								</div>
 							</div>
@@ -405,10 +456,10 @@ export default function CheckoutPage() {
 												{/* Line price */}
 												<div className="text-right">
 													<p className="text-sm font-black tabular-nums text-foreground">
-														{(price * item.quantity).toLocaleString("ru")} ₽
+														{fmtRub(price * item.quantity)}
 													</p>
 													<p className="text-[11px] text-muted-foreground/40 font-mono">
-														{price.toLocaleString("ru")} ₽/шт.
+														{fmtRub(price)}/шт.
 													</p>
 												</div>
 											</div>
@@ -417,14 +468,7 @@ export default function CheckoutPage() {
 								})}
 
 								{/* Subtotal row */}
-								<div className="flex items-center justify-between px-5 py-3.5 bg-foreground/3">
-									<span className="text-xs font-bold uppercase text-muted-foreground/50">
-										Итого
-									</span>
-									<span className="text-lg font-black italic text-primary">
-										{Math.round(math.totalRental).toLocaleString("ru")} ₽
-									</span>
-								</div>
+								<Subtotal />
 							</div>
 						)}
 					</div>

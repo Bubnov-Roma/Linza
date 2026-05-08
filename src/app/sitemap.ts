@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	try {
 		const equipment = await prisma.equipment.findMany();
 		const equipmentUrls = equipment.map((item) => ({
-			url: `https://linzarental.ru/catalog/item/${item.slug}`,
+			url: `https://linzarental.ru/equipment/item/${item.slug}`,
 			lastModified: item.updatedAt,
 		}));
 
@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 				priority: 1,
 			},
 			{
-				url: "https://linzarental.ru/catalog",
+				url: "https://linzarental.ru/equipment",
 				lastModified: new Date(),
 				changeFrequency: "daily",
 				priority: 0.8,

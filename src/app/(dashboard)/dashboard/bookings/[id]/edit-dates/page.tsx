@@ -37,7 +37,21 @@ export default async function EditDatesPage({ params }: Props) {
 
 	if (!raw) notFound();
 
-	const booking = toBookingDetailRow(raw);
+	let promoValidUntil: string | null = null;
+	if (raw.promoCode) {
+		const promo = await prisma.promoCode.findUnique({
+			where: { code: raw.promoCode },
+			select: { validUntil: true },
+		});
+		promoValidUntil = promo?.validUntil?.toISOString() ?? null;
+	}
+
+	const booking = toBookingDetailRow({
+		...raw,
+		promoValidUntil,
+	} as Parameters<typeof toBookingDetailRow>[0] & {
+		promoValidUntil: string | null;
+	});
 
 	if (["ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED"].includes(booking.status))
 		redirect(`/dashboard/bookings/${id}`);

@@ -1,5 +1,6 @@
 "use client";
 
+import { TagChevronIcon } from "@phosphor-icons/react";
 import { differenceInHours } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -43,7 +44,7 @@ import type {
 	BookingDetailRow,
 	BookingStatus,
 } from "@/core/domain/entities/Booking";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { formatPlural } from "@/utils";
 
 export function BookingDetailClient({
@@ -376,35 +377,53 @@ export function BookingDetailClient({
 														</p>
 													</div>
 													<p className="text-sm font-mono font-bold">
-														{item.priceAtBooking.toLocaleString()} ₽
+														{fmtRub(item.priceAtBooking)}
 													</p>
 												</div>
 											);
 										})}
-										{/* {booking.bookingItems.map((item) => {
-											return (
-												<div
-													key={item.id}
-													className={cn(
-														"flex items-center gap-3 px-5 py-3.5 border-b border-foreground/5 last:border-0"
-													)}
-												>
-													<div className="flex-1 min-w-0">
-														<p className="text-sm font-bold truncate leading-none mb-1">
-															{item.equipment?.title}
-														</p>
+										<div className="px-6 py-6 bg-foreground/3 border-t border-foreground/5 space-y-3">
+											{/* Промокод — если был применён */}
+											{booking.promoCode && (
+												<div className="flex items-center justify-between rounded-xl border border-green-500/25 bg-green-500/8 px-4 py-2.5">
+													<div className="flex items-center gap-2">
+														<TagChevronIcon
+															size={13}
+															className="text-green-600 shrink-0"
+														/>
+														<div>
+															<p className="text-xs font-bold font-mono text-green-700 dark:text-green-400">
+																{booking.promoCode}
+															</p>
+															<p className="text-[10px] text-muted-foreground">
+																Промокод применён
+															</p>
+														</div>
 													</div>
-													<p className="text-sm font-mono font-bold">
-														{item.priceAtBooking.toLocaleString()} ₽
-													</p>
+													{booking.discountAmount != null &&
+														booking.discountAmount > 0 && (
+															<span className="text-sm font-bold text-green-600 tabular-nums">
+																−{fmtRub(booking.discountAmount)}
+															</span>
+														)}
 												</div>
-											);
-										})} */}
-										<div className="px-6 py-6 bg-foreground/3 border-t border-foreground/5 space-y-4">
+											)}
+											{/* Итого */}
 											<div className="flex justify-between items-center text-sm">
-												<span className="text-muted-foreground">Итого</span>
-												<span className="font-bold text-lg">
-													{booking.totalAmount.toLocaleString()} ₽
+												<div className="space-y-0.5">
+													<span className="text-muted-foreground">Итого</span>
+													{/* Зачеркнутая исходная цена если была скидка */}
+													{booking.discountAmount != null &&
+														booking.discountAmount > 0 && (
+															<p className="text-[11px] text-muted-foreground/50 line-through tabular-nums">
+																{fmtRub(
+																	booking.totalAmount + booking.discountAmount
+																)}
+															</p>
+														)}
+												</div>
+												<span className="font-bold text-lg tabular-nums">
+													{fmtRub(booking.totalAmount)}
 												</span>
 											</div>
 										</div>

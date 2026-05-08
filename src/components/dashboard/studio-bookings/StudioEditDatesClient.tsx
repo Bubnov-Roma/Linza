@@ -1,5 +1,6 @@
 "use client";
 
+import { TagChevronIcon } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ChevronDown, InfoIcon } from "lucide-react";
@@ -63,6 +64,28 @@ export function StudioEditDatesClient({ booking }: StudioEditDatesClientProps) {
 		return { hours, startFull: start, endFull: end };
 	}, [period]);
 
+	const promoWillExpire = useMemo(() => {
+		// Нет промокода — не предупреждаем
+		if (!booking.promoCode || !booking.discountAmount) return false;
+		// Нет validUntil в данных — не знаем, молчим
+		// (validUntil нет в BookingDetailRow / ClientStudioBookingDetail по умолчанию —
+		//  см. шаг 2 ниже)
+		if (!booking.promoValidUntil) return false;
+		// Нет новой даты — молчим
+		const endFull =
+			"endFull" in math
+				? math.endFull
+				: combineDateAndTime(period.endDate, period.endTime);
+		if (!endFull) return false;
+		return endFull > new Date(booking.promoValidUntil);
+	}, [
+		booking.promoCode,
+		booking.discountAmount,
+		booking.promoValidUntil,
+		math,
+		period,
+	]);
+
 	// Проверяем доступность при смене дат
 	const checkAvailability = async (start: Date, end: Date) => {
 		setIsChecking(true);
@@ -113,6 +136,12 @@ export function StudioEditDatesClient({ booking }: StudioEditDatesClientProps) {
 				math.endFull.toISOString()
 			);
 			if (result.success) {
+				if (result.promoExpired) {
+					toast.warning(
+						"Промокод сгорел: новые даты выходят за срок его действия. Скидка отменена.",
+						{ duration: 6000 }
+					);
+				}
 				toast.success("Даты обновлены. Менеджер подтвердит изменения.");
 				router.push(`/dashboard/studio-bookings/${booking.id}`);
 			} else {
@@ -203,6 +232,29 @@ export function StudioEditDatesClient({ booking }: StudioEditDatesClientProps) {
 							</p>
 						)}
 					</div>
+
+					{promoWillExpire && (
+						<div className="mt-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5">
+							<TagChevronIcon
+								size={14}
+								className="text-amber-500 shrink-0 mt-0.5"
+							/>
+							<div>
+								<p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+									Промокод{" "}
+									<span className="font-mono">{booking.promoCode}</span> сгорит
+								</p>
+								<p className="text-xs text-amber-500/80 mt-0.5">
+									Новые даты выходят за срок действия промокода. При сохранении
+									скидка{" "}
+									<span className="font-semibold">
+										−{fmtRub(booking.discountAmount ?? 0)}
+									</span>{" "}
+									будет отменена.
+								</p>
+							</div>
+						</div>
+					)}
 
 					<div
 						className={cn(

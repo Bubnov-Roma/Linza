@@ -1087,19 +1087,6 @@ function PricingBlock({
 							</span>
 						</div>
 					) : null}
-					<div className="flex justify-between items-center py-1.5">
-						<span className="text-xs text-muted-foreground">Страховка</span>
-						<span
-							className={cn(
-								"text-xs font-bold",
-								booking.insuranceIncluded
-									? "text-green-500"
-									: "text-muted-foreground"
-							)}
-						>
-							{booking.insuranceIncluded ? "Включена" : "Нет"}
-						</span>
-					</div>
 					<BalanceSection booking={booking} onApplied={onSaved} />
 				</div>
 			</div>
@@ -1325,7 +1312,7 @@ function BalanceSection({
 					type="number"
 					value={applyAmount}
 					onChange={(e) => setApplyAmount(e.target.value)}
-					placeholder={`до ${balance} ₽`}
+					placeholder={`до ${fmtRub(balance)}`}
 					className="h-7 text-xs flex-1"
 					max={Math.min(balance, booking.totalAmount)}
 				/>
@@ -1782,14 +1769,6 @@ export function BookingDetailSheet({
 									</div>
 								</div>
 							)}
-
-							{/* Meta */}
-							<div className="px-6 py-4">
-								<SectionTitle icon={ClockIcon}>Мета</SectionTitle>
-								<p className="text-xs text-muted-foreground font-mono select-all">
-									{localBooking.id}
-								</p>
-							</div>
 						</div>
 					)}
 

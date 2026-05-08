@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { saveSetAction } from "@/actions/favorites-actions";
 import { Button, Label } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import type { EquipmentSet, FavoriteItem } from "./types";
 
 interface SetItem {
@@ -286,12 +286,12 @@ export function FavoriteSetEditor({
 													</p>
 												</div>
 												<p className="text-xs text-muted-foreground mt-0.5">
-													{fav.equipment?.pricePerDay} ₽/сут
+													{fmtRub(fav.equipment?.pricePerDay)}/сут
 													{qty > 1 && (
 														<span className="text-primary font-bold">
 															{" "}
 															× {qty} ={" "}
-															{(fav.equipment?.pricePerDay ?? 0) * qty} ₽
+															{fmtRub((fav.equipment?.pricePerDay ?? 0) * qty)}
 														</span>
 													)}
 												</p>
@@ -349,7 +349,7 @@ export function FavoriteSetEditor({
 											{" "}
 											поз. ·{" "}
 											<span className="font-bold text-foreground">
-												{totalPrice.toLocaleString()} ₽/сут
+												{fmtRub(totalPrice)}/сут
 											</span>
 										</span>
 									</>

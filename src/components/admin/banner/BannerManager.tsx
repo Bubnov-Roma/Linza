@@ -88,7 +88,7 @@ export function BannerManager({
 	};
 
 	return (
-		<div className="card-surface space-y-4 flex flex-col items-center">
+		<div className="card-surface space-y-4 flex flex-col items-center p-4">
 			<div className="flex flex-col items-center justify-between">
 				<h2 className="text-lg font-black uppercase italic tracking-tight">
 					Баннеры главной страницы
@@ -108,7 +108,7 @@ export function BannerManager({
 							dragOverIndex.current = index;
 						}}
 						onDrop={handleDrop}
-						className="flex items-center gap-3 p-3 cursor-grab active:cursor-grabbing group"
+						className="flex items-center gap-3 p-3 cursor-grab active:cursor-grabbing group hover:bg-secondary/50 rounded-2xl transition-colors hover:shadow-md shadow-secondary"
 					>
 						<DotsSixVerticalIcon
 							size={14}
@@ -211,8 +211,8 @@ export function BannerManager({
 			<Button
 				size="md"
 				variant="ghost"
+				className="w-full"
 				onClick={() => setShowCreate(true)}
-				className="gap-2 mx-auto"
 			>
 				<PlusIcon size={14} />
 				Добавить новый баннер

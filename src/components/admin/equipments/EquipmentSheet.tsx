@@ -27,10 +27,10 @@ import {
 	checkInventoryNumberUniqueAction,
 	createEquipmentAction,
 	getRelatedEquipmentAction,
-	searchEquipmentAction,
 	syncEquipmentByTitle,
 	updateEquipment,
 } from "@/actions/admin-equipment-actions";
+import { clientSearchEquipmentAction } from "@/actions/client-equipment-actions";
 import { ImageCell } from "@/components/admin/equipments/ImageCell";
 import {
 	CommentsBlock,
@@ -67,7 +67,7 @@ import type {
 	GroupedEquipment,
 	OwnershipType,
 } from "@/core/domain/entities/Equipment";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { useUnsavedChanges } from "@/store";
 
 interface EditMode {
@@ -193,7 +193,7 @@ export function RelatedEquipmentPicker({
 			return;
 		}
 		startSearchTransition(async () => {
-			const data = await searchEquipmentAction(debouncedQuery);
+			const data = await clientSearchEquipmentAction(debouncedQuery);
 			// Убираем из результатов текущую позицию и те, что уже добавлены
 			setResults(
 				data.filter((item) => item.id !== excludeId && !value.includes(item.id))
@@ -310,7 +310,7 @@ export function RelatedEquipmentPicker({
 								<div className="flex-1 min-w-0">
 									<p className="text-sm font-medium truncate">{item.title}</p>
 									<p className="text-[11px] text-muted-foreground">
-										{item.pricePerDay} ₽/сут
+										{fmtRub(item.pricePerDay)}/сут
 									</p>
 								</div>
 								<PlusIcon
@@ -369,7 +369,7 @@ export function RelatedEquipmentPicker({
 										{item.title}
 									</p>
 									<p className="text-[11px] text-muted-foreground">
-										{item.pricePerDay} ₽/сут
+										{fmtRub(item.pricePerDay)}/сут
 									</p>
 								</div>
 								<span className="text-[10px] text-muted-foreground/40 font-mono shrink-0">

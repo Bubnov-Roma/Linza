@@ -5,6 +5,7 @@ import { uploadToS3 } from "@/actions/upload-actions";
 import { auth } from "@/auth";
 import { TEMPLATE_VARIABLES } from "@/constants";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 import type { BookingDocData, DocTemplateRow, DocTemplateType } from "@/types";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -181,7 +182,7 @@ async function buildBookingDocData(bookingId: string): Promise<BookingDocData> {
 	const equipmentListNumbered = items
 		.map(
 			(i, idx) =>
-				`${idx + 1}. ${i.title}${i.qty > 1 ? ` — ${i.qty} шт.` : ""} — ${i.price.toLocaleString("ru-RU")} ₽`
+				`${idx + 1}. ${i.title}${i.qty > 1 ? ` — ${i.qty} шт.` : ""} — ${fmtRub(i.price)}`
 		)
 		.join("\n");
 
@@ -198,9 +199,9 @@ async function buildBookingDocData(bookingId: string): Promise<BookingDocData> {
 		endDate: fmtDate(booking.endDate),
 		startDatetime: `${fmtDate(booking.startDate)} ${fmtTime(booking.startDate)}`,
 		endDatetime: `${fmtDate(booking.endDate)} ${fmtTime(booking.endDate)}`,
-		totalAmount: `${booking.totalAmount.toLocaleString("ru-RU")} ₽`,
+		totalAmount: `${fmtRub(booking.totalAmount)}`,
 		totalAmountWords: amountToWords(booking.totalAmount),
-		depositAmount: `${deposit.toLocaleString("ru-RU")} ₽`,
+		depositAmount: `${fmtRub(deposit)}`,
 		insurance: booking.insuranceIncluded ? "включена" : "не включена",
 		clientName: booking.user.name ?? "—",
 		clientEmail: booking.user.email ?? "—",

@@ -82,7 +82,7 @@ import type {
 	DbCategory,
 	DbEquipmentWithImages,
 } from "@/core/domain/entities/Equipment";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { useAdminTablesStore } from "@/store/admin-tables.store";
 import { useUnsavedChanges } from "@/store/unsaved-changes.store";
 import { formatPlural } from "@/utils";
@@ -1137,7 +1137,7 @@ export default function EquipmentTable() {
 															)}
 														</TableCell>
 														<TableCell className="text-sm">
-															{item.pricePerDay} ₽
+															{fmtRub(item.pricePerDay)}
 														</TableCell>
 														<TableCell onClick={(e) => e.stopPropagation()}>
 															<AvailabilityToggle
@@ -1179,15 +1179,22 @@ export default function EquipmentTable() {
 														{viewMode === "extended" && (
 															<>
 																<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-																	{item.price4h ? `${item.price4h} ₽` : "—"} /{" "}
-																	{item.price8h ? `${item.price8h} ₽` : "—"}
+																	{item.price4h
+																		? `${fmtRub(item.price4h)}`
+																		: "—"}{" "}
+																	/{" "}
+																	{item.price8h
+																		? `${fmtRub(item.price8h)}`
+																		: "—"}
 																</TableCell>
 																<TableCell className="text-xs text-muted-foreground">
-																	{item.deposit ? `${item.deposit} ₽` : "—"}
+																	{fmtRub(item.deposit)
+																		? `${fmtRub(item.deposit)}`
+																		: "—"}
 																</TableCell>
 																<TableCell className="text-xs text-muted-foreground">
 																	{item.replacementValue
-																		? `${item.replacementValue} ₽`
+																		? `${fmtRub(item.replacementValue)}`
 																		: "—"}
 																</TableCell>
 																<TableCell>

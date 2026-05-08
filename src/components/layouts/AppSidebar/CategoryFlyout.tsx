@@ -41,12 +41,12 @@ export function CategoryFlyout({
 					}}
 					transition={{ type: "spring", stiffness: 400, damping: 30 }}
 					className={cn(
-						"fixed left-28 top-0 bottom-0 w-72 z-90 bg-background border-r border-foreground/8 flex flex-col shadow-md shadow-foreground/10 space-y-6"
+						"fixed left-20 top-0 bottom-0 w-72 z-90 bg-sidebar border-r border-foreground/8 flex flex-col shadow-md shadow-foreground/10 space-y-6"
 					)}
 				>
 					<Link
 						href={`/equipment?category=${category.slug}`}
-						className="flex items-center gap-4 px-8 pt-8 pb-6 justify-between bg-secondary/10 hover:bg-muted-foreground/10 group/header"
+						className="flex items-center gap-4 px-8 pt-8 pb-6 justify-between bg-muted-foreground/5 hover:bg-muted-foreground/10 group/header"
 					>
 						<div className="flex flex-col">
 							<p className="font-black text-xl tracking-tight leading-none transition-colors">

@@ -570,10 +570,6 @@ export function PaymentsPanel({
 						</div>
 
 						<div className="flex flex-col gap-1 flex-1 relative items-baseline pt-2">
-							{/* <Label className="opacity-0 text-xs pb-2 md:block">
-								Сумма, ₽
-							</Label> */}
-
 							{!isExpense && remaining > 0 && (
 								<div className="flex gap-2 flex-wrap items-center">
 									{[50, 100].map((pct) => {

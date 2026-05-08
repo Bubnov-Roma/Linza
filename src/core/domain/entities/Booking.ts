@@ -64,6 +64,8 @@ export interface BookingRow {
 	totalReplacementValue: number | null;
 	insuranceIncluded: boolean | null;
 	bookingItems: BookingItemRow[];
+	promoCode?: string | null;
+	discountAmount?: number | null;
 }
 
 export interface BookingDetailRow extends Omit<BookingRow, "booking_items"> {
@@ -71,6 +73,9 @@ export interface BookingDetailRow extends Omit<BookingRow, "booking_items"> {
 	cancellationReason: string | null;
 	cancelledAt: string | null;
 	bookingItems: BookingItemDetailRow[];
+	promoCode?: string | null;
+	discountAmount?: number | null;
+	promoValidUntil?: string | null;
 }
 export interface DashboardEquipment {
 	title: string;
@@ -84,6 +89,8 @@ export interface DashboardBooking {
 	status: string;
 	createdAt: Date;
 	bookingItems: DashboardBookingItem[];
+	promoCode?: string | null;
+	discountAmount?: number | null;
 }
 
 export function toBookingDetailRow(

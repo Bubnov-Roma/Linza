@@ -15,7 +15,7 @@ import {
 	updateStudioTariffAction,
 } from "@/actions/admin-studio-actions";
 import { Badge, Button, CardContent, Switch } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { StudioTariffSheet } from "./StudioTariffSheet";
 
 interface AdminStudioTariffsPanelProps {
@@ -130,7 +130,7 @@ function TariffRow({
 					{/* Price */}
 					<div className="shrink-0 text-right">
 						<p className="font-black text-sm text-primary">
-							{tariff.pricePerHour.toLocaleString("ru")} ₽
+							{fmtRub(tariff.pricePerHour)}
 							<span className="text-[10px] text-muted-foreground">/час</span>
 						</p>
 					</div>

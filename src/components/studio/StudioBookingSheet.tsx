@@ -23,7 +23,13 @@ import {
 	submitStudioBookingAction,
 } from "@/actions/client-studio-actions";
 import { BookingSuccessScreen } from "@/components/dashboard/bookings/BookingSuccessScreen";
-import { getDefaultRentalPeriod, RentalPeriod } from "@/components/shared";
+import {
+	type AppliedPromo,
+	applyPromoDiscount,
+	getDefaultRentalPeriod,
+	PromoCodeField,
+	RentalPeriod,
+} from "@/components/shared";
 import {
 	Button,
 	Drawer,
@@ -36,7 +42,7 @@ import {
 	SheetTitle,
 } from "@/components/ui";
 import { useRequireAuth } from "@/hooks";
-import { cn, combineDateAndTime } from "@/lib/utils";
+import { cn, combineDateAndTime, fmtRub } from "@/lib/utils";
 import { useSiteSettingsStore } from "@/store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,13 +105,11 @@ function TariffCard({
 			</div>
 			<div className="mt-2 flex items-baseline gap-1">
 				<span className="text-lg font-black text-primary">
-					{tariff.pricePerHour.toLocaleString("ru")} ₽
+					{fmtRub(tariff.pricePerHour)}
 				</span>
 				<span className="text-xs text-muted-foreground">/час</span>
 				{durationHours >= 1 && (
-					<span className="ml-auto text-sm font-bold">
-						= {total.toLocaleString("ru")} ₽
-					</span>
+					<span className="ml-auto text-sm font-bold">= {fmtRub(total)}</span>
 				)}
 			</div>
 		</button>
@@ -189,7 +193,7 @@ function EquipmentPicker({
 						</p>
 						<p className="text-[11px] font-black text-primary">
 							{item.priceStudio > 0
-								? `+ ${item.priceStudio.toLocaleString("ru")} ₽`
+								? `+ ${fmtRub(item.priceStudio)}`
 								: "Включено"}
 						</p>
 					</button>
@@ -228,6 +232,7 @@ export function StudioBookingSheet({
 	const [isLoadingEquipment, startEquipmentTransition] = useTransition();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [bookingId, setBookingId] = useState<string | null>(null);
+	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
 
 	// ── Mobile detection ───────────────────────────────────────────────────────
@@ -321,11 +326,17 @@ export function StudioBookingSheet({
 		if (!canBook || !startFull || !endFull) return;
 		setIsSubmitting(true);
 		try {
+			const { finalPrice: _finalTotal, discountAmount } = applyPromoDiscount(
+				totalPrice,
+				appliedPromo
+			);
 			const result = await submitStudioBookingAction({
 				tariffId: selectedTariffId,
 				startDate: startFull,
 				endDate: endFull,
 				equipmentIds: selectedEquipmentIds,
+				promoCode: appliedPromo?.code || "",
+				discountAmount,
 			});
 			if (result.success && result.bookingId) {
 				setBookingId(result.bookingId);
@@ -346,6 +357,7 @@ export function StudioBookingSheet({
 			setBookingId(null);
 			setIsAvailable(null);
 			setSelectedEquipmentIds([]);
+			setAppliedPromo(null);
 		}, 300);
 	};
 
@@ -358,6 +370,38 @@ export function StudioBookingSheet({
 			/>
 		</div>
 	) : null;
+
+	const TotalPrice = () => {
+		const { finalPrice, discountAmount: disc } = applyPromoDiscount(
+			totalPrice,
+			appliedPromo
+		);
+		return (
+			<div className="space-y-3">
+				<PromoCodeField
+					appliedPromo={appliedPromo}
+					onApply={setAppliedPromo}
+					onRemove={() => setAppliedPromo(null)}
+					originalPrice={totalPrice}
+				/>
+				<div className="rounded-2xl bg-primary/5 border border-primary/15 p-4 flex items-center justify-between">
+					<div className="space-y-0.5">
+						<span className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+							Итого
+						</span>
+						{disc > 0 && (
+							<p className="text-xs text-muted-foreground line-through tabular-nums">
+								{fmtRub(totalPrice)}
+							</p>
+						)}
+					</div>
+					<span className="text-2xl font-black italic tabular-nums">
+						{fmtRub(Math.round(finalPrice))}
+					</span>
+				</div>
+			</div>
+		);
+	};
 
 	// ── Form content ───────────────────────────────────────────────────────────
 	const formContent = (
@@ -445,16 +489,7 @@ export function StudioBookingSheet({
 			)}
 
 			{/* ── Итого ── */}
-			{totalPrice > 0 && (
-				<div className="rounded-2xl bg-primary/5 border border-primary/15 p-4 flex items-center justify-between">
-					<span className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-						Итого
-					</span>
-					<span className="text-2xl font-black italic">
-						{totalPrice.toLocaleString("ru")} ₽
-					</span>
-				</div>
-			)}
+			{totalPrice > 0 && <TotalPrice />}
 
 			{/* ── Кнопка ── */}
 			<Button

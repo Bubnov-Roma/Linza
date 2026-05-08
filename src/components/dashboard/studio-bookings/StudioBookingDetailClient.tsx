@@ -1,5 +1,6 @@
 "use client";
 
+import { TagChevronIcon } from "@phosphor-icons/react";
 import { differenceInHours } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -19,7 +20,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { ClientStudioBookingDetail } from "@/actions/client-studio-actions";
-import { cancelMyStudioBookingAction } from "@/actions/client-studio-actions";
+import { cancelStudioBookingAction } from "@/actions/client-studio-actions";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
 import { ClientTime } from "@/components/shared";
 import { SupportBlock } from "@/components/shared/SupportBlock";
@@ -91,7 +92,7 @@ function CancelStudioBookingDialog({
 	const handleSubmit = async () => {
 		if (!canSubmit) return;
 		setLoading(true);
-		const result = await cancelMyStudioBookingAction(bookingId, reason);
+		const result = await cancelStudioBookingAction(bookingId, reason);
 		setLoading(false);
 		if (result.success) {
 			onSuccess();
@@ -404,7 +405,7 @@ export function StudioBookingDetailClient({
 						<div className="flex items-center justify-between">
 							<p className="font-bold">{booking.tariffName}</p>
 							<p className="text-sm text-muted-foreground font-mono">
-								{booking.tariffPriceAtBooking.toLocaleString("ru")} ₽/ч
+								{fmtRub(booking.tariffPriceAtBooking)}/ч
 							</p>
 						</div>
 					</div>
@@ -547,10 +548,44 @@ export function StudioBookingDetailClient({
 											))
 										)}
 
-										<div className="px-6 py-4 bg-foreground/3 border-t border-foreground/5">
+										<div className="px-6 py-4 bg-foreground/3 border-t border-foreground/5 space-y-3">
+											{/* Промокод */}
+											{booking.promoCode && (
+												<div className="flex items-center justify-between rounded-xl border border-green-500/25 bg-green-500/8 px-4 py-2.5">
+													<div className="flex items-center gap-2">
+														<TagChevronIcon
+															size={13}
+															className="text-green-600 shrink-0"
+														/>
+														<div>
+															<p className="text-xs font-bold font-mono text-green-700 dark:text-green-400">
+																{booking.promoCode}
+															</p>
+															<p className="text-[10px] text-muted-foreground">
+																Промокод применён
+															</p>
+														</div>
+													</div>
+													{booking.discountAmount > 0 && (
+														<span className="text-sm font-bold text-green-600 tabular-nums">
+															−{fmtRub(booking.discountAmount)}
+														</span>
+													)}
+												</div>
+											)}
+											{/* Итого */}
 											<div className="flex justify-between items-center text-sm">
-												<span className="text-muted-foreground">Итого</span>
-												<span className="font-bold text-lg">
+												<div className="space-y-0.5">
+													<span className="text-muted-foreground">Итого</span>
+													{booking.discountAmount > 0 && (
+														<p className="text-[11px] text-muted-foreground/50 line-through tabular-nums">
+															{fmtRub(
+																booking.totalAmount + booking.discountAmount
+															)}
+														</p>
+													)}
+												</div>
+												<span className="font-bold text-lg tabular-nums">
 													{fmtRub(booking.totalAmount)}
 												</span>
 											</div>

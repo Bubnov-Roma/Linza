@@ -11,6 +11,7 @@ export * from "./ImageUploader";
 export * from "./Inlineeditfield";
 export * from "./LogoIcon";
 export * from "./MarkdownEditor";
+export * from "./PromoCodeField";
 export * from "./QuickActionLink";
 export * from "./RainbowSpinner";
 export * from "./RentalPeriod";

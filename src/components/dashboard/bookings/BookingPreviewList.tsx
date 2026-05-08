@@ -1,5 +1,6 @@
 "use client";
 
+import { TagChevronIcon } from "@phosphor-icons/react";
 import { differenceInHours } from "date-fns";
 import { ChevronRight, Package } from "lucide-react";
 import Image from "next/image";
@@ -12,7 +13,7 @@ import type {
 	BookingStatus,
 	DashboardBooking,
 } from "@/core/domain/entities/Booking";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
@@ -127,6 +128,19 @@ function BookingPreviewRow({ booking }: { booking: DashboardBooking }) {
 					<span className="sm:hidden opacity-40">·</span>
 					<span className="sm:hidden">{hours} ч.</span>
 				</div>
+				{booking.promoCode && (
+					<div className="flex items-center gap-1 mt-1">
+						<TagChevronIcon size={9} className="text-green-500 shrink-0" />
+						<span className="text-[10px] font-mono font-semibold text-green-600">
+							{booking.promoCode}
+						</span>
+						{booking.discountAmount != null && booking.discountAmount > 0 && (
+							<span className="text-[10px] text-green-500/70">
+								−{fmtRub(booking.discountAmount)}
+							</span>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Details button */}

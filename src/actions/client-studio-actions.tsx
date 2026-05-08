@@ -4,6 +4,7 @@ import type { BookingStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,8 @@ export interface SubmitStudioBookingInput {
 	startDate: Date;
 	endDate: Date;
 	equipmentIds?: string[];
+	promoCode?: string;
+	discountAmount?: number;
 }
 
 export interface ClientStudioBookingRow {
@@ -63,7 +66,10 @@ export interface ClientStudioBookingDetail {
 		note: string | null;
 		paidAt: Date;
 	}[];
+	promoCode: string | null;
+	discountAmount: number;
 	totalPaid: number;
+	promoValidUntil?: string | null;
 	paymentStatus: "UNPAID" | "PARTIAL" | "PAID" | "OVERPAID";
 }
 
@@ -99,6 +105,15 @@ export async function getMyStudioBookingDetailAction(
 
 	if (!b) return null;
 
+	let promoValidUntil: string | null = null;
+	if (b.promoCode) {
+		const promo = await prisma.promoCode.findUnique({
+			where: { code: b.promoCode },
+			select: { validUntil: true },
+		});
+		promoValidUntil = promo?.validUntil?.toISOString() ?? null;
+	}
+
 	const totalPaid = b.payments
 		.filter((p) => p.type === "PAYMENT")
 		.reduce((s, p) => s + p.amount, 0);
@@ -129,6 +144,9 @@ export async function getMyStudioBookingDetailAction(
 		cancellationReason: b.cancellationReason,
 		cancelledAt: b.cancelledAt,
 		createdAt: b.createdAt,
+		promoCode: b.promoCode ?? null,
+		discountAmount: b.discountAmount ?? 0,
+		promoValidUntil,
 		items: b.items.map((item) => ({
 			id: item.id,
 			equipmentId: item.equipmentId,
@@ -411,7 +429,44 @@ export async function submitStudioBookingAction(
 		}
 
 		const tariffTotal = tariff.pricePerHour * durationHours;
-		const totalAmount = tariffTotal + equipmentTotal;
+		const rawTotal = tariffTotal + equipmentTotal;
+
+		// Валидируем промокод повторно на сервере
+		let promoCodeId: string | null = null;
+		let finalTotal = rawTotal;
+
+		if (input.promoCode) {
+			const promo = await prisma.promoCode.findUnique({
+				where: { code: input.promoCode.trim().toUpperCase() },
+				select: {
+					id: true,
+					isActive: true,
+					type: true,
+					value: true,
+					usageLimit: true,
+					usedCount: true,
+					validFrom: true,
+					validUntil: true,
+				},
+			});
+			const now = new Date();
+			const isValid =
+				promo?.isActive &&
+				(!promo.validFrom || now >= promo.validFrom) &&
+				(!promo.validUntil || now <= promo.validUntil) &&
+				(promo.usageLimit === null || promo.usedCount < promo.usageLimit);
+
+			if (isValid && promo) {
+				promoCodeId = promo.id;
+				const discount =
+					promo.type === "PERCENT"
+						? (rawTotal * promo.value) / 100
+						: Math.min(promo.value, rawTotal);
+				finalTotal = Math.max(0, rawTotal - discount);
+			}
+		}
+
+		const totalAmount = finalTotal;
 
 		const booking = await prisma.studioBooking.create({
 			data: {
@@ -421,12 +476,24 @@ export async function submitStudioBookingAction(
 				endDate: input.endDate,
 				durationHours,
 				tariffPriceAtBooking: tariff.pricePerHour,
-				totalAmount,
+				totalAmount, // итоговая цена со скидкой
+				promoCode: input.promoCode ?? null, // <- NEW
+				discountAmount: rawTotal - finalTotal, // <- NEW фактическая скидка
 				items: {
 					create: equipmentItems,
 				},
 			},
 		});
+
+		if (promoCodeId) {
+			// Инкрементируем счётчик промокода
+			await prisma.promoCode
+				.update({
+					where: { id: promoCodeId },
+					data: { usedCount: { increment: 1 } },
+				})
+				.catch(() => {});
+		}
 
 		await prisma.studioBookingAuditLog.create({
 			data: {
@@ -543,7 +610,7 @@ export async function getMyStudioBookingsAction(): Promise<
 
 // ─── Client: cancel own booking ───────────────────────────────────────────────
 
-export async function cancelMyStudioBookingAction(
+export async function cancelStudioBookingAction(
 	bookingId: string,
 	reason?: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -572,6 +639,11 @@ export async function cancelMyStudioBookingAction(
 			};
 		}
 
+		const bookingToCancel = await prisma.studioBooking.findUnique({
+			where: { id: bookingId },
+			select: { promoCode: true },
+		});
+
 		await prisma.studioBooking.update({
 			where: { id: bookingId },
 			data: {
@@ -591,11 +663,20 @@ export async function cancelMyStudioBookingAction(
 			},
 		});
 
+		if (bookingToCancel?.promoCode) {
+			await prisma.promoCode
+				.updateMany({
+					where: { code: bookingToCancel.promoCode, usedCount: { gt: 0 } },
+					data: { usedCount: { decrement: 1 } },
+				})
+				.catch(() => {});
+		}
+
 		revalidatePath("/studio");
 		revalidatePath("/dashboard");
 		return { success: true };
 	} catch (e) {
-		console.error("cancelMyStudioBookingAction:", e);
+		console.error("cancelStudioBookingAction:", e);
 		return { success: false, error: "Ошибка отмены" };
 	}
 }
@@ -606,14 +687,20 @@ export async function updateStudioBookingDatesAction(
 	bookingId: string,
 	startDate: string,
 	endDate: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; promoExpired?: boolean; error?: string }> {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
 		const booking = await prisma.studioBooking.findUnique({
 			where: { id: bookingId },
-			select: { userId: true, status: true },
+			select: {
+				userId: true,
+				status: true,
+				discountAmount: true,
+				promoCode: true,
+				totalAmount: true,
+			},
 		});
 
 		if (!booking || booking.userId !== session.user.id)
@@ -625,10 +712,7 @@ export async function updateStudioBookingDatesAction(
 			"READY_TO_RENT",
 		];
 		if (!editableStatuses.includes(booking.status))
-			return {
-				success: false,
-				error: "Нельзя изменить даты на данном этапе",
-			};
+			return { success: false, error: "Нельзя изменить даты на данном этапе" };
 
 		const newStart = new Date(startDate);
 		const newEnd = new Date(endDate);
@@ -649,32 +733,57 @@ export async function updateStudioBookingDatesAction(
 		});
 
 		if (conflict)
-			return {
-				success: false,
-				error: "Студия занята в выбранный период",
-			};
+			return { success: false, error: "Студия занята в выбранный период" };
 
 		const durationHours = durationMs / 3_600_000;
 
-		// Пересчёт суммы с актуальным тарифом
+		// Загружаем полный заказ для пересчёта суммы
 		const existing = await prisma.studioBooking.findUnique({
 			where: { id: bookingId },
 			include: { items: { select: { priceAtBooking: true } } },
 		});
 		if (!existing) return { success: false, error: "Заказ не найден" };
 
+		// Проверяем не вышел ли перенос за дедлайн промокода
+		let promoExpired = false;
+		if (existing.promoCode) {
+			const promo = await prisma.promoCode.findUnique({
+				where: { code: existing.promoCode },
+				select: { validUntil: true },
+			});
+
+			if (promo?.validUntil != null && newEnd > promo.validUntil) {
+				promoExpired = true;
+			}
+		}
+
+		// Пересчёт суммы
 		const equipTotal = existing.items.reduce((s, i) => s + i.priceAtBooking, 0);
-		const newTotal = existing.tariffPriceAtBooking * durationHours + equipTotal;
+		const rawTotal = existing.tariffPriceAtBooking * durationHours + equipTotal;
+
+		// Если промо сгорело — скидку не применяем, иначе сохраняем
+		const savedDiscount = promoExpired ? 0 : (existing.discountAmount ?? 0);
+		const newTotal = Math.max(0, rawTotal - savedDiscount);
+
+		// Строим data для update
+		const updateData: Parameters<
+			typeof prisma.studioBooking.update
+		>[0]["data"] = {
+			startDate: newStart,
+			endDate: newEnd,
+			durationHours,
+			totalAmount: newTotal,
+			status: "PENDING_REVIEW",
+		};
+
+		if (promoExpired) {
+			updateData.promoCode = null;
+			updateData.discountAmount = 0;
+		}
 
 		await prisma.studioBooking.update({
 			where: { id: bookingId },
-			data: {
-				startDate: newStart,
-				endDate: newEnd,
-				durationHours,
-				totalAmount: newTotal,
-				status: "PENDING_REVIEW",
-			},
+			data: updateData,
 		});
 
 		await prisma.studioBookingAuditLog.create({
@@ -686,13 +795,27 @@ export async function updateStudioBookingDatesAction(
 				fieldName: "period",
 				valueBefore: `${existing.startDate.toLocaleString("ru-RU")} – ${existing.endDate.toLocaleString("ru-RU")}`,
 				valueAfter: `${newStart.toLocaleString("ru-RU")} – ${newEnd.toLocaleString("ru-RU")}`,
-				meta: { source: "client", newTotal },
+				meta: {
+					source: "client",
+					newTotal,
+					promoExpired,
+				},
 			},
 		});
 
+		// Декрементируем usedCount если промо сгорело
+		if (promoExpired && existing.promoCode) {
+			await prisma.promoCode
+				.updateMany({
+					where: { code: existing.promoCode, usedCount: { gt: 0 } },
+					data: { usedCount: { decrement: 1 } },
+				})
+				.catch(() => {});
+		}
+
 		revalidatePath("/studio");
 		revalidatePath("/dashboard/studio-bookings");
-		return { success: true };
+		return { success: true, promoExpired };
 	} catch (e) {
 		console.error("updateStudioBookingDatesAction:", e);
 		return { success: false, error: "Ошибка обновления дат" };
@@ -720,6 +843,8 @@ export async function updateStudioBookingTariffAction(input: {
 				durationHours: true,
 				tariffId: true,
 				tariffPriceAtBooking: true,
+				promoCode: true,
+				discountAmount: true,
 			},
 		});
 
@@ -753,7 +878,9 @@ export async function updateStudioBookingTariffAction(input: {
 				: [];
 
 		const equipTotal = equipments.reduce((s, e) => s + e.priceStudio, 0);
-		const newTotal = tariff.pricePerHour * booking.durationHours + equipTotal;
+		const rawTotal = tariff.pricePerHour * booking.durationHours + equipTotal;
+		const savedDiscount = booking.discountAmount ?? 0;
+		const newTotal = Math.max(0, rawTotal - savedDiscount);
 
 		await prisma.$transaction([
 			prisma.studioBookingItem.deleteMany({
@@ -782,7 +909,7 @@ export async function updateStudioBookingTariffAction(input: {
 					action: "BOOKING_UPDATED",
 					fieldName: "tariff",
 					valueBefore: null,
-					valueAfter: `Тариф: ${tariff.name}, техника: ${equipments.length} поз., сумма: ${newTotal} ₽`,
+					valueAfter: `Тариф: ${tariff.name}, техника: ${equipments.length} поз., сумма: ${fmtRub(newTotal)}`,
 					meta: { source: "client", equipmentCount: equipments.length },
 				},
 			}),

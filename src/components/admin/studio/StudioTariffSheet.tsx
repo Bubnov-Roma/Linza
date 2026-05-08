@@ -214,7 +214,7 @@ export function StudioTariffSheet({
 			name: name.trim(),
 			pricePerHour: price,
 			isActive,
-			sortOrder: parseInt(sortOrder) || 0,
+			sortOrder: parseInt(sortOrder, 10) || 0,
 			imageUrls: imageUrls.filter(Boolean),
 		};
 

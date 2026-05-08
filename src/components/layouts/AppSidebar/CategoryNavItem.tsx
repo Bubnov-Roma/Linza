@@ -59,6 +59,7 @@ export function CategoryNavItem({
 						asChild
 						isActive={inCat}
 						className={menuBtnClass(inCat, true)}
+						tooltip={category.name}
 					>
 						<Link
 							href={catHref}
@@ -74,14 +75,6 @@ export function CategoryNavItem({
 							>
 								<RenderIcon icon={Icon} isActive={inCat} />
 							</div>
-							<span
-								className={cn(
-									"text-[10px] font-medium leading-none w-full text-center px-1 truncate",
-									inCat ? "text-foreground font-bold" : "text-muted-foreground"
-								)}
-							>
-								{category.name}
-							</span>
 						</Link>
 					</SidebarMenuButton>
 				</SidebarMenuItem>

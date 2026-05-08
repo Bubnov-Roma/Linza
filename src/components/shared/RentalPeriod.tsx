@@ -532,6 +532,7 @@ function AnchoredPortal({
 		<div
 			ref={portalRef}
 			onPointerDown={(e) => e.stopPropagation()}
+			onWheel={(e) => e.stopPropagation()}
 			style={{
 				position: "fixed",
 				top: pos.top,

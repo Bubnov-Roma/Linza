@@ -78,3 +78,28 @@ export async function getEquipmentImagesByTitles(
 
 	return map;
 }
+
+export async function clientSearchEquipmentAction(
+	query: string
+): Promise<GroupedEquipment[]> {
+	if (!query || query.length < 2) return [];
+
+	const data = await prisma.equipment.findMany({
+		where: {
+			isAvailable: true,
+			title: {
+				contains: query,
+				mode: "insensitive",
+			},
+		},
+		take: 10,
+		include: {
+			equipmentImageLinks: {
+				include: { image: true },
+				orderBy: { orderIndex: "asc" },
+			},
+		},
+	});
+
+	return groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+}

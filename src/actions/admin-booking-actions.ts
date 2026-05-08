@@ -12,6 +12,7 @@ import type {
 } from "@/core/domain/entities/Booking";
 import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -369,10 +370,10 @@ export async function recordBookingPaymentAction(
 		await writeAuditLog(payload.bookingId, userId, name, {
 			action: `${actionLabel} ${typeLabel}`,
 			fieldName: "payments",
-			valueBefore: `Оплачено: ${prevPaid.toLocaleString("ru-RU")} ₽`,
-			valueAfter: `Оплачено: ${newTotalPaid.toLocaleString("ru-RU")} ₽ (${
+			valueBefore: `Оплачено: ${fmtRub(prevPaid)}`,
+			valueAfter: `Оплачено: ${fmtRub(newTotalPaid)} (${
 				payload.amount > 0 ? "+" : ""
-			}${payload.amount.toLocaleString("ru-RU")} ₽ · ${PAYMENT_METHOD_LABELS[payload.method] || payload.method})`,
+			}${fmtRub(payload.amount)} · ${PAYMENT_METHOD_LABELS[payload.method] || payload.method})`,
 			meta: { method: payload.method, note: payload.note, paymentStatus },
 		});
 
@@ -426,7 +427,7 @@ export async function deleteBookingPaymentAction(
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Платёж удалён",
 			fieldName: "payments",
-			valueBefore: `${payment.amount.toLocaleString("ru-RU")} ₽ · ${PAYMENT_METHOD_LABELS[payment.method as PaymentMethod]}`,
+			valueBefore: `${fmtRub(payment.amount)} · ${PAYMENT_METHOD_LABELS[payment.method as PaymentMethod]}`,
 		});
 
 		revalidatePath("/admin/bookings");
@@ -641,8 +642,8 @@ export async function adminUpdateBookingPricingAction(
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Стоимость скорректирована",
 			fieldName: "totalAmount",
-			valueBefore: `${booking.totalAmount} ₽`,
-			valueAfter: `${finalTotal} ₽`,
+			valueBefore: `${fmtRub(booking.totalAmount)}`,
+			valueAfter: `${fmtRub(finalTotal)}`,
 			meta: { adjustments: adjSummary },
 		});
 
@@ -702,7 +703,10 @@ export async function searchEquipmentAction(query: string): Promise<
 		if (!query.trim()) return [];
 		return await prisma.equipment.findMany({
 			where: {
-				title: { contains: query },
+				title: {
+					contains: query,
+					mode: "insensitive",
+				},
 				isAvailable: true,
 			},
 			select: {
@@ -789,8 +793,8 @@ export async function adminUpdateBookingDatesAction(
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Период аренды изменён",
 			fieldName: "startDate/endDate",
-			valueBefore: `Сумма: ${booking.totalAmount} ₽`,
-			valueAfter: `Сумма: ${newTotalAmount} ₽`,
+			valueBefore: `Сумма: ${fmtRub(booking.totalAmount)}`,
+			valueAfter: `Сумма: ${fmtRub(newTotalAmount)}`,
 		});
 
 		revalidatePath("/admin/bookings");
@@ -1082,7 +1086,7 @@ export async function adminQuickPayBookingAction(bookingId: string) {
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Быстрая оплата",
 			fieldName: "payments",
-			valueAfter: `Добавлен платёж на ${remainder} ₽`,
+			valueAfter: `Добавлен платёж на ${fmtRub(remainder)}`,
 		});
 
 		revalidatePath("/admin/bookings");

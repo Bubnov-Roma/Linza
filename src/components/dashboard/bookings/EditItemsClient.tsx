@@ -31,7 +31,7 @@ import type {
 	BookingStatus,
 } from "@/core/domain/entities/Booking";
 import type { DbEquipment } from "@/core/domain/entities/Equipment";
-import { calculateItemPrice, cn } from "@/lib/utils";
+import { calculateItemPrice, cn, fmtRub } from "@/lib/utils";
 
 interface LocalItem {
 	equipment: NonNullable<BookingItemDetailRow["equipment"]>;
@@ -303,7 +303,7 @@ export function EditItemsClient({ booking }: EditItemsClientProps) {
 															{item.equipment.title}
 														</p>
 														<p className="text-[10px] uppercase font-bold text-muted-foreground/50 mt-1 tracking-tight">
-															{unitPrice.toLocaleString()} ₽ / шт.
+															{fmtRub(unitPrice)} / шт.
 														</p>
 														{isBusy && (
 															<div className="flex items-center gap-1 mt-1 text-destructive font-bold text-[9px] uppercase">
@@ -364,7 +364,7 @@ export function EditItemsClient({ booking }: EditItemsClientProps) {
 
 													<div className="text-right min-w-25">
 														<p className="text-sm font-black font-mono">
-															{(unitPrice * item.quantity).toLocaleString()} ₽
+															{fmtRub(unitPrice * item.quantity)}
 														</p>
 														<button
 															type="button"
@@ -404,7 +404,7 @@ export function EditItemsClient({ booking }: EditItemsClientProps) {
 										Стоимость аренды
 									</span>
 									<span className="text-sm font-bold">
-										{Math.round(totalRental).toLocaleString()} ₽
+										{fmtRub(Math.round(totalRental))}
 									</span>
 								</div>
 							</div>
@@ -415,7 +415,7 @@ export function EditItemsClient({ booking }: EditItemsClientProps) {
 										Итого к оплате
 									</span>
 									<span className="text-3xl font-black italic text-primary leading-none">
-										{Math.round(totalRental).toLocaleString()} ₽
+										{fmtRub(Math.round(totalRental))}
 									</span>
 								</div>
 

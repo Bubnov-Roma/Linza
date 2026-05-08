@@ -1,12 +1,14 @@
 "use client";
 
 import { ru } from "date-fns/locale";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	type SiteSettingsInfo,
 	updateSiteSettingsAction,
 } from "@/actions/admin-settings-actions";
+import { AdminManagementSection } from "@/components/admin/settings/AdminManagementSection";
+import { PromoCodesSection } from "@/components/admin/settings/PromoCodesSection";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
 import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 import {
@@ -19,6 +21,7 @@ import {
 	CardTitle,
 	Input,
 	Label,
+	Skeleton,
 } from "@/components/ui";
 
 export function SettingsClient({
@@ -28,6 +31,11 @@ export function SettingsClient({
 }) {
 	const [formData, setFormData] = useState(initialSettings);
 	const [isSaving, setIsSaving] = useState(false);
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	const selectedDates = formData.disabledDates.map((d) => new Date(d));
 
@@ -59,7 +67,7 @@ export function SettingsClient({
 	};
 
 	return (
-		<div className="max-w-5xl mx-auto space-y-6 pb-20">
+		<div className="max-w-5xl mx-auto space-y-6 pb-20 px-2 md:px-6">
 			<DashboardBreadcrumb items={[{ label: "Настройки сайта" }]} />
 
 			<div>
@@ -77,7 +85,7 @@ export function SettingsClient({
 			>
 				{/* График и выходные */}
 				<div className="space-y-6">
-					<Card>
+					<Card className="py-6">
 						<CardHeader>
 							<CardTitle>Часы работы</CardTitle>
 							<CardDescription>
@@ -118,7 +126,7 @@ export function SettingsClient({
 						</CardContent>
 					</Card>
 
-					<Card>
+					<Card className="py-6">
 						<CardHeader>
 							<CardTitle>Нерабочие дни</CardTitle>
 							<CardDescription>
@@ -126,20 +134,24 @@ export function SettingsClient({
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="flex flex-col items-center">
-							<Calendar
-								mode="multiple"
-								locale={ru}
-								selected={selectedDates}
-								onSelect={handleDatesChange}
-								className="rounded-xl border border-foreground/10 p-3"
-							/>
+							{mounted ? (
+								<Calendar
+									mode="multiple"
+									locale={ru}
+									selected={selectedDates}
+									onSelect={handleDatesChange}
+									className="rounded-xl mt-4"
+								/>
+							) : (
+								<Skeleton className="h-85.5 w-69" />
+							)}
 						</CardContent>
 					</Card>
 				</div>
 
 				{/* Контакты */}
 				<div className="space-y-6">
-					<Card>
+					<Card className="py-6">
 						<CardHeader>
 							<CardTitle>Контактная информация</CardTitle>
 						</CardHeader>
@@ -183,33 +195,36 @@ export function SettingsClient({
 							</div>
 						</CardContent>
 					</Card>
+					{/* Юридические документы */}
+
+					<Card className="py-6 lg:col-span-1">
+						<CardHeader>
+							<CardTitle>Юридические документы</CardTitle>
+							<CardDescription>Редактор в формате Markdown</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-6">
+							<MarkdownEditor
+								label="Политика конфиденциальности"
+								value={formData.privacyPolicy}
+								onChange={(val) =>
+									setFormData({ ...formData, privacyPolicy: val })
+								}
+								rows={12}
+							/>
+							<MarkdownEditor
+								label="Договор оферты (Terms of Service)"
+								value={formData.termsOfService}
+								onChange={(val) =>
+									setFormData({ ...formData, termsOfService: val })
+								}
+								rows={12}
+							/>
+						</CardContent>
+					</Card>
 				</div>
 
-				{/* Юридические документы */}
-				<Card className="lg:col-span-2">
-					<CardHeader>
-						<CardTitle>Юридические документы</CardTitle>
-						<CardDescription>Редактор в формате Markdown</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
-						<MarkdownEditor
-							label="Политика конфиденциальности"
-							value={formData.privacyPolicy}
-							onChange={(val) =>
-								setFormData({ ...formData, privacyPolicy: val })
-							}
-							rows={12}
-						/>
-						<MarkdownEditor
-							label="Договор оферты (Terms of Service)"
-							value={formData.termsOfService}
-							onChange={(val) =>
-								setFormData({ ...formData, termsOfService: val })
-							}
-							rows={12}
-						/>
-					</CardContent>
-				</Card>
+				<PromoCodesSection />
+				<AdminManagementSection />
 
 				<div className="lg:col-span-2 flex justify-end">
 					<Button
@@ -225,107 +240,3 @@ export function SettingsClient({
 		</div>
 	);
 }
-
-// const PERMISSIONS = [
-// 	{ key: "bookings_approve", label: "Подтверждать брони" },
-// 	{ key: "equipment_edit", label: "Редактировать технику" },
-// 	{ key: "users_view", label: "Просматривать клиентов" },
-// 	{ key: "finance_view", label: "Просматривать финансы" },
-// ] as const;
-
-/* (user.role === "MANAGER" && (
-			<SectionCard
-				icon={<ShieldCheckIcon size={14} />}
-				title="Права менеджера"
-				className="bg-amber-500/5"
-			>
-				<div className="p-5 space-y-3">
-					{PERMISSIONS.map((perm) => (
-						<Label
-							key={perm.key}
-							className="flex items-center gap-3 cursor-pointer"
-						>
-							<Checkbox
-								checked={!!permissions[perm.key]}
-								onCheckedChange={(v) => {
-									const newPerms = { ...permissions, [perm.key]: !!v };
-									onPermissionSave(newPerms);
-								}}
-							/>
-							<span className="text-sm font-medium">{perm.label}</span>
-						</Label>
-					))}
-				</div>
-			</SectionCard>
-			); */
-import type { UserProfile } from "@/core/domain/entities/User";
-
-interface PersonalTableProps {
-	currentUserRole: string | undefined;
-	initialUsers: UserProfile[];
-}
-
-export const PersonalTable = ({
-	currentUserRole,
-	initialUsers,
-}: PersonalTableProps) => {
-	// const [_isPending, startTransition] = useTransition();
-	// const handleRoleChange = (userId: string, newRole: Role) => {
-	// 	startTransition(async () => {
-	// 		const r = await updateUserRoleAction(userId, newRole);
-	// 		if (r.success) {
-	// 			setUsers((prev) =>
-	// 				prev.map((u) =>
-	// 					u.id === userId ? { ...u, role: newRole as UserProfile["role"] } : u
-	// 				)
-	// 			);
-	// 			toast.success(`Роль → ${newRole}`);
-	// 		} else toast.error(r.error);
-	// 	});
-	// };
-
-	return (
-		<div>
-			{currentUserRole}
-			{initialUsers.map((u) => (
-				<div key={u.id}>
-					{u.name} - {u.email} - {u.role}
-				</div>
-			))}
-
-			{/* <TableCell onClick={(e) => e.stopPropagation()}>
-                      {currentUserRole === "ADMIN" ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex items-center gap-1 hover:opacity-80"
-                            >
-                              <RoleBadge role={user.role ?? "user"} />
-                              <CaretDownIcon
-                                size={10}
-                                className="text-muted-foreground"
-                              />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {(
-                              ["USER", "PARTNER", "MANAGER", "ADMIN"] as Role[]
-                            ).map((r) => (
-                              <DropdownMenuItem
-                                key={r}
-                                onClick={() => handleRoleChange(user.id, r)}
-                                className={user.role === r ? "font-bold" : ""}
-                              >
-                                {r}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <RoleBadge role={user.role ?? "user"} />
-                      )}
-                    </TableCell> */}
-		</div>
-	);
-};

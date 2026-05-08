@@ -21,6 +21,8 @@ export async function submitBookingAction(formData: {
 	totalPrice: number;
 	hasInsurance: boolean;
 	totalReplacementValue: number;
+	promoCode?: string | undefined;
+	discountAmount?: number;
 }): Promise<{ success: boolean; bookingId?: string; error?: string }> {
 	try {
 		const session = await auth();
@@ -72,21 +74,56 @@ export async function submitBookingAction(formData: {
 			};
 		}
 
-		// Prisma позволяет создать запись и все связанные элементы (items) за одну транзакцию!
+		// Валидируем промокод повторно на сервере и получаем его id
+		let promoCodeId: string | null = null;
+		if (formData.promoCode) {
+			const promo = await prisma.promoCode.findUnique({
+				where: { code: formData.promoCode.trim().toUpperCase() },
+				select: {
+					id: true,
+					isActive: true,
+					usageLimit: true,
+					usedCount: true,
+					validFrom: true,
+					validUntil: true,
+				},
+			});
+			const now = new Date();
+			const isValid =
+				promo?.isActive &&
+				(!promo.validFrom || now >= promo.validFrom) &&
+				(!promo.validUntil || now <= promo.validUntil) &&
+				(promo.usageLimit === null || promo.usedCount < promo.usageLimit);
+
+			if (isValid) promoCodeId = promo.id;
+		}
+
 		const booking = await prisma.booking.create({
 			data: {
 				userId: session.user.id,
 				startDate: new Date(formData.startDate),
 				endDate: new Date(formData.endDate),
-				totalAmount: formData.totalPrice,
+				totalAmount: formData.totalPrice, // уже итоговая цена со скидкой
 				insuranceIncluded: formData.hasInsurance,
 				totalReplacementValue: formData.totalReplacementValue,
 				status: BookingStatus.PENDING_REVIEW,
+				promoCode: formData.promoCode ?? null, // <- сохраняем код
+				discountAmount: formData.discountAmount ?? 0, // <- сохраняем скидку
 				bookingItems: {
 					create: bookingItemRows,
 				},
 			},
 		});
+
+		if (promoCodeId) {
+			// Инкрементируем счётчик использований промокода (отдельно, не блокируем booking)
+			await prisma.promoCode
+				.update({
+					where: { id: promoCodeId },
+					data: { usedCount: { increment: 1 } },
+				})
+				.catch(() => {}); // не блокируем заказ если что-то пошло не так
+		}
 
 		revalidatePath("/dashboard/bookings");
 		return { success: true, bookingId: booking.id };
@@ -108,7 +145,7 @@ export async function cancelBookingAction(
 
 		const booking = await prisma.booking.findUnique({
 			where: { id: bookingId },
-			select: { userId: true, status: true },
+			select: { userId: true, status: true, promoCode: true },
 		});
 
 		if (!booking || booking.userId !== session.user.id) {
@@ -145,6 +182,15 @@ export async function cancelBookingAction(
 			}),
 		]);
 
+		if (booking.promoCode) {
+			await prisma.promoCode
+				.updateMany({
+					where: { code: booking.promoCode, usedCount: { gt: 0 } },
+					data: { usedCount: { decrement: 1 } },
+				})
+				.catch(() => {});
+		}
+
 		revalidatePath(`/dashboard/bookings/${bookingId}`);
 		revalidatePath("/dashboard/bookings");
 		return { success: true };
@@ -160,14 +206,20 @@ export async function updateBookingDatesAction(
 	bookingId: string,
 	startDate: string,
 	endDate: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; promoExpired?: boolean; error?: string }> {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
 		const booking = await prisma.booking.findUnique({
 			where: { id: bookingId },
-			select: { userId: true, status: true },
+			select: {
+				userId: true,
+				status: true,
+				promoCode: true,
+				discountAmount: true,
+				totalAmount: true,
+			},
 		});
 
 		if (!booking || booking.userId !== session.user.id) {
@@ -180,14 +232,44 @@ export async function updateBookingDatesAction(
 			return { success: false, error: "Нельзя изменить даты на данном этапе" };
 		}
 
+		const newEnd = new Date(endDate);
+		let promoExpired = false;
+
+		// Проверяем не вышел ли перенос за дедлайн промокода
+		if (booking.promoCode) {
+			const promo = await prisma.promoCode.findUnique({
+				where: { code: booking.promoCode },
+				select: { validUntil: true, usedCount: true },
+			});
+
+			const isExpiredByDate =
+				promo?.validUntil != null && newEnd > promo.validUntil;
+
+			if (isExpiredByDate) {
+				promoExpired = true;
+			}
+		}
+
+		// Строим data обновления
+		const updateData: Parameters<typeof prisma.booking.update>[0]["data"] = {
+			startDate: new Date(startDate),
+			endDate: newEnd,
+			status: BookingStatus.PENDING_REVIEW,
+		};
+
+		// Если промокод сгорел — сбрасываем и возвращаем оригинальную сумму
+		if (promoExpired) {
+			updateData.promoCode = null;
+			updateData.discountAmount = 0;
+			// Возвращаем оригинальную цену: totalAmount + то что было скидкой
+			updateData.totalAmount =
+				(booking.totalAmount ?? 0) + (booking.discountAmount ?? 0);
+		}
+
 		await prisma.$transaction([
 			prisma.booking.update({
 				where: { id: bookingId },
-				data: {
-					startDate: new Date(startDate),
-					endDate: new Date(endDate),
-					status: BookingStatus.PENDING_REVIEW,
-				},
+				data: updateData,
 			}),
 			prisma.adminNotification.create({
 				data: {
@@ -197,13 +279,25 @@ export async function updateBookingDatesAction(
 						booking_id: bookingId,
 						start_date: startDate,
 						end_date: endDate,
+						promo_expired: promoExpired,
 					} as Prisma.InputJsonValue,
 				},
 			}),
 		]);
 
+		// Декрементируем usedCount если промо сгорело
+		if (promoExpired && booking.promoCode) {
+			await prisma.promoCode
+				.updateMany({
+					where: { code: booking.promoCode, usedCount: { gt: 0 } },
+					data: { usedCount: { decrement: 1 } },
+				})
+				.catch(() => {});
+		}
+
 		revalidatePath(`/dashboard/bookings/${bookingId}`);
-		return { success: true };
+		revalidatePath("/dashboard/bookings");
+		return { success: true, promoExpired };
 	} catch (error: unknown) {
 		if (error instanceof Error) return { success: false, error: error.message };
 		return { success: false, error: "Ошибка обновления дат" };
@@ -256,6 +350,8 @@ export async function updateBookingItemsAction(
 		items: { equipmentId: string; quantity: number; pricePerUnit: number }[];
 		totalAmount: number;
 		totalReplacementValue: number;
+		promoCode?: string;
+		discountAmount?: number;
 	}
 ): Promise<{ success: boolean; error?: string }> {
 	try {
@@ -306,6 +402,12 @@ export async function updateBookingItemsAction(
 					bookingItems: {
 						create: newRows,
 					},
+					...(payload.promoCode !== undefined
+						? { promoCode: payload.promoCode }
+						: {}),
+					...(payload.discountAmount !== undefined
+						? { discountAmount: payload.discountAmount }
+						: {}),
 				},
 			}),
 			prisma.adminNotification.create({

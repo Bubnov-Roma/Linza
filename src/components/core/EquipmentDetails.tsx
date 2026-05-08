@@ -25,9 +25,11 @@ import { Lightbox } from "@/components/core/Lightbox";
 import { PriceSelector } from "@/components/core/PriceSelector";
 import { BookingSuccessScreen } from "@/components/dashboard/bookings/BookingSuccessScreen";
 import {
-	BackButton,
+	type AppliedPromo,
+	applyPromoDiscount,
 	BookingButton,
 	getDefaultRentalPeriod,
+	PromoCodeField,
 	RentalPeriod,
 	SimpleMarkdown,
 } from "@/components/shared";
@@ -46,7 +48,12 @@ import {
 } from "@/components/ui";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 import { useFavorite, useRequireAuth } from "@/hooks";
-import { calculateItemPrice, cn, combineDateAndTime } from "@/lib/utils";
+import {
+	calculateItemPrice,
+	cn,
+	combineDateAndTime,
+	fmtRub,
+} from "@/lib/utils";
 import { useSiteSettingsStore } from "@/store";
 import { useCartStore } from "@/store/use-cart.store";
 
@@ -177,7 +184,7 @@ function RelatedSlider({ ids }: { ids: string[] }) {
 	const [items, setItems] = useState<GroupedEquipment[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [slideIdx, setSlideIdx] = useState(0);
-	const VISIBLE = 4; // видимых карточек
+	const VISIBLE = 4;
 
 	useEffect(() => {
 		if (!ids.length) return;
@@ -312,6 +319,7 @@ export default function EquipmentDetails({
 	const [busyIds, setBusyIds] = useState<string[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [bookingId, setBookingId] = useState<string | null>(null);
+	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
 	const quantity = useMemo(() => {
 		const inCart = cartItems.find((i) => i.equipment.id === equipment.id);
@@ -407,6 +415,10 @@ export default function EquipmentDetails({
 		if (!canBook || !math.startFull || !math.endFull) return;
 		setIsSubmitting(true);
 		try {
+			const { finalPrice: finalTotal, discountAmount } = applyPromoDiscount(
+				math.totalRental,
+				appliedPromo
+			);
 			const result = await submitBookingAction({
 				items: [
 					{
@@ -420,9 +432,11 @@ export default function EquipmentDetails({
 				],
 				startDate: math.startFull.toISOString(),
 				endDate: math.endFull.toISOString(),
-				totalPrice: math.totalRental,
+				totalPrice: finalTotal,
 				hasInsurance: true,
 				totalReplacementValue: math.totalRV,
+				promoCode: appliedPromo?.code,
+				discountAmount,
 			});
 			if (result.success && result.bookingId) {
 				clearCart();
@@ -494,19 +508,44 @@ export default function EquipmentDetails({
 		</>
 	);
 
+	const TotalPrice = () => {
+		const { finalPrice, discountAmount: disc } = applyPromoDiscount(
+			math.totalRental,
+			appliedPromo
+		);
+		return (
+			<div className="space-y-3">
+				<PromoCodeField
+					appliedPromo={appliedPromo}
+					onApply={setAppliedPromo}
+					onRemove={() => setAppliedPromo(null)}
+					originalPrice={math.totalRental}
+				/>
+				<div className="flex justify-between items-end">
+					<div className="space-y-0.5">
+						<span className="text-xs font-bold uppercase text-muted-foreground">
+							Итого к оплате
+						</span>
+						{disc > 0 && (
+							<p className="text-xs text-muted-foreground line-through tabular-nums">
+								{fmtRub(math.totalRental)}
+							</p>
+						)}
+					</div>
+					<span className="text-2xl font-black italic text-foreground leading-none flex items-center gap-2 tabular-nums">
+						{fmtRub(Math.round(finalPrice))}
+						{isChecking && (
+							<span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mb-1" />
+						)}
+					</span>
+				</div>
+			</div>
+		);
+	};
+
 	const quickBookFooter = (
 		<>
-			<div className="flex justify-between items-end">
-				<span className="text-xs font-bold uppercase text-muted-foreground">
-					Итого к оплате
-				</span>
-				<span className="text-2xl font-black italic text-foreground leading-none flex items-center gap-2">
-					{math.totalRental.toLocaleString("ru")} ₽
-					{isChecking && (
-						<span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mb-1" />
-					)}
-				</span>
-			</div>
+			<TotalPrice />
 			<BookingButton
 				onClick={handleQuickBookSubmit}
 				disabled={!canBook}
@@ -529,7 +568,6 @@ export default function EquipmentDetails({
 			{/* Mobile title */}
 			<div className="lg:px-6 max-w-7xl mx-auto px-4 py-4 flex-col gap-4 space-y-6 items-center animate-in fade-in duration-500 lg:overflow-visible">
 				<div className="flex w-full items-baseline h-full gap-2">
-					<BackButton fallback="/equipment" />
 					<h1 className="text-3xl font-black italic uppercase tracking-tighter leading-tight">
 						{equipment.title}
 					</h1>
@@ -576,7 +614,7 @@ export default function EquipmentDetails({
 									onClick={handleShare}
 									className="w-9 h-9 rounded-full bg-background/80 backdrop-blur-md flex items-center justify-center hover:bg-background transition-colors shadow-sm"
 								>
-									<ShareFatIcon className="text-foreground/70 w-3.5 h-3.5" />
+									<ShareFatIcon className="text-foreground/70 w-4 h-4" />
 								</button>
 								<button
 									type="button"
@@ -586,8 +624,9 @@ export default function EquipmentDetails({
 									className="w-9 h-9 rounded-full bg-background/80 backdrop-blur-md flex items-center justify-center hover:bg-background transition-colors shadow-sm"
 								>
 									<HeartIcon
+										weight={`${isFavorite ? "fill" : "regular"}`}
 										className={cn(
-											"w-3.5 h-3.5 transition-colors",
+											"w-4 h-4 transition-all duration-200",
 											isFavorite ? "text-primary" : "text-foreground/70"
 										)}
 									/>
@@ -718,14 +757,13 @@ export default function EquipmentDetails({
 													</div>
 													<div>
 														<p className="text-xl font-black italic tracking-tighter leading-none">
-															{equipment.price4h.toLocaleString("ru")} ₽
+															{fmtRub(equipment.price4h)}
 														</p>
 														<p className="text-[10px] text-muted-foreground mt-1 font-medium">
 															Экономия{" "}
-															{(
+															{fmtRub(
 																equipment.pricePerDay - equipment.price4h
-															).toLocaleString("ru")}{" "}
-															₽
+															)}
 														</p>
 													</div>
 												</div>
@@ -748,14 +786,13 @@ export default function EquipmentDetails({
 													</div>
 													<div>
 														<p className="text-xl font-black italic tracking-tighter leading-none">
-															{equipment.price8h.toLocaleString("ru")} ₽
+															{fmtRub(equipment.price8h)}
 														</p>
 														<p className="text-[10px] text-muted-foreground mt-1 font-medium">
 															Экономия{" "}
-															{(
+															{fmtRub(
 																equipment.pricePerDay - equipment.price8h
-															).toLocaleString("ru")}{" "}
-															₽
+															)}
 														</p>
 													</div>
 												</div>
@@ -774,7 +811,7 @@ export default function EquipmentDetails({
 										</span>
 										<div className="flex items-baseline gap-1.5">
 											<span className="text-4xl font-black italic uppercase tracking-tighter">
-												{math.totalRental.toLocaleString("ru")}
+												{fmtRub(math.totalRental)}
 											</span>
 											<span className="text-xl font-bold text-muted-foreground italic">
 												₽

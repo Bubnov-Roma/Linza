@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { useDebounceValue } from "usehooks-ts";
-import { searchEquipmentAction } from "@/actions/admin-equipment-actions";
+import { clientSearchEquipmentAction } from "@/actions/client-equipment-actions";
 import { AddToCartButton } from "@/components/core/AddToCartButton";
 import { SearchFilters } from "@/components/core/search/SearchFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +17,7 @@ import type {
 } from "@/core/domain/entities/Equipment";
 import type { SearchPanelState } from "@/hooks";
 import { useSearchHistory } from "@/hooks/use-search-history";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 import { useCartStore } from "@/store/use-cart.store";
 import { slugify } from "@/utils";
 
@@ -84,7 +84,7 @@ export function SearchPanel({
 		isFetching,
 	} = useQuery({
 		queryKey: ["search-panel", debouncedQuery],
-		queryFn: () => searchEquipmentAction(debouncedQuery),
+		queryFn: () => clientSearchEquipmentAction(debouncedQuery),
 		enabled: debouncedQuery.length > 1,
 		staleTime: 1000 * 60 * 2,
 		placeholderData: (prev) => prev,
@@ -250,7 +250,7 @@ export function SearchPanel({
 												{item.title}
 											</div>
 											<div className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
-												{item.pricePerDay} ₽/сут
+												{fmtRub(item.pricePerDay)}/сут
 											</div>
 										</div>
 									</button>

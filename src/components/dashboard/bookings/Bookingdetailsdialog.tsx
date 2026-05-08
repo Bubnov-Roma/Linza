@@ -1,5 +1,6 @@
 "use client";
 
+import { TagChevronIcon } from "@phosphor-icons/react";
 import { ExternalLink, Package, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_STYLES } from "@/constants";
 import type { DashboardBooking } from "@/core/domain/entities/Booking";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 
 export function BookingDetailDialog({
 	booking,
@@ -128,12 +129,23 @@ export function BookingDetailDialog({
 									</p>
 								</div>
 								<div>
-									<p className="text-[9px] uppercase text-muted-foreground font-bold mb-5 text-right">
+									<p className="text-[9px] uppercase text-muted-foreground font-bold mb-1 text-right">
 										Итого
 									</p>
-									<p className="text-xs font-black italic text-right">
-										{booking.totalAmount.toLocaleString()}
+									<p className="text-xs font-black italic text-right tabular-nums">
+										{fmtRub(booking.totalAmount)}
 									</p>
+									{booking.promoCode && (
+										<div className="flex items-center justify-end gap-1 mt-0.5">
+											<TagChevronIcon
+												size={9}
+												className="text-green-500 shrink-0"
+											/>
+											<span className="text-[9px] font-mono font-bold text-green-600 truncate max-w-16">
+												{booking.promoCode}
+											</span>
+										</div>
+									)}
 								</div>
 							</div>
 							<div className="space-y-2 relative">
@@ -168,7 +180,7 @@ export function BookingDetailDialog({
 												{item.equipment.title}
 											</p>
 											<p className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-												{(item.priceAtBooking || 0).toLocaleString()} ₽
+												{fmtRub(item.priceAtBooking || 0)}
 											</p>
 										</div>
 									</div>

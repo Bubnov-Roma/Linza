@@ -37,6 +37,7 @@
     "migrate:deploy": "dotenv -e .env.development -- prisma migrate deploy",
     "migrate:status": "dotenv -e .env.development -- prisma migrate status",
     "backup:db": "node scripts/backup-database.js",
+    "db:pull": "ssh root@155.212.190.166 \"docker exec linza-postgres pg_dump -U linza --data-only --exclude-table='_prisma_migrations' --disable-triggers linza_db > /opt/linza/init-db/01_data.sql\" && scp root@155.212.190.166:/opt/linza/init-db/01_data.sql init-db/01_data.sql",
     "clear:cache": "rm -rf .next/cache",
     "clear:all": "rm -rf .next node_modules/.cache"
   },

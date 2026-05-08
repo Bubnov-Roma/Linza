@@ -7,6 +7,7 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 
 export async function AdminFavoritesStats({ limit = 10 }: { limit?: number }) {
 	// Prisma умеет сортировать по количеству связанных записей (relation count)!
@@ -67,7 +68,7 @@ export async function AdminFavoritesStats({ limit = 10 }: { limit?: number }) {
 									<div className="flex-1 min-w-0">
 										<p className="text-sm font-medium truncate">{row.title}</p>
 										<p className="text-xs text-muted-foreground">
-											{row.pricePerDay.toLocaleString("ru-RU")} ₽/сутки
+											{fmtRub(row.pricePerDay)}/сутки
 										</p>
 									</div>
 									{!row.isAvailable && (

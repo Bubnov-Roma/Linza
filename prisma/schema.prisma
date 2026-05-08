@@ -167,6 +167,7 @@ model User {
   studioBookings             StudioBooking[]
   studioPaymentsAuthored     StudioBookingPayment[]    @relation("StudioPaymentAuthor")
   studioAuditLogsAuthored    StudioBookingAuditLog[]   @relation("StudioAuditAuthor")
+  createdPromoCodes          PromoCode[]               @relation("PromoCreator")
 }
 
 model UserAuditLog {
@@ -202,6 +203,7 @@ model Account {
   user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
 }
+
 model InviteToken {
   id        String    @id @default(uuid())
   userId    String
@@ -256,6 +258,8 @@ model Booking {
   cancellationReason    String?
   cancelledAt           DateTime?
   expiredAt             DateTime?
+  promoCode             String?
+  discountAmount        Float?        @default(0)
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
@@ -634,6 +638,26 @@ model DocumentGenerationLog {
   author           User?            @relation("DocGenAuthor", fields: [generatedBy], references: [id], onDelete: SetNull)
 }
 
+// ─── PROMO CODES ─────────────────────────────────────────────────────────────
+
+model PromoCode {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  type        DiscountType
+  value       Float
+  description String?      @db.Text
+  isActive    Boolean      @default(true)
+  usageLimit  Int?
+  usedCount   Int          @default(0)
+  validFrom   DateTime?
+  validUntil  DateTime?
+  createdBy   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  creator     User?        @relation("PromoCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+}
+
 // ─── STUDIO ──────────────────────────────────────────────────────────────────
 
 // Тариф студии (база, интервью, хромакей и кастомные)
@@ -666,6 +690,8 @@ model StudioBooking {
   cancellationReason String?
   cancelledAt        DateTime?
   expiredAt          DateTime?
+  promoCode          String?
+  discountAmount     Float?        @default(0)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 

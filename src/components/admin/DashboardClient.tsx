@@ -20,6 +20,7 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_STYLES } from "@/constants";
+import { fmtRub } from "@/lib/utils";
 import type { AdminDashboardData } from "@/types";
 
 interface DashboardClientProps {
@@ -44,7 +45,7 @@ export function DashboardClient({ stats, banners }: DashboardClientProps) {
 			</div>
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				{/* Recent bookings */}
-				<Card className="lg:col-span-2">
+				<Card className="lg:col-span-2 py-4">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between">
 							<CardTitle className="text-base font-bold">
@@ -99,7 +100,7 @@ export function DashboardClient({ stats, banners }: DashboardClientProps) {
 													</p>
 												</td>
 												<td className="px-4 py-3 font-bold text-sm whitespace-nowrap">
-													{booking.totalAmount.toLocaleString("ru-RU")} ₽
+													{fmtRub(booking.totalAmount)}
 												</td>
 												<td className="px-4 py-3">
 													<Badge
@@ -130,7 +131,7 @@ export function DashboardClient({ stats, banners }: DashboardClientProps) {
 
 				{/* Right column */}
 				<div className="space-y-4">
-					<Card>
+					<Card className="py-6">
 						<CardHeader className="pb-3">
 							<CardTitle className="text-base font-bold">
 								Быстрые действия

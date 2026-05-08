@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 import { cleanUndefined } from "@/utils";
 
 // ─── Типы ─────────────────────────────────────────────────────────────────────
@@ -1233,10 +1234,10 @@ export async function adminAssignDiscountAction(data: {
 
 		let actionText = "Назначена скидка";
 		let valAfter = `${data.value} %`;
-		if (data.type === "FIXED") valAfter = `${data.value} ₽`;
+		if (data.type === "FIXED") valAfter = `${fmtRub(data.value)}`;
 		if (data.type === "PROMO") {
 			actionText = "Добавлен промокод";
-			valAfter = `${data.promoCode} (-${data.value} ₽)`;
+			valAfter = `${data.promoCode} (-${fmtRub(data.value)})`;
 		}
 
 		await writeUserAuditLog(data.userId, adminId, adminName, {

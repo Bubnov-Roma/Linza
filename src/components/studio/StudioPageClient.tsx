@@ -15,7 +15,7 @@ import type { StudioTariffData } from "@/actions/admin-studio-actions";
 import { Lightbox } from "@/components/core/Lightbox";
 import { StudioBookingSheet } from "@/components/studio/StudioBookingSheet";
 import { Button, CardContent } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 
 // ─── Studio images ─────────────────────────────────────────────────────────────
 // Используем изображения из тарифов + fallback
@@ -92,7 +92,7 @@ function PublicTariffCard({
 				{/* Price */}
 				<div className="flex items-baseline gap-1.5">
 					<span className="text-3xl font-black text-primary">
-						{tariff.pricePerHour.toLocaleString("ru")} ₽
+						{fmtRub(tariff.pricePerHour)}
 					</span>
 					<span className="text-sm text-muted-foreground font-medium">
 						/час

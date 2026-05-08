@@ -535,30 +535,6 @@ export async function deleteEquipment(ids: string[]) {
 	return { success: true };
 }
 
-// TODO: есть дубль в admin-booking-actions
-// TODO! используется на клиенте в core search !!!
-export async function searchEquipmentAction(
-	query: string
-): Promise<GroupedEquipment[]> {
-	if (!query || query.length < 2) return [];
-
-	const data = await prisma.equipment.findMany({
-		where: {
-			isAvailable: true,
-			title: { contains: query },
-		},
-		take: 10,
-		include: {
-			equipmentImageLinks: {
-				include: { image: true },
-				orderBy: { orderIndex: "asc" },
-			},
-		},
-	});
-
-	return groupEquipmentRows(data as unknown as RawEquipmentRow[]);
-}
-
 export async function duplicateEquipment(id: string): Promise<DbEquipment> {
 	const original = await prisma.equipment.findUnique({
 		where: { id },

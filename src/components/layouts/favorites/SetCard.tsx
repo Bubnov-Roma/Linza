@@ -21,6 +21,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
+import { fmtRub } from "@/lib/utils";
 
 export function SetCard({
 	set,
@@ -182,7 +183,7 @@ export function SetCard({
 							<>
 								<span className="opacity-30">·</span>
 								<span className="font-bold text-foreground/70">
-									{set.totalPricePerDay.toLocaleString()} ₽/сут
+									{fmtRub(set.totalPricePerDay)}/сут
 								</span>
 							</>
 						) : null}

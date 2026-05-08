@@ -109,6 +109,7 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
+									tooltip="Весь каталог"
 									isActive={isAllEquipment}
 									className={menuBtnClass(isAllEquipment, isCollapsed)}
 								>
@@ -137,7 +138,7 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 												isActive={isAllEquipment}
 											/>
 										</div>
-										{isCollapsed ? (
+										{/* {isCollapsed ? (
 											<span
 												className={cn(
 													"text-[10px] font-medium leading-none w-full text-center px-1 truncate",
@@ -146,13 +147,13 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 														: "text-muted-foreground"
 												)}
 											>
-												Каталог
-											</span>
-										) : (
-											<span className="font-medium text-base truncate ml-3 flex-1 text-left">
 												Весь каталог
 											</span>
-										)}
+										) : ( */}
+										<span className="font-medium text-base truncate ml-3 flex-1 text-left">
+											Весь каталог
+										</span>
+										{/* )} */}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -176,10 +177,11 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 					<SidebarGroup className={cn("mt-4", isCollapsed && "mt-12")}>
 						<SidebarGroupLabel
 							className={cn(
-								"px-2 mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/50 transition-opacity",
-								isCollapsed
-									? "opacity-0 h-0 mb-0 overflow-hidden"
-									: "opacity-100"
+								"opacity-0 h-0 mb-0 overflow-hidden"
+								// "px-2 mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/50 transition-opacity",
+								// isCollapsed
+								// ? "opacity-0 h-0 mb-0 overflow-hidden"
+								// : "opacity-100"
 							)}
 						>
 							Меню
@@ -209,48 +211,35 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 											asChild
 											isActive={isActive}
 											className={menuBtnClass(isActive, isCollapsed)}
-											tooltip=""
+											tooltip={item.title}
 										>
 											<Link
 												href={item.href}
 												className={cn(
-													"flex",
+													"flex hover:shadow-sm hover:bg-muted-foreground/5",
 													isCollapsed
-														? "flex-col items-center justify-center gap-1 w-full h-full"
+														? "flex-col items-center justify-center gap-1 w-full h-full "
 														: "items-center w-full"
 												)}
 											>
 												<div
 													className={cn(
-														"flex items-center justify-center shrink-0 group-hover/btn:shadow-sm rounded-md",
+														"flex items-center justify-center shrink-0 rounded-md",
 														isCollapsed
 															? "h-10 w-14 rounded-xl transition-colors"
 															: "w-6",
 														isCollapsed && isActive
 															? "bg-muted-foreground/10 text-primary"
-															: "text-muted-foreground group-hover/btn:bg-muted-foreground/5"
+															: "text-muted-foreground"
 													)}
 												>
 													<RenderIcon icon={item.icon} isActive={isActive} />
 												</div>
-
-												{isCollapsed ? (
-													<span
-														className={cn(
-															"text-[10px] font-medium leading-none w-full text-center px-1 truncate",
-															isActive
-																? "text-foreground font-bold"
-																: "text-muted-foreground"
-														)}
-													>
-														{item.title}
-													</span>
-												) : (
+												{!isCollapsed && (
 													<span className="font-medium text-base truncate ml-3 flex-1 text-left">
 														{item.title}
 													</span>
 												)}
-
 												{/* Баджи в раскрытом состоянии */}
 												{getNavBadge(item.href) && !isCollapsed && (
 													<span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold bg-primary text-primary-foreground  border border-primary/20 px-2 shadow-xs">

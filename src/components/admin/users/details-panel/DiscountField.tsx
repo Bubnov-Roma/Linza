@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 
 export type CurrentDiscount = {
 	type: string;
@@ -64,7 +64,7 @@ export function DiscountField({
 						? currentDiscount.type === "PERCENT"
 							? `Скидка ${currentDiscount.value}%`
 							: currentDiscount.type === "FIXED"
-								? `Скидка ${currentDiscount.value} ₽`
+								? `Скидка ${fmtRub(currentDiscount.value)}`
 								: `ПРОМО: ${currentDiscount.promoCode}`
 						: `Назначить скидку`}
 				</Badge>

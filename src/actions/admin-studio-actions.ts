@@ -9,6 +9,7 @@ import {
 } from "@/actions/admin-booking-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -689,7 +690,9 @@ export async function updateStudioBookingFullAction(
 			input.totalAmount !== undefined &&
 			Math.abs(input.totalAmount - existing.totalAmount) > 0.01
 		) {
-			changes.push(`Сумма: ${existing.totalAmount} ₽ → ${input.totalAmount} ₽`);
+			changes.push(
+				`Сумма: ${fmtRub(existing.totalAmount)} → ${fmtRub(input.totalAmount)}`
+			);
 		}
 
 		await prisma.$transaction([
@@ -1151,7 +1154,7 @@ export async function recordStudioPaymentAction(
 				authorName: name ?? "Admin",
 				action: payload.amount > 0 ? "PAYMENT_ADDED" : "REFUND_TO_BALANCE",
 				fieldName: "payment",
-				valueAfter: `Оплачено: ${newTotalPaid.toLocaleString("ru-RU")} ₽`,
+				valueAfter: `Оплачено: ${fmtRub(newTotalPaid)}`,
 				meta: { method: payload.method, note: payload.note, paymentStatus },
 			},
 		});

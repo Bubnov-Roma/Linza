@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { computePaymentStatus } from "@/actions/admin-booking-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -346,7 +347,7 @@ export async function refundToBalanceAction(
 		await writeAuditLog(bookingId, authorId, authorName, {
 			action: "Возврат переплаты",
 			fieldName: "payments",
-			valueAfter: `Переведено на баланс: ${amount} ₽`,
+			valueAfter: `Переведено на баланс: ${fmtRub(amount)}`,
 		});
 
 		revalidatePath("/admin/users");
@@ -390,7 +391,7 @@ export async function applyBalanceToBookingAction(
 		if (user.balance < amount)
 			return {
 				success: false,
-				error: `Недостаточно средств на балансе (есть ${user.balance} ₽)`,
+				error: `Недостаточно средств на балансе (есть ${fmtRub(user.balance)})`,
 			};
 
 		const prevPaid = booking.payments.reduce((s, p) => s + p.amount, 0);
@@ -445,8 +446,8 @@ export async function applyBalanceToBookingAction(
 		await writeAuditLog(bookingId, authorId, authorName, {
 			action: "Оплата с баланса",
 			fieldName: "payments",
-			valueBefore: `Оплачено: ${prevPaid.toLocaleString("ru-RU")} ₽`,
-			valueAfter: `Оплачено: ${newTotalPaid.toLocaleString("ru-RU")} ₽ (+${amount} ₽ с баланса)`,
+			valueBefore: `Оплачено: ${fmtRub(prevPaid)}`,
+			valueAfter: `Оплачено: ${fmtRub(newTotalPaid)} (+${fmtRub(amount)} с баланса)`,
 			meta: { paymentStatus },
 		});
 

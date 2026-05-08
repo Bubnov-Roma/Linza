@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, fmtRub } from "@/lib/utils";
 
 type PeriodType = "h4" | "h8" | "day";
 
@@ -111,7 +111,7 @@ export function PriceSelector({
 					{currentBenefit ? (
 						<div className="flex items-center gap-1.5 text-lime-600 dark:text-lime-400">
 							<span className="text-[11px] font-bold">
-								Экономия {currentBenefit.savings.toLocaleString("ru")} ₽
+								Экономия {fmtRub(currentBenefit.savings)}
 								относительно суток
 							</span>
 						</div>

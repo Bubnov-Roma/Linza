@@ -23,7 +23,7 @@ export default function SetPasswordPage() {
 	}>({});
 	const [isPending, startTransition] = useTransition();
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: React.SyntheticEvent) => {
 		e.preventDefault();
 
 		const result = updatePasswordSchema.safeParse({

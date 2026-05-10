@@ -23,7 +23,7 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 					</Link>
 				</Button>
 			</div>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6">
 				{categories.map((cat) => {
 					let IconComp = PHOSPHOR_SSR_ICON_MAP[
 						cat.iconName as keyof typeof PHOSPHOR_SSR_ICON_MAP
@@ -36,7 +36,7 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 						<Link
 							key={cat.id}
 							href={`/equipment?category=${cat.slug}`}
-							className="group relative h-48 rounded-3xl bg-background/5 border border-muted-foreground/20 overflow-hidden hover:border-primary/50 transition-all"
+							className="group relative h-48 rounded-3xl bg-background/5 border border-muted-foreground/20 overflow-hidden transition-all"
 						>
 							{cat.imageUrl ? (
 								<>
@@ -47,19 +47,19 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 										sizes="(max-width: 768px) 50vw, 25vw"
 										className="object-cover opacity-30 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
 									/>
-									<div className="absolute inset-0 bg-linear-to-t from-foreground/30 via-foreground/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+									<div className="absolute inset-0 bg-linear-to-t from-background/40 via-transparent to-transparent opacity-100 group-hover:opacity-100 transition-opacity" />
 								</>
 							) : (
 								<div className="absolute inset-0 bg-linear-to-b from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 							)}
-							<div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
+							<div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
 								{!cat.imageUrl && (
 									<div className="mb-4 text-primary group-hover:scale-110 transition-transform text-4xl">
 										<IconComp weight="duotone" />
 									</div>
 								)}
 								<div className="absolute inset-0 bg-linear-to-t from-background/40 to-transparent opacity-100 group-hover:opacity-0 transition-opacity" />
-								<h3 className="relative font-semibold text-xl uppercase italic tracking-[0.2em] mt-auto group-hover:text-primary transition-all">
+								<h3 className="relative font-semibold text-xl uppercase italic tracking-[0.2em] mt-auto transition-all group-hover:backdrop-brightness-130 group-hover:backdrop-blur-md dark:group-hover:backdrop-brightness-40 py-3 px-5 rounded-2xl duration-500">
 									{cat.name}
 								</h3>
 							</div>

@@ -11,19 +11,19 @@ import { cn } from "@/lib/utils";
 
 export async function Footer({ support }: { support: SupportInfo }) {
 	const footerLinkClass =
-		"text-sm text-muted-foreground hover:text-primary transition-colors duration-200";
+		"text-sm text-muted-foreground hover:text-foreground transition-colors duration-200";
 	const sectionTitleClass =
 		"text-sm font-bold uppercase tracking-widest text-foreground/70 mb-6";
 
 	return (
 		<footer className="w-full border-t border-foreground/5 bg-background">
-			<div className="container mx-auto px-6 py-16">
+			<div className="container mx-auto w-full py-16 px-6 md:px-4">
 				<div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
 					{/* Brand & Mission */}
 					<div className="lg:col-span-4 flex flex-col gap-6">
 						<Link href="/" className="flex items-center gap-3 group">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-primary-foreground transition-transform group-hover:scale-105">
-								<Logo />
+							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-primary-foreground transition-transform group-hover:scale-105">
+								<Logo className="text-background p-1" />
 							</div>
 							<span className="text-2xl font-black tracking-tighter">
 								LINZA
@@ -68,7 +68,7 @@ export async function Footer({ support }: { support: SupportInfo }) {
 								<li>
 									<Link
 										href="/equipment"
-										className={cn(footerLinkClass, "font-medium text-primary")}
+										className={cn(footerLinkClass, "font-medium")}
 									>
 										Все категории
 									</Link>
@@ -106,7 +106,7 @@ export async function Footer({ support }: { support: SupportInfo }) {
 						{/* Contacts */}
 						<div className="flex flex-col col-span-2 md:col-span-1">
 							<h3 className={sectionTitleClass}>Связь с нами</h3>
-							<ul className="space-y-4">
+							<ul className="space-y-5">
 								<li className="flex items-start gap-3">
 									<PhoneIcon size={20} weight="fill" className="shrink-0" />
 									<Link

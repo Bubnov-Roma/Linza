@@ -702,12 +702,12 @@ export default function EquipmentDetails({
 										<div className="max-w-3xl">
 											<MD>{specDesc}</MD>
 										</div>
-									))}
+									))} */}
 								{activeInfoTab === "kit" && (
 									<div className="max-w-3xl text-sm leading-relaxed">
 										<MD>{equipment.kit}</MD>
 									</div>
-								)} */}
+								)}
 								{activeInfoTab === "reviews" &&
 									equipment.videoUrls.length > 0 && (
 										<VideoReviews
@@ -843,7 +843,7 @@ export default function EquipmentDetails({
 				)}
 
 				{/* ── Tabs (описание, характеристики, обзоры) — полная ширина ── */}
-				<div className="mt-8 px-0 sm:hidden">
+				<div className="mt-8 px-0 lg:hidden">
 					{/* Навигация вкладок */}
 					<div className="flex overflow-x-auto no-scrollbar justify-center">
 						{visibleTabs.map(({ id, label, icon: Icon }) => (
@@ -893,12 +893,17 @@ export default function EquipmentDetails({
 								<div className="max-w-3xl">
 									<MD>{specDesc}</MD>
 								</div>
-							))}
+							))} */}
+						{activeInfoTab === "kit" && (
+							<div className="max-w-3xl text-sm leading-relaxed">
+								<MD>{equipment.kit}</MD>
+							</div>
+						)}
 						{activeInfoTab === "reviews" && equipment.videoUrls.length > 0 && (
 							<VideoReviews
 								urls={(equipment.videoUrls as string[] | undefined) ?? []}
 							/>
-						)} */}
+						)}
 					</div>
 				</div>
 			</div>

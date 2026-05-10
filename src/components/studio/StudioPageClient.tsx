@@ -254,15 +254,16 @@ export function StudioPageClient({ tariffs }: StudioPageClientProps) {
 							<h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter leading-none">
 								Студия Linza
 							</h1>
-							<p className="text-sm text-muted-foreground max-w-md leading-relaxed">
-								Профессиональная студия с циклорамой, хромакеем и огрмоным
-								выбором техники для любых творческих проектов.
+							<p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+								Подкаст или мк, персональная съемка или рекламный ролик.
+								<br />
+								Мы поможем вам с решением любой задачи.
 							</p>
 						</div>
 						<Button
-							size="lg"
+							size="xl"
 							onClick={() => handleBook()}
-							className="h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-wide shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all duration-200 shrink-0"
+							className="h-14 px-8 rounded-xl font-black text-sm uppercase tracking-wide shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all duration-200 shrink-0"
 						>
 							<CalendarBlankIcon size={18} className="mr-2" />
 							Забронировать

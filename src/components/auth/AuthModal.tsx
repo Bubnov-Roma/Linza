@@ -54,7 +54,7 @@ export function AuthModal({ open, onOpenChange, intent }: AuthModalProps) {
 			? "Войдите для бронирования"
 			: intent.type === "redirect" || intent.type === "callback"
 				? "Требуется авторизация"
-				: "Вход в Linza Rental";
+				: "Вход в Linza";
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

@@ -36,18 +36,19 @@ export const metadata: Metadata = {
 		"Аренда профессиональной фото- и видеотехники в Самаре. Широкий выбор камер, объективов, света и звука. Бронируйте онлайн на сайте Linza.",
 	keywords: [
 		"прокат фото видео оборудования",
-		"рентал фото-видео техники в Самаре",
-		"аренда камер Самара",
+		"аренда фото-видео техники в Самаре",
+		"аренда фотостудии Самара",
+		"Линза",
 		"Linza",
 	],
 	openGraph: {
-		title: "Linza | Прокат фото и видео техники",
+		title: "Linza | Прокат фото видео техники",
 		description: "Аренда профессионального оборудования для съемок в Самаре.",
 		url: "https://linzarental.ru",
-		siteName: "Linza Rental",
+		siteName: "Linza",
 		images: [
 			{
-				url: "https://linzarental.ru/og-image.jpg", // Красивый баннер для соцсетей и Telegram
+				url: "https://linzarental.ru/og-image.png",
 				width: 1200,
 				height: 630,
 			},

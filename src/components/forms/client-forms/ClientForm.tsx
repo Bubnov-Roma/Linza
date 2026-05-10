@@ -37,6 +37,7 @@ export const ClientForm = () => {
 			clientType: "individual",
 			applicationData: {
 				personalData: {
+					phone: "+7",
 					email: user?.email ?? "",
 				},
 			},

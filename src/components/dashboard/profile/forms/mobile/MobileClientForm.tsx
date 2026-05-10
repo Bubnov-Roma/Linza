@@ -201,6 +201,7 @@ export function MobileClientForm({
 			fields: [
 				"applicationData.contacts.socials",
 				"applicationData.additional.referralSource",
+				"agreements.personalDataConsent",
 			],
 			content: (
 				<div className="space-y-6">

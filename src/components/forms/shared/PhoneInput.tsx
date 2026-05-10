@@ -27,34 +27,18 @@ interface PhoneInputProps {
 }
 
 /**
- * Normalize any phone string to 10 digits so PatternFormat can fill
- * +7(###)###-##-## cleanly.
- *
- * Handles:
- *   "9025810525"          → "9025810525"   (already clean)
- *   "+79025810525"        → "9025810525"
- *   "89025810525"         → "9025810525"
- *   "(902)581-05-25"      → "9025810525"   (browser autofill without +7)
- *   "+7 (902) 581-05-25"  → "9025810525"
- *   "7(902)581-05-25"     → "9025810525"
+ * Normalize any phone to 11 digits starting with 7.
+ * "+79025810525" | "89025810525" | "(902) 581-05-25" → "79025810525"
  */
 function normalizePhone(raw: string): string {
-	// Strip everything except digits
 	const digits = raw.replace(/\D/g, "");
-
 	if (!digits) return "";
-
-	// 11 digits starting with 7 or 8 → strip leading digit
-	if (digits.length === 11 && (digits[0] === "7" || digits[0] === "8")) {
-		return digits.slice(1);
+	if (digits.length === 11) {
+		return digits[0] === "8" ? `7${digits.slice(1)}` : digits;
 	}
-
-	// 10 digits → already the local part
 	if (digits.length === 10) {
-		return digits;
+		return `7${digits}`;
 	}
-
-	// Anything else → return as-is (PatternFormat will mask it)
 	return digits;
 }
 
@@ -81,48 +65,40 @@ export const PhoneInput = ({
 	const { error } = control.getFieldState(name, formState);
 	const { ref, ...restRegister } = register(name);
 
-	// PatternFormat expects the raw digits (without the +7 prefix) OR the full
-	// formatted value "+7(XXX)XXX-XX-XX". We store the *formatted* value in RHF
-	// and feed it back directly — PatternFormat handles it fine. On autofill we
-	// normalise first.
-	const handleChange = (raw: string, formatted: string) => {
-		// If the value coming in looks like an autofilled raw phone, normalise it
-		const needsNorm =
-			!formatted.startsWith("+7") && raw.replace(/\D/g, "").length > 0;
-
-		if (needsNorm) {
-			const local = normalizePhone(raw);
-			// Re-derive the formatted string PatternFormat would produce
-			const padded = local.padEnd(10, "_");
-			const f = `+7(${padded.slice(0, 3)})${padded.slice(3, 6)}-${padded.slice(6, 8)}-${padded.slice(8, 10)}`;
-			setValue(name, f, { shouldValidate: true });
-		} else {
-			setValue(name, formatted, { shouldValidate: true });
-		}
-	};
-
 	const inputElement = (
 		<PatternFormat
 			{...restRegister}
 			getInputRef={ref}
 			value={currentValue}
-			format="+7(###)###-##-##"
+			format="+#(###)###-##-##"
 			mask="_"
 			allowEmptyFormatting={false}
 			placeholder="+7(___) ___-__-__"
 			disabled={disabled}
+			autoComplete="tel"
 			onFocus={onFocus}
 			onBlur={onBlur}
 			onValueChange={(values) => {
-				handleChange(values.value, values.formattedValue);
+				// values.value — только цифры (до 11 штук)
+				// Нормализуем: если первая цифра 8 → заменяем на 7
+				const digits = values.value;
+				if (digits.length > 0 && digits[0] === "8") {
+					const fixed = `7${digits.slice(1)}`;
+					// Форматируем вручную
+					const padded = fixed.padEnd(11, "_");
+					const f = `+${padded[0]}(${padded.slice(1, 4)})${padded.slice(4, 7)}-${padded.slice(7, 9)}-${padded.slice(9, 11)}`;
+					setValue(name, f, { shouldValidate: true });
+				} else {
+					setValue(name, values.formattedValue, { shouldValidate: true });
+				}
 			}}
-			onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-				const raw = e.target.value;
-				if (!raw.startsWith("+7")) {
-					const local = normalizePhone(raw);
-					if (local) {
-						const padded = local.padEnd(10, "_");
-						const f = `+7(${padded.slice(0, 3)})${padded.slice(3, 6)}-${padded.slice(6, 8)}-${padded.slice(8, 10)}`;
+			onInput={(e: React.SyntheticEvent<HTMLInputElement>) => {
+				const raw = (e.target as HTMLInputElement).value;
+				if (raw && !raw.startsWith("+")) {
+					const normalized = normalizePhone(raw);
+					if (normalized.length >= 10) {
+						const padded = normalized.padEnd(11, "_");
+						const f = `+${padded[0]}(${padded.slice(1, 4)})${padded.slice(4, 7)}-${padded.slice(7, 9)}-${padded.slice(9, 11)}`;
 						setValue(name, f, { shouldValidate: true });
 					}
 				}

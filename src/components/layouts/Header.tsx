@@ -315,12 +315,12 @@ export function Header({ categories, support }: HeaderProps) {
 				<Link
 					href="/checkout"
 					data-cart-icon
-					className="relative group/cart p-2.5 hover:bg-primary/10 rounded-xl transition-colors"
+					className="relative group/cart p-2.5 dark:hover:bg-muted-foreground/80 rounded-xl transition-all duration-300"
 				>
 					<ShoppingCartSimpleIcon
 						size={22}
 						weight="fill"
-						className="text-foreground group-hover/cart:text-primary transition-colors"
+						className="text-foreground/80 scale-100 group-hover/cart:scale-110  group-hover/cart:text-primary transition-colors"
 					/>
 					{cartCount > 0 && (
 						<span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background animate-in zoom-in">

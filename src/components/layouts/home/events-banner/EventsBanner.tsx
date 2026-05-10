@@ -5,6 +5,8 @@ import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
 	CalendarIcon,
+	CaretLeftIcon,
+	CaretRightIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -107,13 +109,14 @@ function ImageLightbox({
 				)}
 
 				{/* Закрыть */}
-				<button
-					type="button"
+				<Button
+					asChild
+					variant="ghost"
 					onClick={onClose}
-					className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center"
+					className="absolute bottom-4 h-10 w-10 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center p-3"
 				>
-					<XIcon size={16} className="text-white" />
-				</button>
+					<XIcon size={26} className="text-white" />
+				</Button>
 			</button>
 		</motion.div>
 	);
@@ -288,7 +291,7 @@ function EventModal({
 							</p>
 						)}
 
-						<h2 className="text-2xl font-black tracking-tight leading-tight">
+						<h2 className="text-2xl font-black tracking-tight leading-tight text-foreground">
 							{banner.title}
 						</h2>
 						{banner.subtitle && (
@@ -318,13 +321,13 @@ function EventModal({
 						)}
 					</div>
 
-					<button
-						type="button"
+					<Button
+						variant="ghost"
 						onClick={onClose}
-						className="absolute top-4 right-4 h-8 w-8 rounded-full bg-background/80 border border-foreground/10 flex items-center justify-center hover:bg-foreground/10 transition-colors backdrop-blur-sm"
+						className="absolute top-4 right-4 h-8 w-8 rounded-full border border-muted-foreground/20 text-muted-foreground flex items-center justify-center bg-background/20 hover:bg-background/60 transition-colors backdrop-blur-sm"
 					>
 						<XIcon size={14} />
-					</button>
+					</Button>
 				</motion.div>
 			</motion.div>
 
@@ -360,11 +363,11 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 	);
 
 	// Автопрокрутка
-	useEffect(() => {
-		if (banners.length <= 1 || activeBanner) return;
-		const id = setInterval(next, 7000);
-		return () => clearInterval(id);
-	}, [next, banners.length, activeBanner]);
+	// useEffect(() => {
+	// 	if (banners.length <= 1 || activeBanner) return;
+	// 	const id = setInterval(next, 7000);
+	// 	return () => clearInterval(id);
+	// }, [next, banners.length, activeBanner]);
 
 	// Свайп
 	const onTouchStart = (e: React.TouchEvent) => {
@@ -387,9 +390,9 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 
 	return (
 		<>
-			<section className="w-full overflow-hidden">
+			<section className="w-full overflow-hidden container m-auto p-4">
 				<div
-					className="relative w-full"
+					className="relative overflow-hidden rounded-2xl bg-foreground text-background"
 					onTouchStart={onTouchStart}
 					onTouchEnd={onTouchEnd}
 				>
@@ -400,7 +403,7 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
 							transition={{ duration: 0.4 }}
-							className="relative w-full aspect-21/8 md:aspect-21/7 cursor-pointer group"
+							className="relative w-full aspect-video cursor-pointer group"
 							onClick={() => setActiveBanner(banner)}
 						>
 							{/* Фон */}
@@ -409,7 +412,8 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 									src={coverUrl}
 									alt={banner.title}
 									fill
-									sizes="100vw"
+									sizes="380px"
+									loading="eager"
 									className="object-cover"
 									priority
 								/>
@@ -422,28 +426,9 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 							<div className="absolute inset-0 bg-linear-to-t from-background/60 to-transparent" />
 
 							{/* Контент */}
-							<div className="absolute inset-0 flex items-end p-6 md:p-10 lg:p-14">
-								<div className="max-w-xl space-y-3">
-									<div
-										className={cn(
-											"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border",
-											config.badge
-										)}
-									>
-										<config.icon size={10} weight="fill" />
-										{config.label}
-										{banner.eventDate && (
-											<span className="opacity-70">
-												·{" "}
-												{new Date(banner.eventDate).toLocaleDateString(
-													"ru-RU",
-													{ day: "numeric", month: "short" }
-												)}
-											</span>
-										)}
-									</div>
-
-									<h2 className="text-2xl md:text-4xl font-black italic tracking-tight leading-tight drop-shadow-sm">
+							<div className="absolute inset-0 flex items-end py-8 px-12">
+								<div className="max-w-xl space-y-6">
+									<h2 className="text-2xl md:text-4xl font-black italic tracking-tight leading-tight drop-shadow-sm text-muted-foreground group-hover:text-foreground duration-300">
 										{banner.title}
 									</h2>
 
@@ -453,22 +438,34 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 										</p>
 									)}
 
-									<div className="flex items-center gap-2 pt-1">
+									<div className="flex items-center gap-6 pt-1">
+										<div
+											className={cn(
+												"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border",
+												config.badge
+											)}
+										>
+											<config.icon size={10} weight="fill" />
+											{config.label}
+											{banner.eventDate && (
+												<span className="opacity-70">
+													·{" "}
+													{new Date(banner.eventDate).toLocaleDateString(
+														"ru-RU",
+														{ day: "numeric", month: "short" }
+													)}
+												</span>
+											)}
+										</div>
 										<span className="text-xs text-muted-foreground/60 group-hover:text-foreground/60 transition-colors">
 											Подробнее →
 										</span>
-										{banner.images?.length > 1 && (
-											<span className="text-[10px] text-muted-foreground/40">
-												{banner.images.length} фото
-											</span>
-										)}
 									</div>
 								</div>
 							</div>
 						</motion.div>
 					</AnimatePresence>
 
-					{/* Стрелки — полупрозрачные, по бокам */}
 					{banners.length > 1 && (
 						<>
 							<button
@@ -477,9 +474,9 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 									e.stopPropagation();
 									prev();
 								}}
-								className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/30 hover:bg-background/60 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all opacity-70 hover:opacity-100"
+								className="absolute left-1 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/30 hover:bg-background/60 backdrop-blur-sm flex items-center justify-center transition-all opacity-70 hover:opacity-100"
 							>
-								<ArrowLeftIcon size={16} className="text-foreground" />
+								<CaretLeftIcon size={16} className="text-foreground" />
 							</button>
 							<button
 								type="button"
@@ -487,9 +484,9 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 									e.stopPropagation();
 									next();
 								}}
-								className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/30 hover:bg-background/60 backdrop-blur-sm border border-white/10 flex items-center justify-center transition-all opacity-70 hover:opacity-100"
+								className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/30 hover:bg-background/60 backdrop-blur-sm flex items-center justify-center transition-all opacity-70 hover:opacity-100"
 							>
-								<ArrowRightIcon size={16} className="text-foreground" />
+								<CaretRightIcon size={16} className="text-foreground" />
 							</button>
 						</>
 					)}

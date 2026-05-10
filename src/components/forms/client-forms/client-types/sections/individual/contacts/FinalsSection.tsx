@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useFormContext, useWatch } from "react-hook-form";
+import { FormCheckbox, FormTextarea } from "@/components/forms/shared";
 import { FormInput } from "@/components/forms/shared/FormInput";
 import { FormRadioGroup } from "@/components/forms/shared/FormRadioGroup";
 import { REFERRAL_OPTIONS } from "@/constants";
@@ -47,11 +49,31 @@ export const FinalsSection = () => {
 					/>
 				</motion.div>
 			)}
-			<FormInput
-				name="agreements.promoCode"
-				label="Промокод"
-				placeholder="Введите промокод"
+			<FormTextarea
+				name="agreements.comment"
+				label="Комментарий"
+				placeholder="Дополнительная информация или пожелания (необязательно)"
+				rows={3}
 			/>
+			{/* <div className="border-t border-foreground/5 pt-5"> */}
+			<FormCheckbox
+				name="agreements.personalDataConsent"
+				className="normal-case tracking-normal"
+				label={
+					<span className="leading-relaxed text-sm">
+						Я подтверждаю корректность данных, принимаю условия сотрудничества и
+						даю согласие на{" "}
+						<Link
+							href="/privacy"
+							target="_blank"
+							className="underline hover:text-blue-500"
+						>
+							обработку персональных данных
+						</Link>
+					</span>
+				}
+			/>
+			{/* </div> */}
 		</div>
 	);
 };

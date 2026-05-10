@@ -78,7 +78,7 @@ const passportSchema = z.object({
 });
 
 const promoAndAgreementsSchema = z.object({
-	promoCode: z.string().optional(),
+	comment: z.string().optional(),
 	newsletter: z.boolean().optional(),
 	personalDataConsent: z.boolean().refine((val) => val === true, {
 		message: "необходимо ваше согласие",

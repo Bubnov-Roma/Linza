@@ -50,7 +50,7 @@ export function SettingsClient({
 		setFormData({ ...formData, disabledDates: strings });
 	};
 
-	const handleSave = async (e: React.FormEvent) => {
+	const handleSave = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setIsSaving(true);
 		try {

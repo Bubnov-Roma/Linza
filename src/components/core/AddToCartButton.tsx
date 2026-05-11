@@ -106,7 +106,6 @@ export function AddToCartButton({
 	const btnRef = useRef<HTMLButtonElement>(null);
 	const [pulse, setPulse] = useState(false);
 
-	// Убрали жесткий min-width, добавили гибкость
 	const s = {
 		sm: { h: "h-10", side: "w-6", text: "text-xs", icon: 12 },
 		md: { h: "h-12", side: "w-10", text: "text-sm", icon: 14 },
@@ -145,15 +144,15 @@ export function AddToCartButton({
 				type="button"
 				onClick={inCart ? handleRemove : handleAdd}
 				className={cn(
-					"flex items-center justify-center rounded-xl transition-all active:scale-90",
+					"flex items-center justify-center rounded-xl transition-all active:scale-90 cursor-pointer",
 					"w-9 h-9",
 					inCart
-						? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-						: "bg-foreground/5 text-muted-foreground hover:bg-primary/10 hover:text-primary",
+						? "bg-primary text-primary-foreground shadow-lg shadow-primary/10"
+						: "bg-foreground/5 text-muted-foreground hover:bg-primary/20 hover:text-foreground",
 					className
 				)}
 			>
-				<ShoppingCartSimpleIcon size={s.icon} />
+				<ShoppingCartSimpleIcon size={s.icon} weight="duotone" />
 			</button>
 		);
 	}
@@ -167,32 +166,27 @@ export function AddToCartButton({
 					type="button"
 					onClick={handleAdd}
 					className={cn(
-						"w-full flex items-center justify-center gap-2.5  min-h-13 rounded-2xl",
+						"w-full flex items-center justify-center gap-2.5  min-h-12 rounded-2xl",
 						"bg-primary text-primary-foreground font-black uppercase italic tracking-wider",
-						"shadow-xl shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all",
+						"shadow-xl shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer",
 						pulse && "scale-95 opacity-70",
 						s.h,
 						s.text,
 						className
 					)}
 				>
-					<ShoppingCartSimpleIcon size={s.icon + 2} />
+					<ShoppingCartSimpleIcon size={s.icon + 2} weight="duotone" />
 					{size === "lg" ? "Добавить в корзину" : "В корзину"}
 				</button>
 			);
 		}
 
 		return (
-			<div
-				className={cn(
-					"flex items-center gap-0 w-full border border-primary/20 bg-primary/5 rounded-2xl",
-					className
-				)}
-			>
+			<div className={cn("flex items-center gap-0 w-full rounded-2xl")}>
 				{/* Stepper - фиксированная ширина, чтобы не «схлопывался» */}
 				<div
 					className={cn(
-						"flex items-center bg-foreground/5 rounded-l-2xl rounded-r-xs overflow-hidden shrink-0",
+						"flex items-center bg-foreground/5 rounded-l-2xl rounded-r-md overflow-hidden shrink-0  border border-primary/20 shadow-xl shadow-primary/10",
 						s.h
 					)}
 				>
@@ -200,7 +194,7 @@ export function AddToCartButton({
 						type="button"
 						onClick={handleRemove}
 						className={cn(
-							"flex items-center justify-center hover:bg-foreground/10 active:scale-75 transition-all  active:rounded-2xl",
+							"flex items-center justify-center hover:bg-foreground/20 active:scale-75 transition-all  active:rounded-2xl",
 							s.side,
 							s.h
 						)}
@@ -220,7 +214,7 @@ export function AddToCartButton({
 						onClick={handleAdd}
 						disabled={quantity >= (item.availableCount || 99)}
 						className={cn(
-							"flex items-center justify-center hover:bg-foreground/10 active:scale-75 transition-all",
+							"flex cursor-pointer items-center justify-center hover:bg-foreground/20 active:scale-75 transition-all",
 							"disabled:opacity-20",
 							s.side,
 							s.h
@@ -235,20 +229,24 @@ export function AddToCartButton({
 					type="button"
 					onClick={onQuickBook}
 					className={cn(
-						"flex-1 flex px-1 items-center justify-center gap-2 rounded-r-2xl rounded-l-xs font-black uppercase italic tracking-wider group",
-						"bg-primary/10 text-foreground",
-						"hover:bg-primary hover:text-primary-foreground transition-all active:scale-[0.98]",
+						"flex-1 flex p-1 w-full items-center justify-center gap-2.5  min-h-11  rounded-r-2xl rounded-l-md",
+						"bg-primary text-primary-foreground font-black uppercase italic tracking-wider",
+						"shadow-xl shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer",
 						s.h,
 						s.text
 					)}
 				>
 					<LightningIcon
 						size={s.icon}
-						weight="fill"
-						className="fill-current text-primary group-hover:text-foreground transition-all"
+						weight="duotone"
+						className="fill-current transition-all text-primary-foreground"
 					/>
-					<span className="hidden md:inline">Оформить</span>
-					<span className="shorthand md:hidden">Бронь</span>
+					<span className="hidden md:inline text-primary-foreground">
+						Оформить
+					</span>
+					<span className="shorthand md:hidden text-primary-foreground">
+						Бронь
+					</span>
 				</Button>
 			</div>
 		);
@@ -271,6 +269,7 @@ export function AddToCartButton({
 				)}
 			>
 				{size === "lg" ? "Добавить" : "В корзину"}
+				<ShoppingCartSimpleIcon size={s.icon + 2} weight="duotone" />
 			</button>
 		);
 	}
@@ -288,16 +287,17 @@ export function AddToCartButton({
 				type="button"
 				onClick={handleRemove}
 				className={cn(
-					"flex items-center justify-center shrink-0 h-full hover:bg-foreground/20 active:scale-75 active:rounded-l-md transition-all mx-1.5",
-					s.side
+					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 active:scale-90",
+					"w-10"
+					// s.side // убедитесь, что здесь нет конфликтующей ширины
 				)}
 			>
-				<MinusIcon size="15px" className="text-foreground" />
+				<MinusIcon size={18} className="text-foreground" />
 			</button>
 
 			<span
 				className={cn(
-					"flex items-center justify-center flex-1 font-black text-foreground leading-none",
+					"flex items-center justify-center flex-1 font-black text-foreground leading-none px-1",
 					s.text
 				)}
 			>
@@ -310,13 +310,13 @@ export function AddToCartButton({
 				onClick={handleAdd}
 				disabled={quantity >= (item.availableCount || 99)}
 				className={cn(
-					"flex items-center justify-center shrink-0 h-full",
-					"hover:bg-foreground/20 active:scale-75 transition-all text-foreground active:rounded-r-md mx-1.5",
+					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 active:scale-90",
 					"disabled:opacity-20",
-					s.side
+					"w-10"
+					// s.side
 				)}
 			>
-				<PlusIcon size="15px" />
+				<PlusIcon size={18} />
 			</button>
 		</div>
 	);

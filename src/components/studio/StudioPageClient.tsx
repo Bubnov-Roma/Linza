@@ -254,11 +254,6 @@ export function StudioPageClient({ tariffs }: StudioPageClientProps) {
 							<h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter leading-none">
 								Студия Linza
 							</h1>
-							<p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-								Подкаст или мк, персональная съемка или рекламный ролик.
-								<br />
-								Мы поможем вам с решением любой задачи.
-							</p>
 						</div>
 						<Button
 							size="xl"

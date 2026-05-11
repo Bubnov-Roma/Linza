@@ -129,7 +129,7 @@ export function PriceSelector({
 			<div
 				className={cn(
 					"flex items-end justify-between gap-4",
-					!isDetails && "flex-col sm:flex-row items-start"
+					!isDetails && "flex-row items-end"
 				)}
 			>
 				<div className="space-y-1">
@@ -150,10 +150,7 @@ export function PriceSelector({
 
 				{action && (
 					<div
-						className={cn(
-							"shrink-0",
-							isDetails ? "w-50 sm:w-70" : "w-full sm:w-auto"
-						)}
+						className={cn("shrink-0", isDetails ? "w-50 sm:w-70" : "w-auto")}
 					>
 						{action}
 					</div>

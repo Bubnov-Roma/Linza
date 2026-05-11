@@ -86,7 +86,7 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 						</div>
 					</div>
 					{state.query.trim().length > 1 && (
-						<div className="px-3 pt-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150">
+						<div className="px-1 pt-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150">
 							<SearchFilters
 								categories={categories}
 								category={state.category}

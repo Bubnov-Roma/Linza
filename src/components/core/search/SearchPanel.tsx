@@ -1,7 +1,12 @@
 "use client";
 
+import {
+	ClockCounterClockwiseIcon,
+	MagnifyingGlassIcon,
+	TrashIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { History, Search, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
@@ -124,7 +129,7 @@ export function SearchPanel({
 	const isDesktop = variant === "desktop";
 
 	return (
-		<div className={cn("flex flex-col min-h-0", className)}>
+		<div className={cn("flex flex-col min-h-0 min-w-0", className)}>
 			{showFilters && isDesktop && (
 				<div className="shrink-0 border-b border-foreground/5 space-y-1 px-3 py-2">
 					<SearchFilters
@@ -163,7 +168,7 @@ export function SearchPanel({
 									onClick={clearHistory}
 									className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
 								>
-									<Trash2 size={10} />
+									<TrashIcon weight="duotone" size={10} />
 									Очистить
 								</button>
 							</div>
@@ -179,9 +184,10 @@ export function SearchPanel({
 										className="flex items-center gap-3 flex-1 px-3 py-2.5 text-left text-sm"
 										onClick={() => setQuery(term)}
 									>
-										<History
+										<ClockCounterClockwiseIcon
 											size={15}
-											className="text-muted-foreground group-hover/h:text-primary transition-colors shrink-0"
+											weight="duotone"
+											className="text-muted-foreground group-hover/h:text-foreground transition-colors shrink-0"
 										/>
 										<span className="text-foreground/80 truncate">{term}</span>
 									</button>
@@ -190,14 +196,15 @@ export function SearchPanel({
 										onClick={() => removeFromHistory(term)}
 										className="opacity-0 group-hover/h:opacity-100 transition-opacity mr-2 p-1.5 hover:bg-foreground/10 rounded-lg shrink-0"
 									>
-										<X size={11} className="text-muted-foreground" />
+										<XIcon size={11} className="text-muted-foreground" />
 									</button>
 								</div>
 							))
 						) : (
 							<div className={cn("text-center", isDesktop ? "py-10" : "py-20")}>
-								<Search
+								<MagnifyingGlassIcon
 									size={28}
+									weight="duotone"
 									className="mx-auto text-muted-foreground/20 mb-3"
 								/>
 								<p className="text-sm text-muted-foreground/50">

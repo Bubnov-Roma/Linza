@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { XIcon } from "@phosphor-icons/react/dist/ssr";
 import { useMemo } from "react";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
@@ -29,16 +29,19 @@ export function SearchFilters({
 
 	return (
 		<div
-			className={cn("flex gap-2", isMobile ? "flex-col-reverse" : "flex-col")}
+			className={cn(
+				"flex gap-2 w-full min-w-0 overflow-hidden",
+				isMobile ? "flex-col-reverse" : "flex-col"
+			)}
 		>
 			{/* ── Строка Категорий ── */}
-			<div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+			<div className="flex gap-1.5 overflow-x-auto no-scrollbar min-w-0 w-full overflow-hidden">
 				{/* Кнопка "Все" */}
 				<button
 					type="button"
 					onClick={() => onCategory("all")}
 					className={cn(
-						"flex items-center gap-1 whitespace-nowrap shrink-0 rounded-xl transition-all font-bold uppercase tracking-[0.12em]",
+						"flex items-center gap-1 justify-center whitespace-nowrap shrink-0 rounded-xl transition-all font-bold uppercase tracking-[0.12em]",
 						isMobile ? "h-10 px-4 text-xs" : "h-8 px-3 text-[11px]",
 						category === "all"
 							? "bg-primary/10 text-primary"
@@ -66,7 +69,7 @@ export function SearchFilters({
 						>
 							{cat.name}
 							{hasSubs && active && (
-								<X
+								<XIcon
 									size={isMobile ? 12 : 10}
 									className={cn(
 										"transition-transform duration-200",

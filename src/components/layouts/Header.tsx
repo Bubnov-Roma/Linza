@@ -51,15 +51,15 @@ interface HeaderProps {
 
 const STATIC_LINKS = [
 	{ href: "/about", label: "О сервисе", icon: InfoIcon },
-	{ href: "/rules", label: "Правила проката", icon: ScrollIcon },
-	{ href: "/faq", label: "Вопросы и ответы", icon: QuestionIcon },
+	{ href: "/rules", label: "Правила", icon: ScrollIcon },
+	{ href: "/faq", label: "FAQ", icon: QuestionIcon },
 	{ href: "/contacts", label: "Контакты", icon: AddressBookIcon },
 ];
 
 export function Header({ categories, support }: HeaderProps) {
 	const [isFocused, setIsFocused] = useState(false);
 	const [isMapMenuOpen, setIsMapMenuOpen] = useState(false);
-	const { state: searchState } = useSearchState();
+	const { state: searchState } = useSearchState(categories);
 	const { addToHistory } = useSearchHistory();
 
 	const cartCount = useCartStore((s) =>
@@ -222,7 +222,7 @@ export function Header({ categories, support }: HeaderProps) {
 				<Button
 					variant="ghost"
 					onClick={toggleSidebar}
-					className="items-center justify-center h-8 w-8 rounded-lg text-foreground transition-all duration-300 hover:scale-110 ml-26"
+					className="items-center justify-center h-8 w-8 rounded-lg text-foreground transition-all duration-300 hover:scale-110 ml-20"
 				>
 					<SidebarSimpleIcon size={16} />
 				</Button>
@@ -231,79 +231,84 @@ export function Header({ categories, support }: HeaderProps) {
 			{/* ── Desktop: поле поиска (гибкое, занимает всё доступное место) ── */}
 			<div
 				ref={containerRef}
-				className="relative flex-1 max-w-xl h-11 hidden md:block ml-4"
+				className="relative md:flex-1 max-w-md hidden md:block ml-4 min-w-0"
 			>
 				<div
 					className={cn(
-						"absolute inset-x-0 transition-all duration-300 ease-in-out rounded-2xl pointer-events-none",
+						"absolute inset-x-0 top-0 transition-all duration-300 ease-in-out rounded-2xl pointer-events-none z-0",
 						isFocused
-							? "-top-2 bg-background shadow-2xl ring-1 ring-white/10 z-0"
-							: "top-0 h-11 bg-foreground/5 z-0",
-						isFocused && "h-120"
+							? "bg-white dark:bg-black shadow-2xl backdrop-blur-2xl  ring-1 ring-white/10"
+							: "h-11 bg-foreground/5",
+						isFocused && "h-125"
 					)}
 				/>
-
-				<div className="relative z-5 flex flex-col">
-					<div className="flex items-center h-11 px-4">
-						<MagnifyingGlassIcon
-							className={cn(
-								"transition-colors shrink-0",
-								isFocused ? "text-primary" : "text-muted-foreground"
-							)}
-							size={18}
-						/>
-						<input
-							className="w-full bg-transparent border-none px-3 focus:outline-none text-sm placeholder:text-muted-foreground"
-							placeholder="Поиск техники..."
-							onFocus={() => setIsFocused(true)}
-							value={searchState.query}
-							onChange={(e) => searchState.setQuery(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Escape") handleClose();
-								if (e.key === "Enter" && searchState.query.trim().length > 1)
-									addToHistory(searchState.query.trim());
-							}}
-						/>
-						{searchState.query && (
-							<button
-								type="button"
-								onClick={() => searchState.setQuery("")}
-								className="p-1 hover:bg-foreground/10 rounded-full transition-colors"
-							>
-								<XIcon size={14} className="text-muted-foreground" />
-							</button>
+				<div className="relative z-5 flex items-center h-11 px-4">
+					<MagnifyingGlassIcon
+						className={cn(
+							"transition-colors shrink-0",
+							isFocused ? "text-primary" : "text-muted-foreground"
 						)}
-					</div>
-
-					{isFocused && (
-						<div className="animate-in fade-in slide-in-from-top-1 duration-200">
-							<div className="h-px bg-foreground/5 mx-4 mb-1" />
-							<SearchPanel
-								categories={categories}
-								state={searchState}
-								variant="desktop"
-								onClose={handleClose}
-								className="pb-2"
-							/>
-						</div>
+						size={18}
+					/>
+					<input
+						className="w-full bg-transparent border-none px-3 focus:outline-none text-sm placeholder:text-muted-foreground"
+						placeholder="Поиск техники..."
+						onFocus={() => setIsFocused(true)}
+						value={searchState.query}
+						onChange={(e) => searchState.setQuery(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Escape") handleClose();
+							if (e.key === "Enter" && searchState.query.trim().length > 1)
+								addToHistory(searchState.query.trim());
+						}}
+					/>
+					{searchState.query && (
+						<button
+							type="button"
+							onClick={() => searchState.setQuery("")}
+							className="p-1 hover:bg-foreground/20 rounded-full transition-colors"
+						>
+							<XIcon size={14} className="text-muted-foreground" />
+						</button>
 					)}
 				</div>
+
+				{/* выпадающая панель — ABSOLUTE, не влияет на ширину родителя */}
+				{isFocused && (
+					<div className="absolute inset-x-0 top-11 z-5 animate-in fade-in slide-in-from-top-1 duration-200">
+						<div className="h-px bg-foreground/10 mx-4 mt-2" />
+						<SearchPanel
+							categories={categories}
+							state={searchState}
+							variant="desktop"
+							onClose={handleClose}
+							className="pb-2"
+						/>
+					</div>
+				)}
 			</div>
 
 			{/* ── Desktop: Ссылки и Корзина ── */}
-			<div className="hidden md:flex items-center gap-1">
+			<div className="hidden md:flex lg:flex-1 items-center justify-end-safe gap-1">
 				<TooltipProvider delayDuration={150}>
 					{STATIC_LINKS.map((link) => (
 						<Tooltip key={link.href}>
 							<TooltipTrigger asChild>
 								<Link
+									key={link.href}
 									href={link.href}
-									className="p-2.5 text-muted-foreground hover:bg-foreground/5 hover:text-foreground rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+									className="p-2.5 text-muted-foreground hover:bg-foreground/10 hover:text-foreground rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 flex gap-2"
 								>
-									<link.icon size={20} weight="duotone" />
+									<link.icon size={15} weight="duotone" />
+									<span className="hidden lg:flex text-xs font-bold whitespace-nowrap shrink-0">
+										{link.label}
+									</span>
 								</Link>
 							</TooltipTrigger>
-							<TooltipContent side="bottom" className="text-xs font-bold">
+							<TooltipContent
+								side="bottom"
+								className="text-xs font-bold lg:hidden"
+							>
 								{link.label}
 							</TooltipContent>
 						</Tooltip>
@@ -315,15 +320,15 @@ export function Header({ categories, support }: HeaderProps) {
 				<Link
 					href="/checkout"
 					data-cart-icon
-					className="relative group/cart p-2.5 dark:hover:bg-muted-foreground/80 rounded-xl transition-all duration-300"
+					className="relative group/cart p-2.5 hover:bg-foreground/10  rounded-xl transition-all duration-300"
 				>
 					<ShoppingCartSimpleIcon
 						size={22}
 						weight="fill"
-						className="text-foreground/80 scale-100 group-hover/cart:scale-110  group-hover/cart:text-primary transition-colors"
+						className="text-foreground/80 scale-100 group-hover/cart:scale-120  transition-all duration-200"
 					/>
 					{cartCount > 0 && (
-						<span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background animate-in zoom-in">
+						<span className="absolute -top-1 right-0 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background animate-in zoom-in">
 							{cartCount}
 						</span>
 					)}

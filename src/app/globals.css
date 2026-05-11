@@ -532,6 +532,7 @@
   animation: rotate-gradient 3s linear infinite;
   will-change: transform;
   transform: translateZ(0);
+  contain: strict; /* изолирует от влияния на соседей */
  }
 
 @theme inline {

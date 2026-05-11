@@ -11,8 +11,8 @@ export default async function PrivacyPage() {
 	const settings = await getSiteSettings();
 
 	return (
-		<div className="max-w-3xl mx-auto px-4 py-6 md:py-10 space-y-6">
-			<h1 className="text-3xl font-black italic uppercase tracking-tight">
+		<div className="max-w-7xl mx-auto px-4 py-6 md:py-10 space-y-6">
+			<h1 className="text-2xl md:text-3xl lg:text-4xl font-black italic uppercase tracking-tight">
 				Политика конфиденциальности
 			</h1>
 			<SimpleMarkdown

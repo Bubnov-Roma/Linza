@@ -135,7 +135,7 @@ export function EquipmentCard({
 						{/* Fixed-height title block so all cards align in grid */}
 						<Link href={`/equipment/item/${slug}`} className="block">
 							<h3
-								className="text-sm font-bold leading-snug hover:text-primary transition-colors"
+								className="text-sm font-bold leading-snug text-foreground/80 hover:text-foreground transition-colors"
 								style={{
 									display: "-webkit-box",
 									WebkitLineClamp: 2,

@@ -42,9 +42,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Prisma: schema + migrations
 COPY --from=builder /app/prisma ./prisma
 COPY prisma.config.mjs ./prisma.config.mjs
-COPY --from=deps /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=deps /app/node_modules/prisma ./node_modules/prisma
-COPY --from=deps /app/node_modules/@prisma ./node_modules/@prisma
+RUN npm install prisma --no-save
 
 # Скрипт запуска
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./

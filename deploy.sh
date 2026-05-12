@@ -64,8 +64,7 @@ fi
 
 # ── 3. Checking the SSH connectionя 
 info "Checking SSH connection to ${SERVER}..."
-ssh -o ConnectTimeout=10 "${SERVER}" 
-ok "echo 'SSH OK'" || err "Cannot connect to ${SERVER}"
+ssh -o ConnectTimeout=10 "${SERVER}" "echo 'SSH OK'" || err "Cannot connect to ${SERVER}"
 
 # ── 4. Creating a directory on the server 
 ssh "${SERVER}" "mkdir -p ${SERVER_DIR}/init-db"

@@ -1,5 +1,4 @@
-import { SendHorizontal } from "lucide-react";
-import { RainbowSpinner } from "@/components/shared";
+import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -17,21 +16,19 @@ export const SubmitButton = ({
 	return (
 		<Button
 			disabled={isDisabled}
+			size="md"
 			className={cn(
-				"relative rounded-xl justify-center items-center transition-all duration-200 z-10 md:w-auto",
+				"relative rounded-2xl justify-center items-center transition-all duration-200 z-10 md:w-auto",
 				isDisabled && "bg-muted text-foreground/50 cursor-not-allowed"
 			)}
 		>
 			<div className="flex items-center gap-2">
 				{isSubmitting ? (
-					<>
-						<span>Отправляем</span>
-						<RainbowSpinner size={16} />
-					</>
+					<span>Отправляем</span>
 				) : (
 					<>
 						<span>Отправить</span>
-						<SendHorizontal className="w-5 h-5" />
+						<PaperPlaneTiltIcon size={15} weight="duotone" />
 					</>
 				)}
 			</div>

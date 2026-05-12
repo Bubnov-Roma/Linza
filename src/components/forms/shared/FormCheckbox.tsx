@@ -17,7 +17,9 @@ export const FormCheckbox = ({
 	isSecondary,
 	className,
 }: FormCheckboxProps) => {
-	const { register, control, formState } = useFormContext<ClientFormValues>();
+	const { register, control, formState, trigger } =
+		useFormContext<ClientFormValues>();
+	const { ref, onChange, ...restRegister } = register(name);
 	const isChecked = useWatch({ control, name });
 	const { error } = control.getFieldState(name, formState);
 
@@ -29,7 +31,12 @@ export const FormCheckbox = ({
 				<div className="relative flex items-center justify-center">
 					<input
 						type="checkbox"
-						{...register(name)}
+						ref={ref}
+						{...restRegister}
+						onChange={async (e) => {
+							await onChange(e);
+							trigger(name);
+						}}
 						className="peer w-5 h-5 opacity-0 absolute cursor-pointer z-10"
 					/>
 					<div

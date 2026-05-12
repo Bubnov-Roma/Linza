@@ -231,7 +231,7 @@ export function Header({ categories, support }: HeaderProps) {
 			{/* ── Desktop: поле поиска (гибкое, занимает всё доступное место) ── */}
 			<div
 				ref={containerRef}
-				className="relative md:flex-1 max-w-md hidden md:block ml-4 min-w-0"
+				className="relative md:flex-1 max-w-2xl hidden md:block ml-4 min-w-0"
 			>
 				<div
 					className={cn(

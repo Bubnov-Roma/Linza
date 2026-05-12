@@ -26,22 +26,6 @@ interface PhoneInputProps {
 	required?: boolean;
 }
 
-/**
- * Normalize any phone to 11 digits starting with 7.
- * "+79025810525" | "89025810525" | "(902) 581-05-25" → "79025810525"
- */
-function normalizePhone(raw: string): string {
-	const digits = raw.replace(/\D/g, "");
-	if (!digits) return "";
-	if (digits.length === 11) {
-		return digits[0] === "8" ? `7${digits.slice(1)}` : digits;
-	}
-	if (digits.length === 10) {
-		return `7${digits}`;
-	}
-	return digits;
-}
-
 export const PhoneInput = ({
 	name,
 	label,
@@ -78,30 +62,35 @@ export const PhoneInput = ({
 			autoComplete="tel"
 			onFocus={onFocus}
 			onBlur={onBlur}
-			onValueChange={(values) => {
-				// values.value — только цифры (до 11 штук)
-				// Нормализуем: если первая цифра 8 → заменяем на 7
-				const digits = values.value;
-				if (digits.length > 0 && digits[0] === "8") {
-					const fixed = `7${digits.slice(1)}`;
-					// Форматируем вручную
-					const padded = fixed.padEnd(11, "_");
-					const f = `+${padded[0]}(${padded.slice(1, 4)})${padded.slice(4, 7)}-${padded.slice(7, 9)}-${padded.slice(9, 11)}`;
-					setValue(name, f, { shouldValidate: true });
-				} else {
-					setValue(name, values.formattedValue, { shouldValidate: true });
+			onValueChange={(values, sourceInfo) => {
+				const { value, formattedValue } = values;
+
+				if (
+					sourceInfo.source === "prop" ||
+					(sourceInfo.event &&
+						(sourceInfo.event as unknown as InputEvent)?.inputType ===
+							"deleteContentBackward")
+				) {
+					setValue(name, formattedValue, { shouldValidate: true });
+					return;
 				}
-			}}
-			onInput={(e: React.SyntheticEvent<HTMLInputElement>) => {
-				const raw = (e.target as HTMLInputElement).value;
-				if (raw && !raw.startsWith("+")) {
-					const normalized = normalizePhone(raw);
-					if (normalized.length >= 10) {
-						const padded = normalized.padEnd(11, "_");
-						const f = `+${padded[0]}(${padded.slice(1, 4)})${padded.slice(4, 7)}-${padded.slice(7, 9)}-${padded.slice(9, 11)}`;
-						setValue(name, f, { shouldValidate: true });
-					}
+
+				// Логика умной вставки:
+				// Если пользователь вводит "8", заменяем её на "7"
+				if (value.startsWith("8")) {
+					const corrected = "7" + value.slice(1);
+					// Мы не форматируем вручную, PatternFormat сам применит маску к 7...
+					setValue(name, corrected, { shouldValidate: true });
+					return;
 				}
+
+				// Если пользователь вставил/ввел 10 цифр (без 7), добавляем 7 в начало
+				if (value.length === 10 && !value.startsWith("7")) {
+					setValue(name, `7${value}`, { shouldValidate: true });
+					return;
+				}
+
+				setValue(name, formattedValue, { shouldValidate: true });
 			}}
 			className={cn(
 				"h-11 w-full min-w-0 px-4 py-2 text-base transition-all outline-none",

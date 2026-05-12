@@ -112,7 +112,7 @@ export const UniversalClientForm = ({
 				onStepClick={handleStepClick}
 				visitedSteps={visitedSteps}
 			/>
-			<FormConsentInfo canSubmit={isValid} />
+			<FormConsentInfo canSubmit={isValid} isSubmitting={isSubmitting} />
 		</motion.div>
 	);
 };

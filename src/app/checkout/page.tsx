@@ -1,13 +1,13 @@
 "use client";
 
 import {
-	ArrowBigDown,
-	ArrowBigUp,
-	ChevronDown,
-	Minus,
-	Package,
-	Plus,
-} from "lucide-react";
+	CaretCircleDownIcon,
+	CaretCircleUpIcon,
+	CaretDownIcon,
+	MinusIcon,
+	PackageIcon,
+	PlusIcon,
+} from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -328,9 +328,19 @@ export default function CheckoutPage() {
 								</p>
 								<span>
 									Измените период аренды{" "}
-									{<ArrowBigUp size={10} className="inline fill-primary" />} или
-									комплектацию заказа{" "}
-									{<ArrowBigDown size={10} className="inline fill-primary" />}
+									{
+										<CaretCircleUpIcon
+											size={10}
+											className="inline fill-primary"
+										/>
+									}{" "}
+									или комплектацию заказа{" "}
+									{
+										<CaretCircleDownIcon
+											size={10}
+											className="inline fill-primary"
+										/>
+									}
 								</span>
 							</div>
 						)}
@@ -344,7 +354,7 @@ export default function CheckoutPage() {
 							onClick={() => setItemsExpanded((v) => !v)}
 							className="w-full flex items-center gap-4 p-5 hover:bg-foreground/5 transition-colors"
 						>
-							<Package
+							<PackageIcon
 								size={14}
 								className="text-muted-foreground/40 shrink-0"
 							/>
@@ -360,7 +370,7 @@ export default function CheckoutPage() {
 									</span>
 								</div>
 							</div>
-							<ChevronDown
+							<CaretDownIcon
 								size={15}
 								className={cn(
 									"text-muted-foreground/40 transition-transform shrink-0",
@@ -404,7 +414,7 @@ export default function CheckoutPage() {
 															className="object-cover"
 														/>
 													) : (
-														<Package
+														<PackageIcon
 															size={16}
 															className="absolute inset-0 m-auto text-muted-foreground/20"
 														/>
@@ -437,7 +447,7 @@ export default function CheckoutPage() {
 														onClick={() => removeOne(item.equipment.id)}
 														className="w-9 h-9 flex items-center justify-center hover:bg-foreground/8 active:bg-foreground/15 transition-colors"
 													>
-														<Minus size={12} />
+														<MinusIcon size={12} />
 													</button>
 													<span className="w-8 text-center text-sm font-bold tabular-nums border-x border-foreground/8 h-9 flex items-center justify-center">
 														{item.quantity}
@@ -450,7 +460,7 @@ export default function CheckoutPage() {
 														}
 														className="w-9 h-9 flex items-center justify-center hover:bg-foreground/8 active:bg-foreground/15 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
 													>
-														<Plus size={12} />
+														<PlusIcon size={12} />
 													</button>
 												</div>
 												{/* Line price */}

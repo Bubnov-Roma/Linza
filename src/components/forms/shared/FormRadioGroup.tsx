@@ -87,7 +87,7 @@ export const FormRadioGroup = <TFieldValues extends FieldValues>({
 								const labelContent = (
 									<Label
 										onClick={() => isActive && onValueChange?.(option.id)}
-										className={`relative backdrop-blur-md flex items-center rounded-xl h-10 drop-shadow-xs duration-200 cursor-pointer border
+										className={`relative shrink-0 backdrop-blur-md flex items-center rounded-xl h-10 drop-shadow-xs duration-200 cursor-pointer border
                       ${
 												isActive
 													? "bg-white/10 border-border/90 shadow-lg z-10 text-foreground"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SearchFilters } from "@/components/core/search/SearchFilters";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
@@ -60,16 +60,26 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 						: "inset(0 0 100% 0 round 0px)",
 				}}
 			>
-				<div className="shrink-0 flex flex-col w-full bg-background/95 backdrop-blur-xl border-b border-foreground/5 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2">
-					<div className="mx-3">
-						<div className="flex items-center gap-3 bg-foreground/5 rounded-2xl px-4 h-12">
-							<Search size={16} className="text-primary shrink-0" />
+				<div className="shrink-0 flex flex-col w-full backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-muted-foreground/10">
+					<div className="mx-3 mb-2">
+						<div
+							className={cn(
+								"flex items-center gap-3 bg-foreground/5 rounded-2xl px-4 h-12",
+								"bg-white dark:bg-black"
+							)}
+						>
+							<MagnifyingGlassIcon
+								size={16}
+								className="text-primary shrink-0"
+							/>
 							<input
 								ref={inputRef}
 								type="text"
 								inputMode="search"
 								style={{ fontSize: "16px" }}
-								className="flex-1 bg-transparent border-none focus:outline-none placeholder:text-muted-foreground text-foreground w-0 min-w-0"
+								className={cn(
+									"flex-1 bg-transparent border-none focus:outline-none placeholder:text-muted-foreground text-foreground w-0 min-w-0"
+								)}
 								placeholder="Поиск техники..."
 								value={state.query}
 								onChange={(e) => state.setQuery(e.target.value)}
@@ -80,13 +90,13 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 									onClick={() => state.setQuery("")}
 									className="p-1 bg-foreground/5 rounded-full shrink-0"
 								>
-									<X size={13} className="text-muted-foreground" />
+									<XIcon size={13} className="text-muted-foreground" />
 								</button>
 							)}
 						</div>
 					</div>
 					{state.query.trim().length > 1 && (
-						<div className="px-1 pt-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150">
+						<div className="px-1 py-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150 bg-muted-foreground/13 drop-shadow-xs shadow-muted-foreground snap-center">
 							<SearchFilters
 								categories={categories}
 								category={state.category}

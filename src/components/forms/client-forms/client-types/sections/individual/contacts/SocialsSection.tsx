@@ -1,6 +1,12 @@
 "use client";
 
-import { Check, Edit3, Globe, Plus, Trash2, X } from "lucide-react";
+import {
+	CheckIcon,
+	PencilIcon,
+	PlusIcon,
+	TrashIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
@@ -95,7 +101,7 @@ export const SocialsSection = () => {
 								? `Редактирование ссылки #${editingIndex + 1}`
 								: "Соцсети и мессенджеры"
 						}
-						placeholder="@username или https://..."
+						placeholder="https://... или @username"
 						value={inputValue}
 						error={localError ?? ""}
 						onChange={(e) => {
@@ -111,39 +117,39 @@ export const SocialsSection = () => {
 								cancelEdit();
 							}
 						}}
-						icon={<Globe className="h-4 w-4" />}
+						// icon={<Globe className="h-4 w-4" />}
 					/>
 				</div>
 
 				{editingIndex !== null ? (
-					<div className="flex gap-1 mb-5">
+					<div className="flex gap-1 mb-4">
 						<Button
 							type="button"
 							variant="default"
 							onClick={handleAddOrUpdate}
 							disabled={!inputValue}
-							className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+							className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
 						>
-							<Check size={18} />
+							<CheckIcon size={18} />
 						</Button>
 						<Button
 							type="button"
-							variant="ghost"
+							variant="brand"
 							onClick={cancelEdit}
-							className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-muted-foreground"
+							className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-muted-foreground"
 						>
-							<X size={18} />
+							<XIcon size={18} />
 						</Button>
 					</div>
 				) : (
 					<Button
 						type="button"
-						variant="glass"
+						variant="brand"
 						onClick={handleAddOrUpdate}
 						disabled={!inputValue || fields.length >= 5}
-						className="w-11 h-11 mb-5 rounded-xl flex items-center justify-center shrink-0"
+						className="w-12 h-12 mb-4 rounded-full flex items-center justify-center shrink-0"
 					>
-						<Plus size={20} />
+						<PlusIcon size={20} />
 					</Button>
 				)}
 			</div>
@@ -183,7 +189,7 @@ export const SocialsSection = () => {
 										className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
 										title="Удалить"
 									>
-										<Trash2 size={14} />
+										<TrashIcon size={14} />
 									</button>
 									<button
 										type="button"
@@ -193,7 +199,7 @@ export const SocialsSection = () => {
 										className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
 										title={isEditing ? "Отмена" : "Редактировать"}
 									>
-										{isEditing ? <X size={14} /> : <Edit3 size={14} />}
+										{isEditing ? <XIcon size={14} /> : <PencilIcon size={14} />}
 									</button>
 								</div>
 							</div>

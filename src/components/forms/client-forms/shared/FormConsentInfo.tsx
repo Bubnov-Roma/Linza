@@ -1,10 +1,19 @@
 "use client";
 import { motion } from "framer-motion";
+import { SubmitButton } from "@/components/forms/shared";
 
-export const FormConsentInfo = ({ canSubmit }: { canSubmit: boolean }) => {
+interface FormConsentInfoProps {
+	canSubmit: boolean;
+	isSubmitting?: boolean;
+}
+
+export const FormConsentInfo = ({
+	canSubmit,
+	isSubmitting = false,
+}: FormConsentInfoProps) => {
 	return (
 		<div className="flex flex-col justify-center items-center w-full px-4 py-2 mt-4 space-y-4">
-			{!canSubmit && (
+			{!canSubmit ? (
 				<motion.p
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
@@ -13,6 +22,8 @@ export const FormConsentInfo = ({ canSubmit }: { canSubmit: boolean }) => {
 					Для отправки анкеты, пожалуйста, заполните все обязательные поля и
 					дайте согласие
 				</motion.p>
+			) : (
+				<SubmitButton isSubmitting={isSubmitting} disabled={!canSubmit} />
 			)}
 		</div>
 	);

@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { CaretLeftIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -43,7 +43,7 @@ export default async function BookingsPage() {
 							href="/dashboard"
 							className="w-10 h-10 rounded-xl border border-foreground/10 flex items-center justify-center hover:bg-foreground/5 transition-all shrink-0"
 						>
-							<ArrowLeft size={18} />
+							<CaretLeftIcon size={18} />
 						</Link>
 						<div>
 							<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">

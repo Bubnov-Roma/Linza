@@ -40,7 +40,7 @@ export function UserMenuDropdown({
 			<DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
 
 			<DropdownMenuContent
-				className="w-[calc(100vw-2rem)] md:w-72 rounded-2xl bg-white/60 dark:bg-black/40 backdrop-blur-3xl border-foreground/10 shadow-2xl shadow-muted-foreground/50 p-2 z-50 ml-4"
+				className="w-[calc(100vw-2rem)] md:w-72 rounded-2xl bg-white/60 dark:bg-black/40 backdrop-blur-3xl border-foreground/10 shadow-2xl shadow-muted-foreground/50 p-2 z-50 ml-2"
 				align={align}
 				side={side}
 				sideOffset={8}

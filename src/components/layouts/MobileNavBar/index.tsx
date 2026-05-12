@@ -4,14 +4,16 @@ import type { Icon } from "@phosphor-icons/react";
 import {
 	CameraIcon,
 	CaretDownIcon,
+	MagnifyingGlassIcon,
 	PackageIcon,
 	ShoppingCartSimpleIcon,
+	SignInIcon,
 	SquaresFourIcon,
 	UserIcon,
 	VideoIcon,
+	XCircleIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogIn, Search, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -184,7 +186,7 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 					style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
 				>
 					{/* ── Левый закрепленный блок (User) ── */}
-					<div className="shrink-0 w-14 flex items-center justify-center border-r border-foreground/5">
+					<div className="shrink-0 w-14 flex items-center justify-center border-r border-muted-foreground/5">
 						{user ? (
 							<UserMenuDropdown
 								align="start"
@@ -225,7 +227,7 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 								onClick={() => open({ type: "auth" })}
 								className="flex flex-col items-center gap-1 group"
 							>
-								<LogIn
+								<SignInIcon
 									size={22}
 									strokeWidth={2}
 									className="text-muted-foreground group-active:scale-90 transition-transform"
@@ -339,7 +341,7 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 					</div>
 
 					{/* ── Правый закрепленный блок (Поиск) ── */}
-					<div className="shrink-0 w-14 flex items-center justify-center border-l border-foreground/5">
+					<div className="shrink-0 w-14 flex items-center justify-center border-l border-muted-foreground/5">
 						<button
 							type="button"
 							onClick={() => {
@@ -347,10 +349,10 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 								setSearchOpen(nextState);
 								if (nextState) searchRef.current?.focus();
 							}}
-							className="flex flex-col h-full items-center justify-center gap-1 group active:scale-90 transition-transform"
+							className="flex flex-col h-full w-full items-center justify-center group active:scale-90 transition-transform"
 							aria-label={searchOpen ? "Закрыть поиск" : "Открыть поиск"}
 						>
-							<div className="relative w-5.5 h-5.5">
+							<div className="relative w-10 h-10">
 								<AnimatePresence mode="wait" initial={false}>
 									{searchOpen ? (
 										<motion.div
@@ -359,9 +361,13 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 											animate={{ opacity: 1, rotate: 0, scale: 1 }}
 											exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
 											transition={{ duration: 0.15, ease: "easeOut" }}
-											className="absolute inset-0 flex items-center justify-center"
+											className="absolute inset-0 flex items-center justify-center h-full"
 										>
-											<X size={24} strokeWidth={2.5} className="text-primary" />
+											<XCircleIcon
+												weight="duotone"
+												size={34}
+												className="text-muted-foreground dark:text-primary group-active:scale-90"
+											/>
 										</motion.div>
 									) : (
 										<motion.div
@@ -372,23 +378,15 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 											transition={{ duration: 0.15, ease: "easeOut" }}
 											className="absolute inset-0 flex items-center justify-around"
 										>
-											<Search
-												size={24}
-												strokeWidth={2}
+											<MagnifyingGlassIcon
+												weight="duotone"
+												size={34}
 												className="text-muted-foreground group-active:scale-90"
 											/>
 										</motion.div>
 									)}
 								</AnimatePresence>
 							</div>
-							<span
-								className={cn(
-									"text-[9px] font-semibold leading-none mt-0.5 transition-colors",
-									searchOpen ? "text-primary" : "text-muted-foreground"
-								)}
-							>
-								{searchOpen ? "Закрыть" : "Поиск"}
-							</span>
 						</button>
 					</div>
 				</div>

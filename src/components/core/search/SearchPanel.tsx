@@ -131,7 +131,7 @@ export function SearchPanel({
 	return (
 		<div className={cn("flex flex-col min-h-0 min-w-0", className)}>
 			{showFilters && isDesktop && (
-				<div className="shrink-0 border-b border-foreground/5 space-y-1 px-3 py-2">
+				<div className="shrink-0 border-b border-foreground/5 space-y-1 py-2 bg-muted-foreground/13 drop-shadow-xs shadow-muted-foreground snap-center">
 					<SearchFilters
 						categories={categories}
 						category={category}

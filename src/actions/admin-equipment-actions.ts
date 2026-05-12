@@ -74,9 +74,9 @@ function buildPrismaWhere(
 
 	if (search) {
 		where.OR = [
-			{ title: { contains: search } },
-			{ description: { contains: search } },
-			{ inventoryNumber: { contains: search } },
+			{ title: { contains: search, mode: "insensitive" } },
+			{ description: { contains: search, mode: "insensitive" } },
+			{ inventoryNumber: { contains: search, mode: "insensitive" } },
 		];
 	}
 

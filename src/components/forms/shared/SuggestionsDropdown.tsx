@@ -26,8 +26,7 @@ export const SuggestionsDropdown = ({
 					exit={{ opacity: 0, y: -5 }}
 					transition={{ duration: 0.15 }}
 					onMouseDown={(e) => e.preventDefault()}
-					onTouchStart={(e) => e.preventDefault()}
-					className="absolute backdrop-blur supports-backdrop-filter:bg-background/95 z-100 w-full -mt-2 border border-foreground/10 rounded-xl overflow-hidden shadow-xl  p-1"
+					className="absolute backdrop-blur supports-backdrop-filter:bg-background/95 z-100 w-full -mt-2 border border-foreground/10 rounded-xl overflow-hidden shadow-xl p-1"
 				>
 					<div className="relative p-1 max-h-60 min-h-10 overflow-y-auto custom-scrollbar">
 						{isLoading && (
@@ -41,8 +40,7 @@ export const SuggestionsDropdown = ({
 								type="button"
 								className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-foreground/10 rounded-lg focus:bg-foreground/10 hover:text-foreground transition-colors"
 								onClick={() => onSelect(s)}
-								onMouseDown={() => onSelect(s)}
-								onTouchEnd={(e) => {
+								onTouchStart={(e) => {
 									e.preventDefault();
 									onSelect(s);
 								}}

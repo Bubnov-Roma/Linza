@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Stepper } from "@/components/forms/client-forms/shared";
-import { SubmitButton } from "@/components/forms/shared";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +19,6 @@ export const FormNavigation = ({
 	next,
 	currentStep,
 	isLastStep,
-	isSubmitting,
-	canSubmit,
 	onStepClick,
 	visitedSteps,
 }: FormNavigationProps) => {
@@ -48,18 +45,18 @@ export const FormNavigation = ({
 					visitedSteps={visitedSteps}
 				/>
 			</div>
-			{isLastStep ? (
-				<SubmitButton isSubmitting={isSubmitting} disabled={!canSubmit} />
-			) : (
-				<Button
-					variant="ghost"
-					onClick={next}
-					className="group rounded-xl h-10 w-10 p-0 text-foreground/60 hover:text-foreground md:h-11 md:w-auto md:px-4"
-				>
-					<span className="hidden md:inline">Далее</span>
-					<ChevronRight className="h-5 w-5 md:ml-2 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
-				</Button>
-			)}
+			<Button
+				variant="ghost"
+				onClick={next}
+				disabled={isLastStep}
+				className={cn(
+					"group rounded-xl h-10 w-10 p-0 text-foreground/60 hover:text-foreground md:h-11 md:w-auto md:px-4",
+					isLastStep && "invisible"
+				)}
+			>
+				<span className="hidden md:inline">Далее</span>
+				<ChevronRight className="h-5 w-5 md:ml-2 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
+			</Button>
 		</div>
 	);
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { EyeClosedIcon, EyeIcon, LockIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -70,7 +70,7 @@ export default function SetPasswordPage() {
 				<div className="space-y-1.5">
 					<Label className="text-xs text-muted-foreground">Новый пароль</Label>
 					<div className="relative">
-						<Lock
+						<LockIcon
 							size={14}
 							className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 						/>
@@ -89,7 +89,11 @@ export default function SetPasswordPage() {
 							onClick={() => setShowPassword((v) => !v)}
 							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 						>
-							{showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+							{showPassword ? (
+								<EyeClosedIcon size={14} />
+							) : (
+								<EyeIcon size={14} />
+							)}
 						</button>
 					</div>
 					{errors.password && (
@@ -102,7 +106,7 @@ export default function SetPasswordPage() {
 						Повторите пароль
 					</Label>
 					<div className="relative">
-						<Lock
+						<LockIcon
 							size={14}
 							className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 						/>
@@ -122,7 +126,11 @@ export default function SetPasswordPage() {
 							onClick={() => setShowConfirm((v) => !v)}
 							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 						>
-							{showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+							{showConfirm ? (
+								<EyeClosedIcon size={14} />
+							) : (
+								<EyeIcon size={14} />
+							)}
 						</button>
 					</div>
 					{errors.confirmPassword && (

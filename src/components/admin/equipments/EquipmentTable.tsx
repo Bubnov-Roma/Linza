@@ -517,18 +517,19 @@ export default function EquipmentTable() {
 						Техника
 					</h1>
 					{selectedIds.size > 0 && (
-						<Badge className="h-5 pl-2 pr-0 text-[10px] font-bold bg-primary text-primary-foreground">
-							<span>{formatPlural(selectedIds.size, "items")}</span>{" "}
+						<Badge className="h-8 pl-2 pr-1 gap-1 text-[10px] font-bold bg-primary text-primary-foreground rounded-md">
+							<span>{formatPlural(selectedIds.size, "items")} </span>{" "}
 							<Tooltip>
 								<TooltipTrigger>
 									<Button
+										asChild
 										variant="ghost"
-										size="icon-xs"
+										size="icon"
 										onClick={() => handleDelete()}
 										disabled={isPending}
-										className="rounded-l-xs"
+										className="rounded-md p-1"
 									>
-										<TrashIcon className="w-4 h-4" />
+										<TrashIcon size={4} />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
@@ -538,13 +539,14 @@ export default function EquipmentTable() {
 							<Tooltip>
 								<TooltipTrigger>
 									<Button
+										asChild
 										variant="ghost"
-										size="icon-xs"
+										size="icon"
 										onClick={handleExport}
 										disabled={isPending}
-										className="rounded-xs"
+										className="rounded-md p-1"
 									>
-										<UploadSimpleIcon className="w-4 h-4" />
+										<UploadSimpleIcon size={4} />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
@@ -554,13 +556,14 @@ export default function EquipmentTable() {
 							<Tooltip>
 								<TooltipTrigger>
 									<Button
+										asChild
 										variant="ghost"
-										size="icon-xs"
+										size="icon"
 										onClick={() => handleDuplicate()}
 										disabled={isPending}
-										className="rounded-l-xs"
+										className="rounded-md p-1"
 									>
-										<CopySimpleIcon className="w-4 h-4" />
+										<CopySimpleIcon size={4} />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>

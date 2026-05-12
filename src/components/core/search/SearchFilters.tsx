@@ -30,22 +30,21 @@ export function SearchFilters({
 	return (
 		<div
 			className={cn(
-				"flex gap-2 w-full min-w-0 overflow-hidden",
-				isMobile ? "flex-col-reverse" : "flex-col"
+				"flex gap-2 w-full min-w-0 overflow-hidden drop-shadow-xs flex-col"
 			)}
 		>
 			{/* ── Строка Категорий ── */}
-			<div className="flex gap-1.5 overflow-x-auto no-scrollbar min-w-0 w-full overflow-hidden">
+			<div className="flex gap-1.5 overflow-x-auto no-scrollbar min-w-0 w-full overflow-hidden snap-x snap-mandatory">
 				{/* Кнопка "Все" */}
 				<button
 					type="button"
 					onClick={() => onCategory("all")}
 					className={cn(
-						"flex items-center gap-1 justify-center whitespace-nowrap shrink-0 rounded-xl transition-all font-bold uppercase tracking-[0.12em]",
+						"cursor-pointer flex items-center gap-1 justify-center whitespace-nowrap shrink-0 rounded-2xl transition-all font-bold uppercase tracking-[0.12em]",
 						isMobile ? "h-10 px-4 text-xs" : "h-8 px-3 text-[11px]",
 						category === "all"
-							? "bg-primary/10 text-primary"
-							: "bg-foreground/5 text-muted-foreground hover:text-foreground"
+							? "bg-background text-foreground"
+							: "bg-foreground/7 text-muted-foreground hover:text-foreground"
 					)}
 				>
 					Все
@@ -60,11 +59,11 @@ export function SearchFilters({
 							type="button"
 							onClick={() => onCategory(cat.slug)}
 							className={cn(
-								"flex items-center gap-1 whitespace-nowrap shrink-0 rounded-xl transition-all font-bold uppercase tracking-[0.12em]",
+								"cursor-pointer flex items-center gap-1 whitespace-nowrap shrink-0 rounded-2xl transition-all font-bold uppercase tracking-[0.12em]",
 								isMobile ? "h-10 px-4 text-xs" : "h-8 px-3 text-[11px]",
 								active
-									? "bg-primary/10 text-primary"
-									: "bg-foreground/5 text-muted-foreground hover:text-foreground"
+									? "bg-background dark:bg-primary/10 text-foreground"
+									: "bg-foreground/7 text-muted-foreground hover:text-foreground"
 							)}
 						>
 							{cat.name}
@@ -86,8 +85,7 @@ export function SearchFilters({
 			{expandedCat && subs.length > 0 && (
 				<div
 					className={cn(
-						"flex gap-1.5 overflow-x-auto no-scrollbar animate-in fade-in duration-200",
-						isMobile ? "slide-in-from-top-1" : "slide-in-from-bottom-1"
+						"flex gap-1.5 overflow-x-auto no-scrollbar animate-in fade-in duration-200 snap-x snap-mandatory slide-in-from-bottom-1"
 					)}
 				>
 					{subs.map((sub) => {
@@ -98,16 +96,24 @@ export function SearchFilters({
 								type="button"
 								onClick={() => onSubcategory(expandedCat, sub.slug)}
 								className={cn(
-									"whitespace-nowrap shrink-0 rounded-lg transition-all font-semibold uppercase tracking-widest",
+									"relative cursor-pointer rounded-2xl whitespace-nowrap shrink-0 transition-all font-semibold uppercase tracking-widest",
 									isMobile
 										? "h-9 px-3.5 text-[11px]"
 										: "h-7 px-2.5 text-[10px]",
 									active
-										? "bg-primary/10 text-primary"
-										: "bg-foreground/5 text-muted-foreground/70 hover:text-foreground"
+										? "bg-background dark:bg-primary/10 text-foreground"
+										: "bg-foreground/7 text-muted-foreground hover:text-foreground"
 								)}
 							>
 								{sub.name}
+								<div
+									className={`absolute brightness-110 bottom-0 left-5 right-5 rounded-full h-0.5 ${active ? "bg-primary shadow-[0_0_10px_white]" : "bg-white/20"}`}
+									style={{
+										transform: active ? "scale(1)" : "scale(0.1)",
+										transition:
+											"transform 0.2s ease-in-out, color 0.1s ease-in-out",
+									}}
+								/>
 							</button>
 						);
 					})}

@@ -34,6 +34,7 @@ export const FinalsSection = () => {
 				label="Как вы о нас узнали?"
 				options={REFERRAL_OPTIONS}
 				required
+				gridClassName="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 pb-3 pt-1 justify-start scrollbar-hide no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 			/>
 			{showExtraInput && (
 				<motion.div
@@ -55,14 +56,13 @@ export const FinalsSection = () => {
 				placeholder="Дополнительная информация или пожелания (необязательно)"
 				rows={3}
 			/>
-			{/* <div className="border-t border-foreground/5 pt-5"> */}
 			<FormCheckbox
 				name="agreements.personalDataConsent"
 				className="normal-case tracking-normal"
 				label={
 					<span className="leading-relaxed text-sm">
-						Я подтверждаю корректность данных, принимаю условия сотрудничества и
-						даю согласие на{" "}
+						Я подтверждаю корректность данных
+						{/* , принимаю условия сотрудничества */} и даю согласие на{" "}
 						<Link
 							href="/privacy"
 							target="_blank"
@@ -73,7 +73,6 @@ export const FinalsSection = () => {
 					</span>
 				}
 			/>
-			{/* </div> */}
 		</div>
 	);
 };

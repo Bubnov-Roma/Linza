@@ -67,25 +67,21 @@ export const Stepper = ({
 								key={step.id}
 								type="button"
 								onClick={() => onStepClick(index)}
-								className="flex items-center group outline-none cursor-pointer"
+								className={cn(
+									"flex items-center group outline-none cursor-pointer rounded-full bg-background/50 hover:bg-background/60 transition-all duration-500",
+									status.state === "active" && "bg-background"
+								)}
 							>
 								<div
 									className={cn(
-										"w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-xl transition-all duration-200 hover:bg-accent/20",
+										"w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full transition-all duration-200",
 										"w-8 h-8 md:w-10 md:h-10 hover:bg-accent/20",
-										status.state === "active" && "shadow-brand-glow"
+										status.state === "active" && "shadow-brand-glow",
+										status.state === "error" && "shadow-error-glow"
 									)}
-									style={{
-										backgroundColor:
-											status.state === "error" ? "rgba(249, 115, 22, 0.1)" : "",
-										opacity: status.state === "completed" ? 0.4 : 1,
-										border:
-											status.state === "untouched"
-												? "1px solid var(--border-soft)"
-												: "none",
-									}}
 								>
 									<Icon
+										weight={status.state === "active" ? "duotone" : "regular"}
 										className={cn(
 											"w-4 h-4 md:w-5 md:h-5 transition-colors",
 											status.state === "active"
@@ -98,7 +94,7 @@ export const Stepper = ({
 								</div>
 							</button>
 						</TooltipTrigger>
-						<TooltipContent>
+						<TooltipContent side="bottom">
 							<p>{step.label}</p>
 						</TooltipContent>
 					</Tooltip>

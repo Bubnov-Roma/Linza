@@ -162,7 +162,7 @@ export type EquipmentSchemaType = z.infer<typeof equipmentSchema>;
 export const individualContactsSchema = z.object({
 	socials: z
 		.array(socialMediaObjectSchema)
-		.min(1, "Укажите хотя бы одну соцсеть")
+		.min(1, "Добавьте хотя бы одну соцсеть")
 		.max(5, "Максимум 5 ссылок"),
 });
 

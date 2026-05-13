@@ -1,22 +1,21 @@
 "use client";
 
-import { LockIcon } from "@phosphor-icons/react";
 import {
-	AlertTriangle,
-	ArrowLeft,
-	ExternalLink,
-	FilePenLine,
-	Globe,
-	ImageOff,
-	ImagePlus,
-	Mail,
-	MessageCircle,
-	Pencil,
-	Phone,
-	Plus,
-	Trash2,
-	User as UserIcon,
-} from "lucide-react";
+	ArrowLeftIcon,
+	ArrowSquareOutIcon,
+	EnvelopeIcon,
+	GlobeIcon,
+	ImageIcon,
+	LockIcon,
+	PencilIcon,
+	PhoneIcon,
+	PlusIcon,
+	TelegramLogoIcon,
+	TrashIcon,
+	UserIcon,
+	UserSwitchIcon,
+	WarningIcon,
+} from "@phosphor-icons/react";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
@@ -144,9 +143,7 @@ export function ProfileDetails({
 			const res = await scheduleAccountDeletionAction();
 			if (!res.success) throw new Error(res.error);
 
-			toast.info(
-				"Аккаунт будет удалён через 7 дней. Войдите снова для отмены."
-			);
+			toast.info("Аккаунт будет удалён через 3 дня. Войдите снова для отмены.");
 			await signOut({ callbackUrl: "/auth" });
 		} catch {
 			toast.error("Ошибка при удалении аккаунта");
@@ -200,7 +197,7 @@ export function ProfileDetails({
 										variant="brand"
 										className="flex flex-col items-center gap-1 group/btn w-full hover:bg-background/50"
 									>
-										<Pencil size={14} className="text-foreground/80" />
+										<PencilIcon size={14} className="text-foreground/80" />
 										<span className="text-[9px] font-bold uppercase tracking-wider text-foreground/60">
 											Изменить
 										</span>
@@ -215,7 +212,7 @@ export function ProfileDetails({
 										disabled={uploading}
 										className="flex flex-col items-center gap-1 w-full hover:bg-background/50"
 									>
-										<ImageOff size={14} className="text-destructive/80" />
+										<TrashIcon size={14} className="text-destructive/80" />
 										<span className="text-[9px] font-bold uppercase tracking-wider text-destructive/60">
 											Удалить
 										</span>
@@ -223,7 +220,7 @@ export function ProfileDetails({
 								</div>
 							) : (
 								<div className="flex flex-col items-center gap-1">
-									<ImagePlus size={16} className="text-foreground" />
+									<ImageIcon size={16} className="text-foreground" />
 									<span className="text-[9px] font-bold uppercase tracking-wider text-foreground/60">
 										Загрузить
 									</span>
@@ -298,12 +295,12 @@ export function ProfileDetails({
 				<div className="space-y-4 animate-in fade-in duration-200">
 					<SectionCard title="Контакты">
 						<DetailRow
-							icon={<Mail size={14} />}
+							icon={<EnvelopeIcon size={14} />}
 							label="Email"
 							value={user?.email || ""}
 						/>
 						<DetailRow
-							icon={<Phone size={14} />}
+							icon={<PhoneIcon size={14} />}
 							label="Телефон"
 							value={displayData?.phone || ""}
 						/>
@@ -340,10 +337,13 @@ export function ProfileDetails({
 							className="detail-row hover:bg-foreground/5 transition-colors group"
 						>
 							<div className="flex items-center gap-3">
-								<MessageCircle size={14} className="text-muted-foreground/40" />
+								<TelegramLogoIcon
+									size={14}
+									className="text-muted-foreground/40"
+								/>
 								<span className="text-sm text-muted-foreground">Telegram</span>
 							</div>
-							<ExternalLink
+							<ArrowSquareOutIcon
 								size={12}
 								className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors"
 							/>
@@ -353,7 +353,7 @@ export function ProfileDetails({
 							className="detail-row hover:bg-foreground/5 transition-colors"
 						>
 							<div className="flex items-center gap-3">
-								<Phone size={14} className="text-muted-foreground/40" />
+								<PhoneIcon size={14} className="text-muted-foreground/40" />
 								<span className="text-sm text-muted-foreground">
 									{support.phone}
 								</span>
@@ -399,7 +399,10 @@ export function ProfileDetails({
 					<SectionCard title="Email-адрес">
 						<div className="detail-row">
 							<div className="flex items-center gap-3 min-w-0">
-								<Mail size={14} className="text-muted-foreground/40 shrink-0" />
+								<EnvelopeIcon
+									size={14}
+									className="text-muted-foreground/40 shrink-0"
+								/>
 								<span className="text-sm truncate">{user?.email}</span>
 							</div>
 							<span className="text-[10px] uppercase font-bold tracking-wider text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full shrink-0 ml-2">
@@ -411,7 +414,7 @@ export function ProfileDetails({
 								value=""
 								placeholder="Новый email"
 								type="email"
-								icon={<Mail size={14} />}
+								icon={<EnvelopeIcon size={14} />}
 								onSave={async (val) => {
 									if (!val.includes("@")) throw new Error("Некорректный email");
 									await updateUserFieldAction("email", val);
@@ -431,7 +434,7 @@ export function ProfileDetails({
 								value={(user?.user_metadata?.extra_phone as string) ?? ""}
 								placeholder="+7 (___) ___-__-__"
 								type="tel"
-								icon={<Phone size={14} />}
+								icon={<PhoneIcon size={14} />}
 								onSave={async (val) => {
 									await updateUserFieldAction("extraPhone", val);
 									await refreshProfile({ extraPhone: val });
@@ -476,9 +479,9 @@ export function ProfileDetails({
 						<button
 							type="button"
 							onClick={() => setActiveTab("update_data")}
-							className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-primary/10 bg-secondary/30 text-primary-accent/60 hover:text-primary-accent hover:bg-secondary/60 transition-colors"
+							className="cursor-pointer w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-primary/10 bg-secondary/30 text-primary-accent/60 hover:text-primary-accent hover:bg-secondary/60 transition-colors"
 						>
-							<FilePenLine size={16} />
+							<UserSwitchIcon size={16} />
 							<span className="text-md font-medium">Обновить данные</span>
 						</button>
 					)}
@@ -486,9 +489,9 @@ export function ProfileDetails({
 					<button
 						type="button"
 						onClick={() => setShowDeleteDialog(true)}
-						className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-destructive/20 bg-destructive/5 text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+						className="cursor-pointer w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-destructive/20 bg-destructive/5 text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
 					>
-						<Trash2 size={16} />
+						<TrashIcon size={16} />
 						<span className="text-md font-medium">Удалить аккаунт</span>
 					</button>
 				</div>
@@ -510,7 +513,7 @@ export function ProfileDetails({
 						onClick={() => setActiveTab("settings")}
 						className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
 					>
-						<ArrowLeft size={14} /> Вернуться к общим настройкам
+						<ArrowLeftIcon size={14} /> Вернуться к общим настройкам
 					</Button>
 				</div>
 			)}
@@ -527,16 +530,24 @@ export function ProfileDetails({
 					<AlertDialogHeader>
 						<div className="flex items-center gap-3 mb-2">
 							<div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-								<AlertTriangle size={18} className="text-destructive" />
+								<WarningIcon
+									size={18}
+									weight="duotone"
+									className="text-destructive"
+								/>
 							</div>
 							<AlertDialogTitle className="text-destructive">
 								Удалить аккаунт?
 							</AlertDialogTitle>
 						</div>
 						<AlertDialogDescription className="space-y-2 text-left">
+							<p>Аккаунт будет помечен к удалению.</p>
 							<span>
-								Аккаунт будет помечен к удалению. У вас есть{" "}
-								<strong>7 дней</strong> чтобы передумать — просто войдите снова.
+								У вас есть{" "}
+								<strong className="font-black font-mono text-red-500 px-2">
+									3 дня
+								</strong>{" "}
+								чтобы отменить удаление — просто войдите снова.
 							</span>
 							<span className="text-destructive block py-2">
 								По истечении срока все данные уничтожаются безвозвратно.
@@ -555,9 +566,9 @@ export function ProfileDetails({
 							</span>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
-					<AlertDialogFooter>
+					<AlertDialogFooter className="flex">
 						<AlertDialogCancel
-							className="bg-primary/90 hover:bg-primary disabled:opacity-40 rounded-xl p-2 text-sm cursor-pointer"
+							className="flex-1 bg-primary/90 hover:bg-primary disabled:opacity-40 rounded-xl p-2 text-sm cursor-pointer"
 							onClick={() => setDeleteConfirmText("")}
 						>
 							Отмена
@@ -565,7 +576,7 @@ export function ProfileDetails({
 						<AlertDialogAction
 							onClick={handleDeleteAccount}
 							disabled={deleteConfirmText !== "УДАЛИТЬ"}
-							className="bg-destructive hover:bg-destructive/90 disabled:opacity-30 rounded-xl p-2 text-sm cursor-pointer"
+							className="flex-1 bg-destructive hover:bg-destructive/90 disabled:opacity-30 rounded-xl p-2 text-sm cursor-pointer"
 						>
 							Удалить аккаунт
 						</AlertDialogAction>
@@ -649,7 +660,7 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 								disabled={saving}
 								className="ml-auto w-6 h-6 flex items-center justify-center rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
 							>
-								<Trash2 size={12} />
+								<TrashIcon size={12} />
 							</Button>
 						)}
 					</div>
@@ -661,7 +672,7 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 					<InlineEditField
 						value=""
 						placeholder="@username или https://..."
-						icon={<Globe size={14} />}
+						icon={<GlobeIcon size={14} />}
 						autoFocus
 						onSave={handleAdd}
 						onCancel={() => setAdding(false)}
@@ -675,7 +686,7 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 						className="detail-row w-full text-left hover:bg-foreground/5 transition-colors"
 					>
 						<div className="flex items-center gap-3">
-							<Plus size={14} className="text-muted-foreground/40" />
+							<PlusIcon size={14} className="text-muted-foreground/40" />
 							<span className="text-sm text-muted-foreground">
 								Добавить ссылку
 							</span>

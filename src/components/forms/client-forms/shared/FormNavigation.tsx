@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { Stepper } from "@/components/forms/client-forms/shared";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -35,10 +35,10 @@ export const FormNavigation = ({
 						: "text-foreground/60 hover:text-foreground group"
 				)}
 			>
-				<ChevronLeft className="w-6 h-6 md:mr-2 md:h-4 md:w-4 transition-transform group-hover:-translate-x-1" />
+				<CaretLeftIcon className="w-6 h-6 md:mr-2 md:h-4 md:w-4 transition-transform group-hover:-translate-x-1" />
 				<span className="hidden md:inline">Назад</span>
 			</Button>
-			<div className="flex flex-1 px-1 md:flex-initial">
+			<div className="flex flex-1 md:flex-initial bg-muted-foreground/20 rounded-3xl p-2">
 				<Stepper
 					currentStep={currentStep}
 					onStepClick={onStepClick}
@@ -55,7 +55,7 @@ export const FormNavigation = ({
 				)}
 			>
 				<span className="hidden md:inline">Далее</span>
-				<ChevronRight className="h-5 w-5 md:ml-2 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
+				<CaretRightIcon className="h-5 w-5 md:ml-2 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
 			</Button>
 		</div>
 	);

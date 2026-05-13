@@ -1,6 +1,6 @@
 export const REFERRAL_OPTIONS = [
 	{ id: "website", label: "Сайт", color: "#34d399", placeholder: "" },
-	{ id: "vk", label: "ВК", color: "#4c75a3", placeholder: "" },
+	{ id: "vk", label: "ВКонтакте", color: "#4c75a3", placeholder: "" },
 	{
 		id: "search_engine",
 		label: "Поисковик",

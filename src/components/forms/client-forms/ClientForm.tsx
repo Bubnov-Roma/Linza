@@ -123,7 +123,7 @@ export const ClientForm = () => {
 					onSubmit={handleSubmit(onSubmit)}
 					className="space-y-8 w-full py-6 px-2 md:px-4"
 				>
-					<Card className="rounded-[32px]">
+					<Card className="rounded-[32px] px-2 md:px-0">
 						<UniversalClientForm currentStep={step} onStepChange={setStep} />
 					</Card>
 				</form>

@@ -7,6 +7,7 @@ import {
 	type Role,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -130,7 +131,16 @@ export async function updateApplicationDataAction(payload: {
 		const current = (row.applicationData as Record<string, unknown>) || {};
 		const updated = deepSet(current, payload.field, payload.value);
 
-		const parsed = individualClientSchema.safeParse(updated);
+		const updateSchema = individualClientSchema.extend({
+			agreements: z
+				.object({
+					comment: z.string().optional(),
+					newsletter: z.boolean().optional(),
+					personalDataConsent: z.boolean().optional(),
+				})
+				.optional(),
+		});
+		const parsed = updateSchema.safeParse(updated);
 		if (!parsed.success) {
 			return {
 				success: false,

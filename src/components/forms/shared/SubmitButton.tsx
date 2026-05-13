@@ -1,5 +1,5 @@
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
-import { Button } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface NeonSubmitButtonProps {
@@ -18,18 +18,16 @@ export const SubmitButton = ({
 			disabled={isDisabled}
 			size="md"
 			className={cn(
-				"relative rounded-2xl justify-center items-center transition-all duration-200 z-10 md:w-auto",
+				"w-full relative rounded-2xl justify-center items-center transition-all duration-200 z-10 md:w-auto",
 				isDisabled && "bg-muted text-foreground/50 cursor-not-allowed"
 			)}
 		>
 			<div className="flex items-center gap-2">
+				<span>Отправить</span>
 				{isSubmitting ? (
-					<span>Отправляем</span>
+					<Spinner data-icon="inline-end" />
 				) : (
-					<>
-						<span>Отправить</span>
-						<PaperPlaneTiltIcon size={15} weight="duotone" />
-					</>
+					<PaperPlaneTiltIcon size={15} weight="duotone" />
 				)}
 			</div>
 		</Button>

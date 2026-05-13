@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import type { ClientFormValues } from "@/schemas";
 
 type AllowedUserField = "nickname" | "email" | "phone" | "extraPhone";
 
@@ -58,7 +57,7 @@ export async function scheduleAccountDeletionAction(): Promise<{
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
 		const deletionDate = new Date();
-		deletionDate.setDate(deletionDate.getDate() + 7);
+		deletionDate.setDate(deletionDate.getDate() + 1);
 
 		await prisma.user.update({
 			where: { id: session.user.id },
@@ -86,15 +85,19 @@ export async function updateClientSocialsAction(
 
 		if (!app) return { success: false, error: "Анкета не найдена" };
 
-		const currentData =
-			(app.applicationData as Record<string, ClientFormValues>) || {};
+		const currentData = (app.applicationData as Record<string, unknown>) || {};
+
+		const currentAppData =
+			(currentData.applicationData as Record<string, unknown>) || {};
+		const currentContacts =
+			(currentAppData.contacts as Record<string, unknown>) || {};
 
 		const updatedData = {
 			...currentData,
 			applicationData: {
-				...(currentData.applicationData || {}),
+				...currentAppData,
 				contacts: {
-					...(currentData.applicationData?.applicationData.contacts || {}),
+					...currentContacts,
 					socials,
 				},
 			},

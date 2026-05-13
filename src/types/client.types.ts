@@ -25,7 +25,13 @@ export type AllowedUpdateField =
 	| "applicationData.passport.issueDate"
 	| "applicationData.passport.issuedBy"
 	| "applicationData.addresses.registration"
+	| "applicationData.addresses.registration.index"
+	| "applicationData.addresses.registration.country"
+	| "applicationData.addresses.registration.region"
+	| "applicationData.addresses.registration.city"
+	| "applicationData.addresses.registration.address"
 	| "applicationData.addresses.actual"
+	| "applicationData.addresses.actual.address"
 	| "applicationData.addresses.isSame";
 
 export type UserRole = "GUEST" | "USER" | "ADMIN" | "MANAGER";

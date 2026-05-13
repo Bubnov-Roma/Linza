@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { get, useFormContext, useWatch } from "react-hook-form";
 import { AddressFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/address/AddressFieldsGroup";
-import { FinalsSection } from "@/components/forms/client-forms/client-types/sections/individual/contacts/FinalsSection";
-import { SocialsSection } from "@/components/forms/client-forms/client-types/sections/individual/contacts/SocialsSection";
+import { FinalBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/FinalBlock";
+import { ReferralsBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/ReferralsBlock";
+import { SocialsBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/SocialsBlock";
 import { FioInput } from "@/components/forms/client-forms/client-types/sections/individual/id/FioInput";
-import { FormCheckbox, SubmitButton } from "@/components/forms/shared";
+import { FormCheckbox } from "@/components/forms/shared";
 import { DateInput } from "@/components/forms/shared/DateInput";
 import { FormTextarea } from "@/components/forms/shared/FormTextarea";
 import { PassportInput } from "@/components/forms/shared/PassportInput";
@@ -28,11 +28,6 @@ interface SectionDef {
 	dotColor: string;
 	fields: string[];
 	content: React.ReactNode;
-}
-
-interface MobileClientFormProps {
-	isSubmitting: boolean;
-	isValid: boolean;
 }
 
 function getSectionStatus(
@@ -56,11 +51,7 @@ const DOT_COLOR: Record<ReturnType<typeof getSectionStatus>, string> = {
 	untouched: "bg-foreground/20",
 };
 
-export function MobileClientForm({
-	isSubmitting,
-	isValid,
-}: MobileClientFormProps) {
-	const [mounted, setMounted] = useState(false);
+export function MobileClientForm() {
 	const [openPanels, setOpenPanels] = useState<string[]>(["personal"]);
 	const [visitedSections, setVisitedSections] = useState<Set<string>>(
 		new Set(["personal"])
@@ -76,10 +67,6 @@ export function MobileClientForm({
 		control,
 		name: "applicationData.addresses.isSame",
 	});
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
 
 	const sections: SectionDef[] = [
 		{
@@ -205,9 +192,10 @@ export function MobileClientForm({
 			],
 			content: (
 				<div className="space-y-6">
-					<SocialsSection />
+					<SocialsBlock />
+					<ReferralsBlock />
 					<div className="border-t border-foreground/5 pt-5">
-						<FinalsSection />
+						<FinalBlock />
 					</div>
 				</div>
 			),
@@ -235,130 +223,76 @@ export function MobileClientForm({
 		setOpenPanels(values);
 	};
 
-	const toggleDot = (id: string) => {
-		setOpenPanels((prev) =>
-			prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-		);
-		setVisitedSections((prev) => {
-			const n = new Set(prev);
-			n.add(id);
-			return n;
-		});
-	};
-
 	return (
-		<>
-			<div className="py-4 pb-10">
-				<h1 className="text-3xl font-black tracking-tight uppercase italic text-center pb-4">
-					Анкета
-				</h1>
-				<Accordion
-					type="multiple"
-					value={openPanels}
-					onValueChange={handleValueChange}
-					className="space-y-2"
-				>
-					{sections.map((section) => {
-						const isOpen = openPanels.includes(section.id);
-						const status = getSectionStatus(
-							section.fields,
-							errors,
-							allValues,
-							visitedSections,
-							section.id
-						);
+		<div className="py-4 pb-10">
+			<h1 className="text-3xl font-black tracking-tight uppercase italic text-center pb-4">
+				Анкета
+			</h1>
+			<Accordion
+				type="multiple"
+				value={openPanels}
+				onValueChange={handleValueChange}
+				className="space-y-2"
+			>
+				{sections.map((section) => {
+					const isOpen = openPanels.includes(section.id);
+					const status = getSectionStatus(
+						section.fields,
+						errors,
+						allValues,
+						visitedSections,
+						section.id
+					);
 
-						return (
-							<AccordionItem
-								key={section.id}
-								value={section.id}
+					return (
+						<AccordionItem
+							key={section.id}
+							value={section.id}
+							className={cn(
+								"rounded-2xl overflow-hidden transition-colors duration-200 border-b-0 shadow-sm shadow-foreground/10",
+								isOpen ? "bg-muted-foreground/5 " : "bg-foreground/5"
+							)}
+						>
+							<AccordionTrigger
 								className={cn(
-									"rounded-2xl overflow-hidden transition-colors duration-200 border-b-0 shadow-sm shadow-foreground/10",
-									isOpen ? "bg-muted-foreground/5 " : "bg-foreground/5"
+									"flex items-center gap-3 px-4 py-4",
+									"hover:no-underline hover:bg-transparent [&>svg:last-child]:hidden"
 								)}
 							>
-								<AccordionTrigger
+								<div
 									className={cn(
-										"flex items-center gap-3 px-4 py-4",
-										"hover:no-underline hover:bg-transparent [&>svg:last-child]:hidden"
+										"w-2 h-2 rounded-full shrink-0 transition-colors duration-300",
+										isOpen ? section.dotColor : DOT_COLOR[status]
+									)}
+								/>
+								<span
+									className={cn(
+										"flex-1 text-sm font-bold text-left transition-colors",
+										isOpen ? "text-foreground" : "text-foreground/70"
 									)}
 								>
-									<div
-										className={cn(
-											"w-2 h-2 rounded-full shrink-0 transition-colors duration-300",
-											isOpen ? section.dotColor : DOT_COLOR[status]
-										)}
-									/>
+									{section.title}
+								</span>
+								{!isOpen && status !== "untouched" && (
 									<span
 										className={cn(
-											"flex-1 text-sm font-bold text-left transition-colors",
-											isOpen ? "text-foreground" : "text-foreground/70"
+											"text-[10px] font-bold mr-1",
+											status === "error"
+												? "text-orange-400"
+												: "text-emerald-500"
 										)}
 									>
-										{section.title}
+										{status === "error" ? "Проверьте" : "✓"}
 									</span>
-									{!isOpen && status !== "untouched" && (
-										<span
-											className={cn(
-												"text-[10px] font-bold mr-1",
-												status === "error"
-													? "text-orange-400"
-													: "text-emerald-500"
-											)}
-										>
-											{status === "error" ? "Проверьте" : "✓"}
-										</span>
-									)}
-								</AccordionTrigger>
-								<AccordionContent className="px-4 pb-5 pt-1 overflow-visible">
-									{section.content}
-								</AccordionContent>
-							</AccordionItem>
-						);
-					})}
-				</Accordion>
-			</div>
-
-			{mounted &&
-				createPortal(
-					<div
-						className="fixed inset-x-0 z-45 md:hidden pointer-events-none"
-						style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
-					>
-						<div className="mx-3 pointer-events-auto">
-							<div className="flex items-center gap-2 p-2 rounded-2xl bg-background/80 backdrop-blur-xl border border-foreground/10 shadow-lg">
-								<div className="flex items-center gap-1.5 flex-1 pl-1 overflow-x-auto no-scrollbar">
-									{sections.map((section, idx) => {
-										const status = getSectionStatus(
-											section.fields,
-											errors,
-											allValues,
-											visitedSections,
-											section.id
-										);
-										const isOpen = openPanels.includes(section.id);
-										return (
-											<button
-												key={`dot-${section.id}-${idx}`}
-												type="button"
-												title={section.title}
-												onClick={() => toggleDot(section.id)}
-												className={cn(
-													"w-2.5 h-2.5 rounded-full transition-all shrink-0 hover:scale-125",
-													DOT_COLOR[status],
-													isOpen &&
-														"ring-2 ring-offset-1 ring-offset-background ring-foreground/40"
-												)}
-											/>
-										);
-									})}
-								</div>
-								<SubmitButton isSubmitting={isSubmitting} disabled={!isValid} />
-							</div>
-						</div>
-					</div>,
-					document.body
-				)}
-		</>
+								)}
+							</AccordionTrigger>
+							<AccordionContent className="px-4 pb-5 pt-1 overflow-visible">
+								{section.content}
+							</AccordionContent>
+						</AccordionItem>
+					);
+				})}
+			</Accordion>
+		</div>
 	);
 }

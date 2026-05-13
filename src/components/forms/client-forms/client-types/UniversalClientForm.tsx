@@ -53,8 +53,8 @@ export const UniversalClientForm = ({
 	if (isMobile) {
 		return (
 			<div className="relative flex-1 flex flex-col">
-				<MobileClientForm isSubmitting={isSubmitting} isValid={isValid} />
-				<FormConsentInfo canSubmit={isValid} />
+				<MobileClientForm />
+				<FormConsentInfo canSubmit={isValid} isSubmitting={isSubmitting} />
 			</div>
 		);
 	}

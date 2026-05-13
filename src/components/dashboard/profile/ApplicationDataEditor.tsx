@@ -1,6 +1,11 @@
 "use client";
 
-import { FilePenLine, MapPin, ShieldCheck, User } from "lucide-react";
+import {
+	FileMagnifyingGlassIcon,
+	MapPinIcon,
+	ShieldCheckIcon,
+	UserIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -119,7 +124,7 @@ export function ApplicationDataEditor({ data }: ApplicationDataEditorProps) {
 			<div className="space-y-3 animate-in fade-in duration-200">
 				{/* ── Personal data ── */}
 				<AccordionSection
-					icon={<User size={14} />}
+					icon={<UserIcon size={14} />}
 					title="Личные данные"
 					open={openSection === "personal"}
 					onToggle={() =>
@@ -155,7 +160,7 @@ export function ApplicationDataEditor({ data }: ApplicationDataEditorProps) {
 
 				{/* ── Passport ── */}
 				<AccordionSection
-					icon={<ShieldCheck size={14} />}
+					icon={<ShieldCheckIcon size={14} />}
 					title="Паспортные данные"
 					open={openSection === "passport"}
 					onToggle={() =>
@@ -202,7 +207,7 @@ export function ApplicationDataEditor({ data }: ApplicationDataEditorProps) {
 
 				{/* ── Addresses ── */}
 				<AccordionSection
-					icon={<MapPin size={14} />}
+					icon={<MapPinIcon size={14} />}
 					title="Адреса"
 					open={openSection === "addresses"}
 					onToggle={() =>
@@ -294,7 +299,10 @@ export function ApplicationDataEditor({ data }: ApplicationDataEditorProps) {
 
 				{/* ── Warning banner ── */}
 				<div className="flex items-start gap-3 px-4 py-3 rounded-2xl border border-amber-500/50 bg-secondary/60">
-					<FilePenLine size={14} className="text-amber-400 shrink-0 mt-0.5" />
+					<FileMagnifyingGlassIcon
+						size={14}
+						className="text-amber-400 shrink-0 mt-0.5"
+					/>
 					<p className="text-xs text-muted-foreground leading-relaxed">
 						После обновления персональных данных наш менеджер может запросить
 						подтверждающие документы.

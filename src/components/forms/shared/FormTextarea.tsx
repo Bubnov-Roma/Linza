@@ -17,6 +17,7 @@ export const FormTextarea = ({
 	name,
 	label,
 	className,
+	rows,
 	required = false,
 	...props
 }: FormTextareaProps) => {
@@ -34,6 +35,7 @@ export const FormTextarea = ({
 			required={required}
 			className={className}
 			error={error?.message ?? ""}
+			rows={rows}
 		/>
 	);
 };

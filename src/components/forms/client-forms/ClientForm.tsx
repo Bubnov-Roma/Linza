@@ -37,7 +37,6 @@ export const ClientForm = () => {
 			clientType: "individual",
 			applicationData: {
 				personalData: {
-					phone: "+7",
 					email: user?.email ?? "",
 				},
 			},
@@ -87,7 +86,12 @@ export const ClientForm = () => {
 	}, []);
 
 	useEffect(() => {
-		const sub = watch((v) => triggerAutosave(v as Partial<ClientFormValues>));
+		const sub = watch((v) => {
+			const currentStatus = useApplicationStore.getState().status;
+			if (currentStatus === "DRAFT" || currentStatus === "NO_APPLICATION") {
+				triggerAutosave(v as Partial<ClientFormValues>);
+			}
+		});
 		return () => {
 			sub.unsubscribe();
 			if (saveTimer.current) clearTimeout(saveTimer.current);

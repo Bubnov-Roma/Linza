@@ -5,5 +5,6 @@ export * from "./error-handler";
 export * from "./group-equipment";
 export * from "./input-group.utils";
 export * from "./is-value-filled";
+export * from "./keyboard-layout";
 export * from "./pluralize";
 export * from "./slugify";

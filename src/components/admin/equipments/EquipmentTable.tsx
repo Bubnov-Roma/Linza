@@ -12,10 +12,8 @@ import {
 	CopySimpleIcon,
 	DotsThreeVerticalIcon,
 	FunnelSimpleIcon,
-	MagnifyingGlassIcon,
 	PencilSimpleIcon,
 	PlusIcon,
-	SmileyXEyesIcon,
 	SortDescendingIcon,
 	SparkleIcon,
 	StarIcon,
@@ -40,6 +38,7 @@ import {
 	toggleEquipmentFeaturedAction,
 	toggleEquipmentPrimaryAction,
 } from "@/actions/admin-equipment-actions";
+import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { FilterBuilder } from "@/components/admin/equipments/FilterBuilder";
 import { SortBuilder } from "@/components/admin/equipments/SortBuilder";
 import {
@@ -59,11 +58,8 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
+	InlineSearchInput,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -91,25 +87,6 @@ import { EquipmentSheet } from "./EquipmentSheet";
 const PAGE_SIZE = 25;
 
 const SKELETON_COUNT = 10;
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-	AVAILABLE: { label: "Свободно", color: "text-emerald-400" },
-	RENTED: { label: "В аренде", color: "text-blue-400" },
-	RESERVED: { label: "Забронировано", color: "text-amber-400" },
-	MAINTENANCE: { label: "Обслуживание", color: "text-orange-400" },
-	BROKEN: { label: "Неисправно", color: "text-red-400" },
-	ARCHIVED: { label: "Архив", color: "text-zinc-500" },
-};
-
-const BOOKING_STATUS_EQUIPMENT_LABELS: Record<
-	string,
-	{ label: string; color: string }
-> = {
-	PENDING_REVIEW: { label: "Проверка", color: "text-amber-400" },
-	WAIT_PAYMENT: { label: "Ожидает оплаты", color: "text-blue-400" },
-	READY_TO_RENT: { label: "К выдаче", color: "text-green-400" },
-	ACTIVE: { label: "В аренде", color: "text-emerald-400" },
-};
 
 function SortIcon({
 	column,
@@ -264,19 +241,13 @@ function FeaturedToggle({
 function AvailabilityToggle({
 	id,
 	isAvailable,
-	status,
 	onRefresh,
 }: {
 	id: string;
 	isAvailable: boolean;
-	status: string;
 	onRefresh: () => void;
 }) {
 	const [isPending, startTransition] = useTransition();
-	const info = STATUS_LABELS[status] ?? {
-		label: status,
-		color: "text-muted-foreground",
-	};
 
 	return (
 		<div className="flex flex-col gap-1 items-start">
@@ -285,14 +256,11 @@ function AvailabilityToggle({
 					<button
 						type="button"
 						disabled={isPending}
-						className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 hover:bg-foreground/5 transition-colors"
+						className={cn(
+							"flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-background/60 hover:bg-background transition-colors",
+							!isAvailable && "bg-red-300/40 hover:bg-red-300/50"
+						)}
 					>
-						<div
-							className={cn(
-								"h-1.5 w-1.5 rounded-full shrink-0",
-								isAvailable ? "bg-emerald-500" : "bg-red-500"
-							)}
-						/>
 						<span className="text-[10px] font-medium">
 							{isAvailable ? "Доступно" : "Скрыто"}
 						</span>
@@ -301,7 +269,7 @@ function AvailabilityToggle({
 				</DropdownMenuTrigger>
 				<DropdownMenuContent
 					align="center"
-					className="min-w-30 rounded-xl text-xs"
+					className="min-w-30 rounded-2xl text-xs brightness-125"
 					onClick={(e) => e.stopPropagation()}
 				>
 					<DropdownMenuItem
@@ -332,10 +300,6 @@ function AvailabilityToggle({
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-			{/* Статус состояния отдельной строкой */}
-			<span className={cn("text-[10px] ml-1 font-semibold", info.color)}>
-				{info.label}
-			</span>
 		</div>
 	);
 }
@@ -590,17 +554,15 @@ export default function EquipmentTable() {
 				<CardContent className="px-0 space-y-3 justify-between">
 					<div className="flex flex-col lg:flex-row items-center gap-2 flex-wrap">
 						<div className="flex flex-col flex-1 w-full sm:max-w-sm">
-							<InputGroup className="relative flex-1 glass-input min-h-9">
-								<InputGroupAddon>
-									<MagnifyingGlassIcon className="z-1 h-4 w-4 text-muted-foreground" />
-								</InputGroupAddon>
-								<InputGroupInput
-									placeholder="Название или инв. номер..."
-									className="pl-9 border-white/5 h-9"
-									value={search}
-									onChange={(e) => setSearchTerm(e.target.value)}
-								/>
-							</InputGroup>
+							<InlineSearchInput
+								value={search}
+								onChange={setSearchTerm}
+								placeholder="Название или инв. номер..."
+								fetchSuggestion={async (q) => {
+									const results = await getAutocompleteAction("equipment", q);
+									return results[0] || null;
+								}}
+							/>
 						</div>
 						<div className="flex gap-2 w-full sm:w-auto items-center flex-wrap justify-between">
 							{/* Filters */}
@@ -824,22 +786,15 @@ export default function EquipmentTable() {
 			</Card>
 
 			{/* Summary strip */}
-			<div className="flex items-center gap-4 text-sm text-muted-foreground px-3 justify-between">
+			<div className="flex items-center gap-4 text-sm text-muted-foreground px-3 justify-between min-h-8">
 				<span>
 					Найдено: <strong className="text-foreground">{totalCount}</strong>
 				</span>
-				{isFetching && !isLoading && (
-					<span className="text-primary-accent/60 flex items-center gap-1">
-						<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
-						Обновление...
-					</span>
-				)}
 				{selectedIds.size > 0 && (
 					<span className="text-primary font-medium">
 						Выбрано: {selectedIds.size}
 					</span>
 				)}
-
 				<div className="flex flex-1 flex-col sm:flex-row justify-between items-center pt-1 border-foreground/5 w-full">
 					{/* Active filter chips */}
 					{(filters.length > 0 || sorts.length > 0) && (
@@ -877,7 +832,12 @@ export default function EquipmentTable() {
 						</div>
 					)}
 				</div>
-
+				{isFetching && !isLoading && (
+					<span className="text-primary-accent/60 flex items-center gap-1">
+						<span className="w-2 h-2 border border-primary/40 border-t-primary rounded-full animate-spin" />
+						Обновление
+					</span>
+				)}
 				{totalPages > 1 && (
 					<div className="flex items-center gap-2 md:ml-auto w-auto">
 						<span className="text-xs text-muted-foreground hidden sm:inline">
@@ -909,15 +869,14 @@ export default function EquipmentTable() {
 
 			{totalCount === 0 && !isPending && !isLoading ? (
 				<div className="flex flex-col w-full items-center justify-center space-y-4 py-8 text-center">
-					<SmileyXEyesIcon size={80} weight="fill" />
-					<p className="text-3xl">Нет результатов</p>
+					<p className="text-3xl italic">Нет результатов</p>
 					<p className="text-muted-foreground">
 						Попробуйте обновить поиск или сбросить фильтры
 					</p>
 				</div>
 			) : (
 				<div className="px-3">
-					<Card className="overflow-hidden relative">
+					<Card className="overflow-hidden relative rounded-lg">
 						{/* NpLoader (Top Loading Bar) */}
 						<div
 							className={cn(
@@ -986,14 +945,6 @@ export default function EquipmentTable() {
 										>
 											<span className="flex items-center gap-1">
 												Доступность <SortIcon column="status" sorts={sorts} />
-											</span>
-										</TableHead>
-										<TableHead
-											className="min-w-28 cursor-pointer select-none hover:text-foreground transition-colors"
-											onClick={() => handleHeaderSort("status")}
-										>
-											<span className="flex items-center gap-1">
-												Аренда <SortIcon column="status" sorts={sorts} />
 											</span>
 										</TableHead>
 
@@ -1133,7 +1084,7 @@ export default function EquipmentTable() {
 															{subcategoryName && (
 																<Badge
 																	variant="outline"
-																	className="bg-background/50 text-[10px] font-normal border-white/10 text-muted-foreground"
+																	className="bg-background/50 text-[10px] font-normal border-foreground/10 text-muted-foreground"
 																>
 																	{subcategoryName}
 																</Badge>
@@ -1146,37 +1097,8 @@ export default function EquipmentTable() {
 															<AvailabilityToggle
 																id={item.id}
 																isAvailable={item.isAvailable}
-																status={item.status}
 																onRefresh={refreshData}
 															/>
-														</TableCell>
-														<TableCell>
-															{(() => {
-																const activeStatus = (
-																	item as unknown as {
-																		activeBookingStatus: string | null;
-																	}
-																).activeBookingStatus;
-																if (!activeStatus)
-																	return (
-																		<span className="text-xs text-muted-foreground/40">
-																			—
-																		</span>
-																	);
-																const cfg =
-																	BOOKING_STATUS_EQUIPMENT_LABELS[activeStatus];
-																if (!cfg) return null;
-																return (
-																	<span
-																		className={cn(
-																			"text-xs font-medium",
-																			cfg.color
-																		)}
-																	>
-																		{cfg.label}
-																	</span>
-																);
-															})()}
 														</TableCell>
 
 														{viewMode === "extended" && (
@@ -1229,34 +1151,44 @@ export default function EquipmentTable() {
 																	<Button
 																		variant="ghost"
 																		size="icon"
-																		className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+																		className="h-8 w-8 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
 																	>
 																		<DotsThreeVerticalIcon className="h-4 w-4" />
 																	</Button>
 																</DropdownMenuTrigger>
 																<DropdownMenuContent
 																	align="end"
-																	className="w-48 bg-white/20 border-white/10"
+																	className="w-48 bg-foreg/20 border-white/10 brightness-125 rounded-2xl"
 																>
 																	<DropdownMenuItem
+																		className="rounded-2xl"
 																		onClick={() => setActiveEquipment(item)}
 																	>
-																		<PencilSimpleIcon className="w-4 h-4 mr-2" />{" "}
+																		<PencilSimpleIcon
+																			weight="duotone"
+																			className="w-4 h-4 mr-2"
+																		/>{" "}
 																		Редактировать
 																	</DropdownMenuItem>
 																	<DropdownMenuItem
+																		className="rounded-2xl"
 																		onClick={() => handleDuplicate(item.id)}
 																	>
-																		<CopySimpleIcon className="w-4 h-4 mr-2" />{" "}
+																		<CopySimpleIcon
+																			weight="duotone"
+																			className="w-4 h-4 mr-2"
+																		/>{" "}
 																		Создать копию
 																	</DropdownMenuItem>
-																	<DropdownMenuSeparator className="bg-white/5" />
 																	<DropdownMenuItem
-																		className="text-red-500 focus:text-red-500"
+																		className="text-red-500 focus:text-red-500 rounded-2xl"
 																		onClick={() => handleDelete(item.id)}
 																	>
-																		<TrashIcon className="w-4 h-4 mr-2" />{" "}
-																		Удалить
+																		<TrashIcon
+																			weight="duotone"
+																			className="w-4 h-4 mr-2"
+																		/>{" "}
+																		Удалить позицию
 																	</DropdownMenuItem>
 																</DropdownMenuContent>
 															</DropdownMenu>
@@ -1269,7 +1201,7 @@ export default function EquipmentTable() {
 						</div>
 
 						{totalPages > 1 && (
-							<div className="flex items-center justify-between px-4 py-3 bg-foreground/10 rounded-2xl border-foreground/5 mt-2">
+							<div className="flex items-center justify-between px-4 py-3 bg-foreground/10 rounded-md border-foreground/5 mt-2">
 								<span className="text-xs text-muted-foreground">
 									Страница {page} из {totalPages}
 								</span>

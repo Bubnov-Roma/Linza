@@ -195,36 +195,38 @@ export function SettingsClient({
 							</div>
 						</CardContent>
 					</Card>
-					{/* Юридические документы */}
-
-					<Card className="py-6 lg:col-span-1">
-						<CardHeader>
-							<CardTitle>Юридические документы</CardTitle>
-							<CardDescription>Редактор в формате Markdown</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-6">
-							<MarkdownEditor
-								label="Политика конфиденциальности"
-								value={formData.privacyPolicy}
-								onChange={(val) =>
-									setFormData({ ...formData, privacyPolicy: val })
-								}
-								rows={12}
-							/>
-							<MarkdownEditor
-								label="Договор оферты (Terms of Service)"
-								value={formData.termsOfService}
-								onChange={(val) =>
-									setFormData({ ...formData, termsOfService: val })
-								}
-								rows={12}
-							/>
-						</CardContent>
-					</Card>
+				</div>
+				<div className="flex flex-col gap-6 lg:flex-row lg:col-span-2 w-full">
+					<PromoCodesSection />
+					<AdminManagementSection />
 				</div>
 
-				<PromoCodesSection />
-				<AdminManagementSection />
+				{/* Юридические документы */}
+
+				<Card className="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Юридические документы</CardTitle>
+						<CardDescription>Редактор в формате Markdown</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<MarkdownEditor
+							label="Политика конфиденциальности"
+							value={formData.privacyPolicy}
+							onChange={(val) =>
+								setFormData({ ...formData, privacyPolicy: val })
+							}
+							rows={12}
+						/>
+						<MarkdownEditor
+							label="Договор оферты (Terms of Service)"
+							value={formData.termsOfService}
+							onChange={(val) =>
+								setFormData({ ...formData, termsOfService: val })
+							}
+							rows={12}
+						/>
+					</CardContent>
+				</Card>
 
 				<div className="lg:col-span-2 flex justify-end">
 					<Button

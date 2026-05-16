@@ -18,6 +18,7 @@ export * from "./fab";
 export * from "./field";
 export * from "./form";
 export * from "./hover-card";
+export * from "./InlineSearchInput";
 export * from "./input";
 export * from "./input-group";
 export * from "./input-group";

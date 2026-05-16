@@ -362,13 +362,6 @@ export function EventsBanner({ banners }: { banners: Banner[] }) {
 		[banners.length]
 	);
 
-	// Автопрокрутка
-	// useEffect(() => {
-	// 	if (banners.length <= 1 || activeBanner) return;
-	// 	const id = setInterval(next, 7000);
-	// 	return () => clearInterval(id);
-	// }, [next, banners.length, activeBanner]);
-
 	// Свайп
 	const onTouchStart = (e: React.TouchEvent) => {
 		touchStartX.current = e.touches[0]?.clientX ?? null;

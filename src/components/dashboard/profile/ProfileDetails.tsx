@@ -1,23 +1,25 @@
 "use client";
 
 import {
+	ArrowClockwiseIcon,
 	ArrowLeftIcon,
 	ArrowSquareOutIcon,
 	EnvelopeIcon,
+	EnvelopeOpenIcon,
 	GlobeIcon,
 	ImageIcon,
 	LockIcon,
-	PencilIcon,
+	MonitorIcon,
 	PhoneIcon,
 	PlusIcon,
 	TelegramLogoIcon,
 	TrashIcon,
 	UserIcon,
-	UserSwitchIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
+import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteImageAction } from "@/actions/upload-actions";
@@ -32,6 +34,7 @@ import { ApplicationDataEditor } from "@/components/dashboard/profile/Applicatio
 import { VerificationBadge } from "@/components/forms";
 import { ThemeCard } from "@/components/layouts/ThemeToggle";
 import {
+	BasePhoneInput,
 	ImageUploader,
 	InlineEditField,
 	SignOutButton,
@@ -155,8 +158,8 @@ export function ProfileDetails({
 			{/* ── Hero ───────────────────────────────────────────────────────── */}
 			<div className="card-hero">
 				<div className="flex flex-col sm:flex-row items-center gap-5 p-5 sm:p-6">
-					<div className="relative group shrink-0">
-						<div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl avatar-container">
+					<div className="relative group shrink-0 w-full sm:w-auto">
+						<div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl avatar-container mx-auto">
 							{avatarUrl ? (
 								<Image
 									key={avatarUrl}
@@ -187,22 +190,21 @@ export function ProfileDetails({
 									setShowAvatarUploader((v) => !v);
 								}
 							}}
-							className={`avatar-edit-overlay rounded-2xl ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+							className={`w-full avatar-edit-overlay rounded-2xl ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
 						>
 							{uploading ? (
-								<div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+								<div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-2xl animate-spin" />
 							) : avatarUrl ? (
-								<div className="flex-col items-center gap-3">
+								<div className="w-full flex flex-row sm:flex-col gap-1 justify-between items-center my-auto">
 									<Button
 										variant="brand"
-										className="flex flex-col items-center gap-1 group/btn w-full hover:bg-background/50"
+										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-background/60 rounded-2xl"
 									>
-										<PencilIcon size={14} className="text-foreground/80" />
-										<span className="text-[9px] font-bold uppercase tracking-wider text-foreground/60">
+										<ImageIcon size={14} />
+										<span className="text-[10px] font-bold uppercase tracking-wider">
 											Изменить
 										</span>
 									</Button>
-									<div className="w-full h-px my-0.5 bg-foreground/10" />
 									<Button
 										variant="brand"
 										onClick={(e) => {
@@ -210,10 +212,10 @@ export function ProfileDetails({
 											handleAvatarDelete();
 										}}
 										disabled={uploading}
-										className="flex flex-col items-center gap-1 w-full hover:bg-background/50"
+										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-background/50 rounded-2xl"
 									>
-										<TrashIcon size={14} className="text-destructive/80" />
-										<span className="text-[9px] font-bold uppercase tracking-wider text-destructive/60">
+										<TrashIcon size={14} />
+										<span className="text-[10px] font-bold uppercase tracking-wider">
 											Удалить
 										</span>
 									</Button>
@@ -221,7 +223,7 @@ export function ProfileDetails({
 							) : (
 								<div className="flex flex-col items-center gap-1">
 									<ImageIcon size={16} className="text-foreground" />
-									<span className="text-[9px] font-bold uppercase tracking-wider text-foreground/60">
+									<span className="text-[9px] font-bold uppercase tracking-wider text-foreground">
 										Загрузить
 									</span>
 								</div>
@@ -366,21 +368,17 @@ export function ProfileDetails({
 			{/* ── Settings tab ───────────────────────────────────────────────── */}
 			{activeTab === "settings" && (
 				<div className="space-y-4 animate-in fade-in duration-200">
-					<SectionCard title="Оформление">
+					<SectionCard icon={<MonitorIcon size={14} />} title="Тема интерфейса">
 						<div className="p-5">
-							<p className="text-sm text-muted-foreground mb-4">
-								Тема интерфейса
-							</p>
 							<ThemeCard />
 						</div>
 					</SectionCard>
 					{/* Nickname */}
-					<SectionCard title="Никнейм">
+					<SectionCard icon={<UserIcon size={14} />} title="Никнейм">
 						<div className="px-5 py-4">
 							<InlineEditField
 								value={nickname ?? ""}
-								placeholder="@nickname или отображаемое имя"
-								icon={<UserIcon size={14} />}
+								placeholder="Super-User"
 								onSave={async (val) => {
 									await updateUserFieldAction("nickname", val);
 									await refreshProfile({ nickname: val });
@@ -396,25 +394,15 @@ export function ProfileDetails({
 						</p>
 					</SectionCard>
 					{/* Email change */}
-					<SectionCard title="Email-адрес">
-						<div className="detail-row">
-							<div className="flex items-center gap-3 min-w-0">
-								<EnvelopeIcon
-									size={14}
-									className="text-muted-foreground/40 shrink-0"
-								/>
-								<span className="text-sm truncate">{user?.email}</span>
-							</div>
-							<span className="text-[10px] uppercase font-bold tracking-wider text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full shrink-0 ml-2">
-								Основной
-							</span>
-						</div>
-						<div className="px-5 pb-4">
+					<SectionCard
+						title="Email-адрес"
+						icon={<EnvelopeOpenIcon size={14} />}
+					>
+						<div className="px-5 py-4">
 							<InlineEditField
 								value=""
 								placeholder="Новый email"
 								type="email"
-								icon={<EnvelopeIcon size={14} />}
 								onSave={async (val) => {
 									if (!val.includes("@")) throw new Error("Некорректный email");
 									await updateUserFieldAction("email", val);
@@ -426,38 +414,40 @@ export function ProfileDetails({
 								onCancel={() => {}}
 							/>
 						</div>
+						<p className="px-5 pb-3 text-[11px] text-muted-foreground/40">
+							Запасной email для доступа к профилю
+						</p>
 					</SectionCard>
 					{/* Extra phone */}
-					<SectionCard title="Дополнительный телефон">
+					<SectionCard icon={<PhoneIcon size={14} />} title="Доп. телефон">
 						<div className="px-5 py-4">
 							<InlineEditField
 								value={(user?.user_metadata?.extra_phone as string) ?? ""}
-								placeholder="+7 (___) ___-__-__"
-								type="tel"
-								icon={<PhoneIcon size={14} />}
 								onSave={async (val) => {
 									await updateUserFieldAction("extraPhone", val);
 									await refreshProfile({ extraPhone: val });
-									toast.success(
-										val.trim() ? "Доп. телефон сохранён" : "Доп. телефон удалён"
-									);
+									toast.success("Доп. телефон сохранён");
 								}}
-								onCancel={() => {}}
+								renderInput={(value, onChange, onKeyDown) => (
+									<BasePhoneInput
+										value={value}
+										onChange={onChange}
+										onKeyDown={onKeyDown}
+									/>
+								)}
 							/>
 						</div>
+						<p className="px-5 pb-3 text-[11px] text-muted-foreground/40">
+							На случай, если основной номер будет недоступен.
+						</p>
 					</SectionCard>
 					{/* Password Settings */}
-					<SectionCard title="Безопасность">
-						<div className="px-5 py-4 space-y-4">
-							<p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-								Установите пароль, если хотите входить в систему без
-								использования почтовой ссылки.
-							</p>
+					<SectionCard icon={<LockIcon size={14} />} title="Безопасность">
+						<div className="px-5 py-4">
 							<InlineEditField
 								value=""
 								type="password"
-								placeholder="Новый пароль"
-								icon={<LockIcon size={14} />}
+								placeholder="Постоянный пароль"
 								onSave={async (val) => {
 									// Валидация на фронте (минимум 8 символов)
 									if (val.length < 8) throw new Error("Минимум 8 символов");
@@ -471,6 +461,9 @@ export function ProfileDetails({
 								onCancel={() => {}}
 							/>
 						</div>
+						<p className="px-5 pb-3 text-[11px] text-muted-foreground/40">
+							Для входа в систему без использования почтовой ссылки.
+						</p>
 					</SectionCard>
 					{/* Logout */}
 					<SignOutButton />
@@ -478,10 +471,13 @@ export function ProfileDetails({
 					{(status === "APPROVED" || status === "STANDARD") && (
 						<button
 							type="button"
-							onClick={() => setActiveTab("update_data")}
-							className="cursor-pointer w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-primary/10 bg-secondary/30 text-primary-accent/60 hover:text-primary-accent hover:bg-secondary/60 transition-colors"
+							onClick={() => {
+								setActiveTab("update_data");
+								window.scrollTo({ top: 0, behavior: "smooth" });
+							}}
+							className="cursor-pointer w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-primary-accent/10 bg-primary/5 text-primary-accent/70 hover:text-primary-accent hover:bg-secondary/60 transition-colors"
 						>
-							<UserSwitchIcon size={16} />
+							<ArrowClockwiseIcon size={16} />
 							<span className="text-md font-medium">Обновить данные</span>
 						</button>
 					)}
@@ -541,7 +537,7 @@ export function ProfileDetails({
 							</AlertDialogTitle>
 						</div>
 						<AlertDialogDescription className="space-y-2 text-left">
-							<p>Аккаунт будет помечен к удалению.</p>
+							<span className="block">Аккаунт будет помечен к удалению.</span>
 							<span>
 								У вас есть{" "}
 								<strong className="font-black font-mono text-red-500 px-2">
@@ -703,13 +699,16 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 function SectionCard({
 	title,
 	children,
+	icon,
 }: {
 	title: string;
 	children: React.ReactNode;
+	icon?: React.ReactNode;
 }) {
 	return (
 		<div className="card-surface">
 			<div className="card-section-header">
+				{icon}
 				<p className="card-section-label">{title}</p>
 			</div>
 			<div className="divide-y divide-foreground/5">{children}</div>

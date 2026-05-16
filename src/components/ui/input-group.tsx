@@ -143,7 +143,7 @@ function InputGroupInput({
 			data-slot="input-group-control"
 			className={cn(
 				"flex-1 h-full w-full bg-transparent border-none outline-none px-3",
-				"text-base md:text-sm placeholder:text-foreground/30",
+				"text-base md:text-sm placeholder:text-foreground/20",
 				"focus:ring-0 focus:outline-none",
 				"disabled:cursor-not-allowed disabled:opacity-50",
 				className

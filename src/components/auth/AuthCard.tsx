@@ -1,8 +1,7 @@
 "use client";
 
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import Link from "next/link";
-import { Logo } from "@/components/icons/Logo";
-import { RainbowSpinner } from "@/components/shared";
 import { cn } from "@/lib/utils";
 
 export interface AuthFooterLink {
@@ -38,16 +37,6 @@ export function AuthCard({
 			)}
 		>
 			<div className="text-center space-y-2">
-				{!isModal && (
-					<div className="flex items-center justify-center">
-						<Link
-							href="/"
-							className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity pb-4 duration-500"
-						>
-							<Logo size={30} className="text-primary shadow-primary/30" />
-						</Link>
-					</div>
-				)}
 				<h1
 					className={cn(
 						"font-bold tracking-tight text-foreground",
@@ -64,7 +53,7 @@ export function AuthCard({
 			<div className="relative">
 				{isLoading && (
 					<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-xl">
-						<RainbowSpinner size={50} />
+						<CircleNotchIcon size={50} className="text-primary animate-spin" />
 					</div>
 				)}
 				<div className={cn(isModal ? "py-2" : "p-2")}>{children}</div>

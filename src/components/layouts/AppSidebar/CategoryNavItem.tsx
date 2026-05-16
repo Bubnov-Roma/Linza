@@ -63,11 +63,11 @@ export function CategoryNavItem({
 					>
 						<Link
 							href={catHref}
-							className="flex flex-col items-center justify-center gap-1 w-full h-full"
+							className="flex flex-col items-center justify-center gap-1 w-full h-full hover:shadow-sm active:scale-95 active:shadow-none"
 						>
 							<div
 								className={cn(
-									"flex items-center justify-center h-10 w-14 rounded-xl transition-colors text-muted-foreground",
+									"flex items-center justify-center w-full h-full rounded-xl transition-colors text-muted-foreground",
 									inCat
 										? "bg-muted-foreground/10"
 										: "group-hover/btn:bg-muted-foreground/5 group-hover/btn:shadow-sm"

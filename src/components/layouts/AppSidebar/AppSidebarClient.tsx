@@ -118,19 +118,17 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 										className={cn(
 											"flex",
 											isCollapsed
-												? "flex-col items-center justify-center gap-1 w-full h-full"
+												? "flex-col items-center justify-center gap-1 w-full h-full hover:shadow-sm hover:bg- active:scale-95 active:shadow-none hover:bg-muted-foreground/10"
 												: "items-center w-full"
 										)}
 									>
 										<div
 											className={cn(
-												"flex items-center justify-center shrink-0",
-												isCollapsed
-													? "h-10 w-14 rounded-xl transition-colors"
-													: "w-6",
+												"w-full h-full flex items-center justify-center shrink-0",
+												isCollapsed ? "transition-colors" : "w-6",
 												isCollapsed && isAllEquipment
-													? "bg-muted-foreground/10 text-primary"
-													: "text-muted-foreground group-hover/btn:bg-muted-foreground/5 group-hover/btn:shadow-sm"
+													? "bg-muted-foreground/10"
+													: "text-muted-foreground"
 											)}
 										>
 											<RenderIcon
@@ -138,22 +136,14 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 												isActive={isAllEquipment}
 											/>
 										</div>
-										{/* {isCollapsed ? (
-											<span
-												className={cn(
-													"text-[10px] font-medium leading-none w-full text-center px-1 truncate",
-													isAllEquipment
-														? "text-foreground font-bold"
-														: "text-muted-foreground"
-												)}
-											>
-												Весь каталог
-											</span>
-										) : ( */}
-										<span className="font-medium text-base truncate ml-3 flex-1 text-left">
+										<span
+											className={cn(
+												"font-medium text-base truncate ml-3 flex-1 text-left",
+												isCollapsed && "hidden"
+											)}
+										>
 											Весь каталог
 										</span>
-										{/* )} */}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -176,13 +166,7 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 				{isAdmin && (
 					<SidebarGroup className={cn("mt-4", isCollapsed && "mt-12")}>
 						<SidebarGroupLabel
-							className={cn(
-								"opacity-0 h-0 mb-0 overflow-hidden"
-								// "px-2 mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/50 transition-opacity",
-								// isCollapsed
-								// ? "opacity-0 h-0 mb-0 overflow-hidden"
-								// : "opacity-100"
-							)}
+							className={cn("opacity-0 h-0 mb-0 overflow-hidden")}
 						>
 							Меню
 						</SidebarGroupLabel>
@@ -216,20 +200,20 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 											<Link
 												href={item.href}
 												className={cn(
-													"flex hover:shadow-sm hover:bg-muted-foreground/5",
+													"flex hover:shadow-sm hover:bg-muted-foreground/5 active:scale-95 active:shadow-none",
 													isCollapsed
-														? "flex-col items-center justify-center gap-1 w-full h-full "
+														? "flex-col items-center justify-center gap-1 w-full h-full"
 														: "items-center w-full"
 												)}
 											>
 												<div
 													className={cn(
-														"flex items-center justify-center shrink-0 rounded-md",
+														"flex items-center justify-center shrink-0 ",
 														isCollapsed
-															? "h-10 w-14 rounded-xl transition-colors"
+															? "w-full h-full transition-colors"
 															: "w-6",
 														isCollapsed && isActive
-															? "bg-muted-foreground/10 text-primary"
+															? "bg-muted-foreground/10 inset-ring-foreground"
 															: "text-muted-foreground"
 													)}
 												>
@@ -263,9 +247,8 @@ export function AppSidebarClient({ isAdmin, categories }: Props) {
 			</SidebarContent>
 
 			{/* ── FOOTER ── */}
-
-			<SidebarFooter className="p-4 mx-auto border-t border-primary/5">
-				<UserMenu isAdmin={isAdmin} />
+			<SidebarFooter className="p-4 mx-auto">
+				<UserMenu isAdmin={isAdmin} variant="sidebar" />
 			</SidebarFooter>
 		</>
 	);

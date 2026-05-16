@@ -23,7 +23,7 @@ import {
 	Button,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import type { ClientFormValues } from "@/schemas";
+import { type ClientFormValues, phoneRegex } from "@/schemas";
 import { useApplicationStore } from "@/store";
 import { deepSetClient } from "@/utils";
 import { getClientDisplayData } from "@/utils/client-data.utils";
@@ -31,12 +31,11 @@ import { getClientDisplayData } from "@/utils/client-data.utils";
 // ── Per-field Zod validators (slices of the main schema) ─────────────────────
 
 const nameSchema = z.string().min(6, "Введите полное ФИО");
-const phoneRegex = /^\+7\(\d{3}\)\d{3}-\d{2}-\d{2}$/;
 const phoneSchema = z
 	.string()
 	.min(1, "Укажите номер")
 	.transform((v) => v.replace(/\s/g, ""))
-	.pipe(z.string().regex(phoneRegex, "Формат: +7(XXX)XXX-XX-XX"));
+	.pipe(z.string().regex(phoneRegex, "Формат: +X(XXX)XXX-XX-XX"));
 
 const passportNumberSchema = z
 	.string()
@@ -374,7 +373,7 @@ function AccordionSection({
 				className="w-full card-section-header flex items-center justify-between hover:bg-foreground/2 transition-colors"
 			>
 				<div className="flex items-center gap-2">
-					<span className="text-primary/60">{icon}</span>
+					<span className="text-foreground">{icon}</span>
 					<p className="card-section-label">{title}</p>
 				</div>
 				<span

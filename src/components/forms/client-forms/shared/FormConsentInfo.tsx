@@ -17,9 +17,10 @@ export const FormConsentInfo = ({
 				<motion.p
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
-					className="text-[10px] md:text-xs text-center text-orange-400/80 font-medium py-2"
+					className="text-[10px] md:text-xs text-center text-orange-400 font-medium py-2"
 				>
-					Для отправки анкеты, пожалуйста, заполните все обязательные поля
+					Для отправки анкеты, пожалуйста, заполните все обязательные{" "}
+					<span className="text-blue-400/60 font-black">*</span> поля
 				</motion.p>
 			) : (
 				<SubmitButton isSubmitting={isSubmitting} disabled={!canSubmit} />

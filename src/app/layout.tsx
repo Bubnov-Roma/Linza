@@ -31,6 +31,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
+	metadataBase: new URL("https://linzarental.ru"),
 	title: "Linza | Прокат фото и видео оборудования в Самаре",
 	description:
 		"Аренда профессиональной фото- и видеотехники в Самаре. Широкий выбор камер, объективов, света и звука. Бронируйте онлайн на сайте Linza.",

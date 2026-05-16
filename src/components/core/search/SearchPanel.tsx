@@ -17,7 +17,6 @@ import { SearchFilters } from "@/components/core/search/SearchFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
 	DbCategory,
-	DbEquipment,
 	GroupedEquipment,
 } from "@/core/domain/entities/Equipment";
 import type { SearchPanelState } from "@/hooks";
@@ -102,7 +101,7 @@ export function SearchPanel({
 		// Найти UUID категории по slug
 		const catId = categories.find((c) => c.slug === category)?.id;
 
-		return allResults.filter((item: DbEquipment) => {
+		return allResults.filter((item: GroupedEquipment) => {
 			const catMatch = catId ? item.categoryId === catId : true;
 			if (!subcategory) return catMatch;
 			// Найти UUID подкатегории по slug
@@ -115,9 +114,10 @@ export function SearchPanel({
 	}, [allResults, category, subcategory, categories]);
 
 	const handleItemClick = useCallback(
-		(item: DbEquipment) => {
+		(item: GroupedEquipment) => {
 			addToHistory(item.title);
-			router.push(`/equipment/item/${slugify(item.title)}`);
+			const slug = item.slug || slugify(item.title);
+			router.push(`/equipment/item/${slug}`);
 			onClose?.();
 		},
 		[addToHistory, router, onClose]
@@ -181,7 +181,7 @@ export function SearchPanel({
 								>
 									<button
 										type="button"
-										className="flex items-center gap-3 flex-1 px-3 py-2.5 text-left text-sm"
+										className="flex items-center gap-3 flex-1 px-3 py-2.5 text-left truncate md:text-sm max-w-full overflow-hidden whitespace-nowrap text-ellipsis"
 										onClick={() => setQuery(term)}
 									>
 										<ClockCounterClockwiseIcon
@@ -194,7 +194,7 @@ export function SearchPanel({
 									<button
 										type="button"
 										onClick={() => removeFromHistory(term)}
-										className="opacity-0 group-hover/h:opacity-100 transition-opacity mr-2 p-1.5 hover:bg-foreground/10 rounded-lg shrink-0"
+										className="opacity-100 md:opacity-0 group-hover/h:opacity-100 transition-opacity mr-2 p-1.5 hover:bg-foreground/10 rounded-lg shrink-0"
 									>
 										<XIcon size={11} className="text-muted-foreground" />
 									</button>
@@ -238,6 +238,7 @@ export function SearchPanel({
 										>
 											<Image
 												src={
+													item.imageUrl ||
 													item.equipmentImageLinks?.[0]?.image?.url ||
 													"/placeholder-equipment.png"
 												}
@@ -266,7 +267,7 @@ export function SearchPanel({
 											"shrink-0 mr-2 transition-opacity",
 											!inCart &&
 												isDesktop &&
-												"opacity-0 group-hover/item:opacity-100"
+												"opacity-100 md:opacity-0 group-hover/item:opacity-100"
 										)}
 									>
 										<AddToCartButton

@@ -75,7 +75,7 @@ export function PriceSelector({
 			: null;
 
 	return (
-		<div className={cn("flex flex-col gap-4", className)}>
+		<div className={cn("flex flex-col gap-6", className)}>
 			{/* ── Tabs/Pills */}
 			<div className="flex p-1 gap-1 rounded-2xl bg-secondary/50 border border-foreground/5">
 				{OPTIONS.map((opt) => {
@@ -91,7 +91,7 @@ export function PriceSelector({
 							type="button"
 							onClick={() => handlePeriodClick(opt.id)}
 							className={cn(
-								"relative flex-1 flex flex-col items-center py-2 px-1 rounded-xl transition-all duration-300",
+								"relative flex-1 flex flex-col items-center py-2 px-1 rounded-xl transition-all duration-300 cursor-pointer",
 								isSelected
 									? "bg-background shadow-md text-foreground"
 									: "text-muted-foreground hover:bg-muted-foreground/10"

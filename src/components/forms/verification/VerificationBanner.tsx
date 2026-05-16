@@ -32,8 +32,7 @@ export function VerificationBanner() {
 						<p>без залога</p>
 					</DialogTitle>
 					<DialogDescription className="text-muted-foreground text-sm sm:text-base flex text-center">
-						Заполните анкету один раз чтобы арендовать без страхового депозита
-						всегда.
+						Заполните анкету, чтобы арендовать технику без страхового депозита.
 					</DialogDescription>
 				</DialogHeader>
 				<Button asChild size="xl" className="rounded-3xl font-black border-0">

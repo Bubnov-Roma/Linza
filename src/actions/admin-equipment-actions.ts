@@ -12,7 +12,7 @@ import type {
 	RawEquipmentRow,
 } from "@/core/domain/entities/Equipment";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/utils";
+import { getSearchVariations, slugify } from "@/utils";
 import { groupEquipmentRows } from "@/utils/group-equipment";
 
 // ─── TYPES & HELPERS ────────────────────────────────────────────────────────
@@ -73,11 +73,16 @@ function buildPrismaWhere(
 	const where: Prisma.EquipmentWhereInput = {};
 
 	if (search) {
-		where.OR = [
-			{ title: { contains: search, mode: "insensitive" } },
-			{ description: { contains: search, mode: "insensitive" } },
-			{ inventoryNumber: { contains: search, mode: "insensitive" } },
-		];
+		const baseTerms = [...new Set(search.split(" ").filter(Boolean))];
+
+		const allVariations = baseTerms.flatMap((term) =>
+			getSearchVariations(term)
+		);
+		where.OR = allVariations.flatMap((term) => [
+			{ title: { contains: term, mode: "insensitive" } },
+			{ description: { contains: term, mode: "insensitive" } },
+			{ inventoryNumber: { contains: term, mode: "insensitive" } },
+		]);
 	}
 
 	if (filters && filters.length > 0) {

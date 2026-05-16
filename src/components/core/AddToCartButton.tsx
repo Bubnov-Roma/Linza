@@ -260,7 +260,7 @@ export function AddToCartButton({
 				type="button"
 				onClick={handleAdd}
 				className={cn(
-					"w-full flex items-center justify-center gap-2 rounded-xl px-2.5",
+					"cursor-pointer w-full flex items-center justify-center gap-2 rounded-2xl px-2.5",
 					"bg-primary text-primary-foreground font-bold transition-all",
 					"hover:shadow-lg hover:shadow-primary/30 active:scale-95",
 					s.h,
@@ -277,7 +277,7 @@ export function AddToCartButton({
 	return (
 		<div
 			className={cn(
-				"w-full flex items-center rounded-xl overflow-hidden border border-foreground/30 bg-foreground/5",
+				"w-full flex items-center rounded-2xl overflow-hidden border border-foreground/30 bg-foreground/5",
 				"animate-in fade-in zoom-in-95 duration-200",
 				s.h,
 				className
@@ -287,9 +287,8 @@ export function AddToCartButton({
 				type="button"
 				onClick={handleRemove}
 				className={cn(
-					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 active:scale-90",
+					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 rounded-2xl active:scale-80",
 					"w-10"
-					// s.side // убедитесь, что здесь нет конфликтующей ширины
 				)}
 			>
 				<MinusIcon size={18} className="text-foreground" />
@@ -310,10 +309,10 @@ export function AddToCartButton({
 				onClick={handleAdd}
 				disabled={quantity >= (item.availableCount || 99)}
 				className={cn(
-					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 active:scale-90",
+					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 rounded-2xl active:scale-80",
 					"disabled:opacity-20",
-					"w-10"
-					// s.side
+					"w-10",
+					quantity >= (item.availableCount || 99) && "cursor-not-allowed"
 				)}
 			>
 				<PlusIcon size={18} />

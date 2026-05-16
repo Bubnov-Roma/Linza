@@ -1,6 +1,6 @@
+import { CircleNotchIcon } from "@phosphor-icons/react/dist/ssr";
 import { Suspense } from "react";
 import { AuthFormController } from "@/components/auth/AuthFormController";
-import { RainbowSpinner } from "@/components/shared";
 
 export default async function AuthPage({
 	searchParams,
@@ -15,7 +15,7 @@ export default async function AuthPage({
 			<Suspense
 				fallback={
 					<div className="flex h-64 items-center justify-center">
-						<RainbowSpinner size={50} />
+						<CircleNotchIcon size={50} className="text-primary animate-spin" />
 					</div>
 				}
 			>

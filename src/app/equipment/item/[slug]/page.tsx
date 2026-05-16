@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getEquipmentBySlug } from "@/actions/admin-equipment-actions";
@@ -13,6 +14,47 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+
+// dynamic metadata
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+	const { slug } = await params;
+	const equipment = await getEquipmentBySlug(slug);
+
+	if (!equipment) {
+		return {
+			title: "Оборудование не найдено | Linza",
+		};
+	}
+
+	const ogImage = equipment.imageUrl || "https://linzarental.ru/og-image.png";
+
+	return {
+		title: `${equipment.title} – аренда в Самаре | Linza`,
+		description: equipment.description || `Аренда ${equipment.title} в Самаре.`,
+		openGraph: {
+			title: equipment.title,
+			description:
+				equipment.description || `Аренда ${equipment.title} в Самаре.`,
+			url: `https://linzarental.ru/equipment/item/${equipment.slug}`,
+			images: [
+				{
+					url: ogImage,
+					width: 1200,
+					height: 630,
+					alt: equipment.title,
+				},
+			],
+			type: "website",
+		},
+		alternates: {
+			canonical: `/equipment/item/${equipment.slug}`,
+		},
+	};
+}
 
 export default async function EquipmentDetailsPage({
 	params,

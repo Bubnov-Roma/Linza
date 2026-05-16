@@ -11,7 +11,7 @@ export const RenderIcon = ({
 	<Icon
 		className={cn(
 			"duration-300 transition-all ease-out size-6!",
-			"group-hover/btn:-translate-y-0.5 group-hover/btn:scale-110  group-hover/btn:text-foreground",
+			"group-hover/btn:-translate-y-0.5 group-hover/btn:scale-110 group-hover/btn:text-foreground",
 			isActive
 				? "text-foreground opacity-100"
 				: "opacity-70 group-hover/btn:opacity-100 text-muted-foreground"

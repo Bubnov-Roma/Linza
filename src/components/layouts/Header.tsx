@@ -4,7 +4,6 @@ import {
 	AddressBookIcon,
 	EnvelopeSimpleIcon,
 	InfoIcon,
-	ListIcon,
 	MagnifyingGlassIcon,
 	MapPinIcon,
 	PhoneIcon,
@@ -20,6 +19,7 @@ import { useRef, useState } from "react";
 import { useOnClickOutside } from "usehooks-ts";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
 import { Logo } from "@/components/icons/Logo";
+import { ThemeIconButton } from "@/components/layouts/ThemeToggle";
 import {
 	Button,
 	Collapsible,
@@ -89,27 +89,37 @@ export function Header({ categories, support }: HeaderProps) {
 			className={cn(
 				"fixed top-0 left-0 right-0 z-5",
 				!isCollapsed && "md:left-(--sidebar-width)",
-				"transition-[left] duration-300 ease-in-out",
-				"flex h-16 items-center justify-between gap-4 border-b border-foreground/5 bg-background/60 px-4 md:px-6 backdrop-blur-xl group"
+				"transition-[left] duration-300 ease-in-out border-b border-foreground/5 bg-background/60",
+				"flex h-16 items-center justify-between gap-4 px-4 md:px-6 md:backdrop-blur-lg group "
 			)}
 		>
 			{/* ── Mobile: Лого + Гамбургер меню ── */}
-			<div className="md:hidden flex items-center gap-3">
+			<div className="md:hidden flex items-center justify-between gap-3 w-full">
 				<Sheet>
 					<SheetTrigger asChild>
-						<Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
-							<ListIcon size={24} className="text-foreground" />
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-10 w-10 scale-100 shrink-0 backdrop-blur-xs drop-shadow-xl rounded-xl backdrop-invert-10 backdrop-brightness-120"
+						>
+							<SidebarSimpleIcon
+								weight="fill"
+								size={24}
+								className="text-foreground drop-shadow-xl drop-shadow-background"
+							/>
 						</Button>
 					</SheetTrigger>
 					<SheetContent side="left" className="flex flex-col w-75 p-0">
 						<SheetHeader className="p-6 border-b border-foreground/5 text-left">
 							<SheetTitle className="flex items-center gap-2">
-								<div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0">
-									<Logo className="max-h-5 w-auto text-primary-foreground pl-0.5" />
-								</div>
-								<span className="font-black tracking-tighter text-lg">
-									LINZA
-								</span>
+								<Link href="/" className="flex items-center gap-3 group">
+									<div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-primary-foreground transition-transform group-hover:scale-105">
+										<Logo className="text-background p-1" />
+									</div>
+									<span className="text-2xl font-black tracking-tighter">
+										LINZA
+									</span>
+								</Link>
 							</SheetTitle>
 						</SheetHeader>
 
@@ -129,14 +139,27 @@ export function Header({ categories, support }: HeaderProps) {
 							</nav>
 
 							{/* Контакты */}
-							<div className="space-y-4 px-2">
+							<div className="space-y-2 px-0">
 								<h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/50">
 									Связь с нами
 								</h4>
 								<div className="flex flex-col space-y-4 text-sm font-medium">
 									<a
+										href={support.telegram}
+										target="_blank"
+										rel="noreferrer"
+										className="flex items-center gap-3 text-foreground/70 hover:text-foreground hover:bg-muted-foreground/10 p-2 rounded-2xl transition-colors"
+									>
+										<TelegramLogoIcon
+											size={18}
+											weight="fill"
+											className="text-[#2AABEE]"
+										/>
+										Telegram
+									</a>{" "}
+									<a
 										href={`tel:${support.phone}`}
-										className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+										className="flex items-center gap-3 text-foreground/70 hover:text-foreground hover:bg-muted-foreground/10 p-2 rounded-2xl transition-colors"
 									>
 										<PhoneIcon
 											size={18}
@@ -146,21 +169,8 @@ export function Header({ categories, support }: HeaderProps) {
 										{support.phone}
 									</a>
 									<a
-										href={support.telegram}
-										target="_blank"
-										rel="noreferrer"
-										className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
-									>
-										<TelegramLogoIcon
-											size={18}
-											weight="fill"
-											className="text-[#2AABEE]"
-										/>
-										Telegram
-									</a>
-									<a
 										href={`mailto:${support.email}`}
-										className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+										className="flex items-center gap-3 text-foreground/70 hover:text-foreground hover:bg-muted-foreground/10 p-2 rounded-2xl transition-colors"
 									>
 										<EnvelopeSimpleIcon
 											size={18}
@@ -169,13 +179,12 @@ export function Header({ categories, support }: HeaderProps) {
 										/>
 										{support.email}
 									</a>
-
 									{/* Интерактивный адрес */}
 									<Collapsible
 										open={isMapMenuOpen}
 										onOpenChange={setIsMapMenuOpen}
 									>
-										<CollapsibleTrigger className="flex items-start gap-3 text-foreground hover:text-primary transition-colors text-left">
+										<CollapsibleTrigger className="flex items-start w-full gap-3 transition-colors text-left text-foreground/70 hover:text-foreground hover:bg-muted-foreground/10 p-2 rounded-2xl">
 											<MapPinIcon
 												size={18}
 												weight="fill"
@@ -215,6 +224,23 @@ export function Header({ categories, support }: HeaderProps) {
 						</div>
 					</SheetContent>
 				</Sheet>
+
+				<Link
+					href="/checkout"
+					data-cart-icon
+					className="relative group/cart p-2.5 rounded-xl transition-all duration-300 backdrop-invert-10 backdrop-blur-xs backdrop-brightness-120 "
+				>
+					<ShoppingCartSimpleIcon
+						size={22}
+						weight="fill"
+						className="text-foreground/80 scale-100 group-hover/cart:scale-120 transition-all duration-200 drop-shadow-xl drop-shadow-background"
+					/>
+					{cartCount > 0 && (
+						<span className="absolute -top-1 right-0 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background animate-in zoom-in">
+							{cartCount}
+						</span>
+					)}
+				</Link>
 			</div>
 
 			{/* ── Desktop: toggle кнопка когда sidebar свёрнут ── */}
@@ -235,15 +261,16 @@ export function Header({ categories, support }: HeaderProps) {
 			>
 				<div
 					className={cn(
-						"absolute inset-x-0 top-0 transition-all duration-300 ease-in-out rounded-2xl pointer-events-none z-0",
+						"absolute backdrop-blur-3xl inset-x-0 top-0 transition-all duration-300 ease-in-out rounded-2xl pointer-events-none z-0",
 						isFocused
-							? "bg-white dark:bg-black shadow-2xl backdrop-blur-2xl  ring-1 ring-white/10"
-							: "h-11 bg-foreground/5",
+							? "bg-white dark:bg-black shadow-2xl ring-1 ring-white/10"
+							: "h-11 bg-muted-foreground/15 shadow-md",
 						isFocused && "h-125"
 					)}
 				/>
 				<div className="relative z-5 flex items-center h-11 px-4">
 					<MagnifyingGlassIcon
+						weight={isFocused ? "duotone" : "regular"}
 						className={cn(
 							"transition-colors shrink-0",
 							isFocused ? "text-primary" : "text-muted-foreground"
@@ -266,7 +293,7 @@ export function Header({ categories, support }: HeaderProps) {
 						<button
 							type="button"
 							onClick={() => searchState.setQuery("")}
-							className="p-1 hover:bg-foreground/20 rounded-full transition-colors"
+							className="cursor-pointer p-1 hover:bg-foreground/20 rounded-full transition-colors"
 						>
 							<XIcon size={14} className="text-muted-foreground" />
 						</button>
@@ -276,7 +303,7 @@ export function Header({ categories, support }: HeaderProps) {
 				{/* выпадающая панель — ABSOLUTE, не влияет на ширину родителя */}
 				{isFocused && (
 					<div className="absolute inset-x-0 top-11 z-5 animate-in fade-in slide-in-from-top-1 duration-200">
-						<div className="h-px bg-foreground/10 mx-4 mt-2" />
+						<div className="h-px bg-transparent shadow-xs shadow-foreground/10 mt-2" />
 						<SearchPanel
 							categories={categories}
 							state={searchState}
@@ -290,6 +317,8 @@ export function Header({ categories, support }: HeaderProps) {
 
 			{/* ── Desktop: Ссылки и Корзина ── */}
 			<div className="hidden md:flex lg:flex-1 items-center justify-end-safe gap-1">
+				<ThemeIconButton weight="fill" />
+				<div className="w-px h-6 bg-foreground/10 mx-2" />
 				<TooltipProvider delayDuration={150}>
 					{STATIC_LINKS.map((link) => (
 						<Tooltip key={link.href}>
@@ -320,12 +349,12 @@ export function Header({ categories, support }: HeaderProps) {
 				<Link
 					href="/checkout"
 					data-cart-icon
-					className="relative group/cart p-2.5 hover:bg-foreground/10  rounded-xl transition-all duration-300"
+					className="relative group/cart p-2.5 hover:bg-foreground/10 rounded-xl transition-all duration-300"
 				>
 					<ShoppingCartSimpleIcon
 						size={22}
 						weight="fill"
-						className="text-foreground/80 scale-100 group-hover/cart:scale-120  transition-all duration-200"
+						className="text-muted-foreground scale-100 group-hover/cart:scale-120 group-hover/cart:text-foreground duration-300"
 					/>
 					{cartCount > 0 && (
 						<span className="absolute -top-1 right-0 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background animate-in zoom-in">

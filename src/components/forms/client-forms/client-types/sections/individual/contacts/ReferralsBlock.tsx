@@ -38,11 +38,9 @@ export const ReferralsBlock = () => {
 		referralSource !== "other";
 
 	return (
-		<div className="space-y-5">
-			{/* Select — как вы о нас узнали */}
-			<div className="space-y-1.5">
-				<div className="flex gap-2">
-					{" "}
+		<div className="space-y-0">
+			<div>
+				<div className="flex w-full gap-4">
 					<Label required>Как вы о нас узнали?</Label>
 					<Select
 						value={referralSource ?? ""}
@@ -56,13 +54,16 @@ export const ReferralsBlock = () => {
 					>
 						<SelectTrigger
 							className={cn(
-								"glass-input h-11 rounded-2xl cursor-pointer py-0",
+								"h-6 rounded-2xl cursor-pointer py-0 bg-muted-foreground/5 min-w-35 w-auto",
 								error && "border-red-400/50"
 							)}
 						>
 							<SelectValue placeholder="Выберите вариант..." />
 						</SelectTrigger>
-						<SelectContent className="rounded-xl border border-foreground/10 bg-background/95 backdrop-blur">
+						<SelectContent
+							className="rounded-xl border border-foreground/10 bg-background/95 backdrop-blur"
+							position="popper"
+						>
 							{REFERRAL_OPTIONS.map((opt) => (
 								<SelectItem
 									key={opt.id}

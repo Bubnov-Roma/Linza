@@ -132,21 +132,18 @@ export function EquipmentCard({
 
 					{/* ── Content ── */}
 					<div className={cn("flex flex-col flex-1 min-w-0 p-3 gap-2")}>
-						{/* Fixed-height title block so all cards align in grid */}
-						<Link href={`/equipment/item/${slug}`} className="block">
-							<h3
-								className="text-sm font-bold leading-snug text-foreground/80 hover:text-foreground transition-colors"
-								style={{
-									display: "-webkit-box",
-									WebkitLineClamp: 2,
-									WebkitBoxOrient: "vertical",
-									overflow: "hidden",
-									height: "2.6em",
-								}}
-							>
-								{item.title}
-							</h3>
-						</Link>
+						<h3
+							className="text-sm font-bold leading-snug text-foreground/80 hover:text-foreground transition-colors"
+							style={{
+								display: "-webkit-box",
+								WebkitLineClamp: 2,
+								WebkitBoxOrient: "vertical",
+								overflow: "hidden",
+								height: "2.6em",
+							}}
+						>
+							{item.title}
+						</h3>
 
 						{/* Price + cart always pinned to bottom of card */}
 						{variant !== "slider" && (

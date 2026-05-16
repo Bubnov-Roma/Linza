@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { EyeClosedIcon, EyeIcon, LockIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -84,7 +84,7 @@ export function UpdatePasswordForm() {
 							setErrors((prev) => ({ ...prev, password: "" }));
 					}}
 					error={errors.password ?? ""}
-					icon={<Lock className="h-4 w-4" />}
+					icon={<LockIcon className="h-4 w-4" />}
 					required
 					suffix={
 						<button
@@ -93,9 +93,9 @@ export function UpdatePasswordForm() {
 							className="text-muted-foreground hover:text-foreground transition-colors p-1"
 						>
 							{showPassword ? (
-								<EyeOff className="h-4 w-4" />
+								<EyeClosedIcon className="h-4 w-4" />
 							) : (
-								<Eye className="h-4 w-4" />
+								<EyeIcon className="h-4 w-4" />
 							)}
 						</button>
 					}
@@ -112,7 +112,7 @@ export function UpdatePasswordForm() {
 							setErrors((prev) => ({ ...prev, confirmPassword: "" }));
 					}}
 					error={errors.confirmPassword ?? ""}
-					icon={<Lock className="h-4 w-4" />}
+					icon={<LockIcon className="h-4 w-4" />}
 					required
 					suffix={
 						<button
@@ -121,9 +121,9 @@ export function UpdatePasswordForm() {
 							className="text-muted-foreground hover:text-foreground transition-colors p-1"
 						>
 							{showConfirmPassword ? (
-								<EyeOff className="h-4 w-4" />
+								<EyeClosedIcon className="h-4 w-4" />
 							) : (
-								<Eye className="h-4 w-4" />
+								<EyeIcon className="h-4 w-4" />
 							)}
 						</button>
 					}

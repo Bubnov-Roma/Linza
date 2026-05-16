@@ -142,7 +142,6 @@ export const IdentitySection = () => {
 					label="Кем выдан"
 					placeholder="Наименование органа выдавшего документ"
 					rows={3}
-					className="min-h-25"
 				/>
 			</AccordionColumn>
 		</SectionWrapper>

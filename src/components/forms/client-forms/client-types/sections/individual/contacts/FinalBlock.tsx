@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormCheckbox, FormTextarea } from "@/components/forms/shared";
+import { Separator } from "@/components/ui";
 
 export const FinalBlock = () => {
 	return (
@@ -10,16 +11,24 @@ export const FinalBlock = () => {
 				name="agreements.comment"
 				label="Комментарий"
 				placeholder="Дополнительная информация или пожелания (необязательно)"
-				rows={5}
+				rows={4}
 				className="mt-auto"
 			/>
+			<Separator />
 			<FormCheckbox
 				name="agreements.personalDataConsent"
 				className="normal-case tracking-normal"
 				label={
 					<span className="leading-relaxed text-sm">
-						Я подтверждаю корректность данных
-						{/* , принимаю условия сотрудничества */} и даю согласие на{" "}
+						Я подтверждаю корректность данных, принимаю{" "}
+						<Link
+							href="/terms"
+							target="_blank"
+							className="underline hover:text-blue-500"
+						>
+							условия сотрудничества
+						</Link>{" "}
+						и даю согласие на{" "}
 						<Link
 							href="/privacy"
 							target="_blank"

@@ -1,9 +1,10 @@
 "use client";
 
 import {
-	CheckIcon,
+	type IconWeight,
 	MonitorIcon,
 	MoonIcon,
+	SpinnerIcon,
 	SunHorizonIcon,
 	SunIcon,
 } from "@phosphor-icons/react";
@@ -46,15 +47,14 @@ export function ThemeCard() {
 						type="button"
 						onClick={() => setTheme(id)}
 						className={cn(
-							"flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border transition-all duration-200",
+							"cursor-pointer flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border border-foreground/5 hover:border-foreground/10 transition-all duration-200",
 							active
-								? "border-primary/30 bg-primary/5 text-primary-accent"
-								: "border-foreground/5 hover:border-foreground/10 text-muted-foreground hover:text-foreground"
+								? "bg-muted-foreground/10 text-foreground brightness-140"
+								: "text-muted-foreground hover:text-foreground"
 						)}
 					>
-						<Icon size={18} />
+						<Icon size={18} weight={active ? "fill" : "regular"} />
 						<span className="text-[11px] font-semibold">{label}</span>
-						{active && <CheckIcon size={10} />}
 					</button>
 				);
 			})}
@@ -130,9 +130,11 @@ export function ThemeToggle({
 export function ThemeIconButton({
 	size = 22,
 	className,
+	weight = "duotone",
 }: {
 	size?: number;
 	className?: string;
+	weight?: IconWeight;
 }) {
 	const { resolvedTheme, setTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
@@ -163,17 +165,29 @@ export function ThemeIconButton({
 				if (navigator.vibrate) navigator.vibrate(5);
 			}}
 			className={cn(
-				"flex items-center justify-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md",
+				"text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl transition-all p-2 hover:bg-foreground/10 group/theme",
 				className
 			)}
 			aria-label="Переключить тему"
 		>
 			{!mounted ? (
-				<SunHorizonIcon size={size} className="text-muted-foreground" />
+				<SpinnerIcon
+					size={size}
+					weight={weight}
+					className="text-muted-foreground group-hover/theme:scale-120 group-hover/theme:text-foreground  duration-300 animate-spin"
+				/>
 			) : resolvedTheme === "dark" ? (
-				<MoonIcon size={size} className="text-muted-foreground" />
+				<MoonIcon
+					size={size}
+					weight={weight}
+					className="text-muted-foreground group-hover/theme:scale-120 group-hover/theme:text-foreground  duration-300"
+				/>
 			) : (
-				<SunIcon size={size} className="text-muted-foreground" />
+				<SunIcon
+					size={size}
+					weight={weight}
+					className="text-muted-foreground group-hover/theme:scale-120 group-hover/theme:text-foreground   duration-300"
+				/>
 			)}
 		</span>
 	);

@@ -208,11 +208,13 @@ export async function saveDraftAction(
 			where: { userId: session.user.id },
 		});
 
-		if (existing && existing.status !== ApplicationStatus.DRAFT) {
-			await prisma.clientApplication.update({
-				where: { userId: session.user.id },
-				data: { applicationData: data as Prisma.InputJsonValue },
-			});
+		const draftOnlyStatuses: ApplicationStatus[] = [
+			ApplicationStatus.DRAFT,
+			ApplicationStatus.NO_APPLICATION,
+		];
+
+		if (existing && !draftOnlyStatuses.includes(existing.status)) {
+			return { success: true };
 		} else {
 			await prisma.clientApplication.upsert({
 				where: { userId: session.user.id },

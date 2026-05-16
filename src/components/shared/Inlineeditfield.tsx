@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus } from "lucide-react";
+import { CheckIcon, PlusIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import {
 	InputGroup,
@@ -29,7 +29,15 @@ interface InlineEditFieldProps {
 	disabled?: boolean;
 	/** Mode of the inline edit field */
 	mode?: "edit" | "create";
-	onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+	onChange?: (val: string) => void;
+	/** Функция для рендеринга кастомного инпута.
+	 * Передает текущее значение черновика, функцию изменения и ссылку.
+	 */
+	renderInput?: (
+		value: string,
+		onChange: (val: string) => void,
+		onKeyDown: (e: React.KeyboardEvent<Element>) => void
+	) => React.ReactNode;
 }
 
 /**
@@ -53,6 +61,7 @@ export function InlineEditField({
 	autoFocus = false,
 	disabled = false,
 	mode = "edit",
+	renderInput,
 }: InlineEditFieldProps) {
 	const [draft, setDraft] = useState(savedValue);
 	const [saving, setSaving] = useState(false);
@@ -64,8 +73,8 @@ export function InlineEditField({
 	}, [savedValue]);
 
 	useEffect(() => {
-		if (autoFocus) inputRef.current?.focus();
-	}, [autoFocus]);
+		if (autoFocus && !renderInput) inputRef.current?.focus();
+	}, [autoFocus, renderInput]);
 
 	const isDirty = draft !== savedValue;
 	const isCreateMode = mode === "create";
@@ -78,10 +87,8 @@ export function InlineEditField({
 			setSaving(true);
 			try {
 				await onAdd(draft);
-				setDraft(""); // Clear after successful add
-				onChange?.({
-					target: { value: "" },
-				} as React.ChangeEvent<HTMLTextAreaElement>);
+				setDraft("");
+				onChange?.("");
 			} finally {
 				setSaving(false);
 			}
@@ -99,16 +106,14 @@ export function InlineEditField({
 	const handleCancel = () => {
 		if (isCreateMode) {
 			setDraft("");
-			onChange?.({
-				target: { value: "" },
-			} as React.ChangeEvent<HTMLTextAreaElement>);
+			onChange?.("");
 		} else {
 			setDraft(savedValue);
 		}
 		onCancel?.();
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+	const handleKeyDown = (e: React.KeyboardEvent<Element>) => {
 		if (e.key === "Enter") {
 			e.preventDefault();
 			if (isCreateMode) {
@@ -124,9 +129,9 @@ export function InlineEditField({
 		}
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		setDraft(e.target.value);
-		onChange?.(e);
+	const internalChange = (val: string) => {
+		setDraft(val);
+		onChange?.(val);
 	};
 
 	const showButton = isCreateMode ? draft.trim().length > 0 : isDirty || saving;
@@ -135,15 +140,19 @@ export function InlineEditField({
 		<InputGroup className={cn("min-h-10 h-fit group", className)} error={false}>
 			{icon && <InputGroupAddon align="inline-start">{icon}</InputGroupAddon>}
 
-			<InputGroupTextarea
-				ref={inputRef}
-				value={draft}
-				placeholder={placeholder}
-				disabled={disabled || saving}
-				onChange={handleChange}
-				onKeyDown={handleKeyDown}
-				className="text-sm"
-			/>
+			{renderInput ? (
+				renderInput(draft, internalChange, handleKeyDown)
+			) : (
+				<InputGroupTextarea
+					ref={inputRef}
+					value={draft}
+					placeholder={placeholder}
+					disabled={disabled || saving}
+					onChange={(e) => internalChange(e.target.value)}
+					onKeyDown={handleKeyDown}
+					className="text-sm"
+				/>
+			)}
 			{showButton && (
 				<InputGroupAddon align="inline-end" className="px-3">
 					<InputGroupButton
@@ -162,9 +171,9 @@ export function InlineEditField({
 						{saving ? (
 							<span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
 						) : isCreateMode ? (
-							<Plus size={14} />
+							<PlusIcon size={14} />
 						) : (
-							isDirty && <Check size={14} />
+							isDirty && <CheckIcon size={14} />
 						)}
 					</InputGroupButton>
 				</InputGroupAddon>

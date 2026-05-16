@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import {
+	CaretDownIcon,
+	CheckIcon,
+	DotsThreeIcon,
+	ExclamationMarkIcon,
+} from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { get, useFormContext, useWatch } from "react-hook-form";
 import { AddressFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/address/AddressFieldsGroup";
 import { FinalBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/FinalBlock";
@@ -52,7 +58,7 @@ const DOT_COLOR: Record<ReturnType<typeof getSectionStatus>, string> = {
 };
 
 export function MobileClientForm() {
-	const [openPanels, setOpenPanels] = useState<string[]>(["personal"]);
+	const [openPanel, setOpenPanel] = useState<string>("personal");
 	const [visitedSections, setVisitedSections] = useState<Set<string>>(
 		new Set(["personal"])
 	);
@@ -67,6 +73,26 @@ export function MobileClientForm() {
 		control,
 		name: "applicationData.addresses.isSame",
 	});
+
+	const registrationAddress = useWatch({
+		control,
+		name: "applicationData.addresses.registration",
+	});
+	const { setValue } = useFormContext<ClientFormValues>();
+
+	useEffect(() => {
+		if (isSame) {
+			setValue("applicationData.addresses.actual", registrationAddress, {
+				shouldValidate: true,
+			});
+		} else {
+			setValue(
+				"applicationData.addresses.actual",
+				{ address: "", index: "", country: "", region: "", city: "" },
+				{ shouldValidate: false }
+			);
+		}
+	}, [isSame, registrationAddress, setValue]);
 
 	const sections: SectionDef[] = [
 		{
@@ -91,6 +117,7 @@ export function MobileClientForm() {
 							name="applicationData.personalData.birth"
 							label="Дата рождения"
 						/>
+
 						<PhoneInput
 							required
 							name="applicationData.personalData.phone"
@@ -148,42 +175,38 @@ export function MobileClientForm() {
 			content: (
 				<div className="space-y-4">
 					<AddressFieldsGroup prefix="applicationData.addresses.registration" />
-					{/* Checkbox inside form body — works correctly on mobile */}
 					<div
 						onClick={(e) => e.stopPropagation()}
 						onKeyDown={(e) => e.stopPropagation()}
 						role="none"
-					>
-						<FormCheckbox
-							name="applicationData.addresses.isSame"
-							label="Совпадает с фактическим адресом"
-						/>
-					</div>
+					></div>
 				</div>
 			),
 		},
-		...(isSame
-			? []
-			: [
-					{
-						id: "actual",
-						title: "Фактическое проживание",
-						dotColor: "bg-purple-400",
-						fields: [
-							"applicationData.addresses.actual.address",
-							"applicationData.addresses.actual.country",
-							"applicationData.addresses.actual.city",
-							"applicationData.addresses.actual.region",
-							"applicationData.addresses.actual.index",
-						],
-						content: (
-							<AddressFieldsGroup prefix="applicationData.addresses.actual" />
-						),
-					} as SectionDef,
-				]),
+		{
+			id: "actual",
+			title: "Фактическое проживание",
+			dotColor: "bg-purple-400",
+			fields: [
+				"applicationData.addresses.actual.address",
+				"applicationData.addresses.actual.country",
+				"applicationData.addresses.actual.city",
+				"applicationData.addresses.actual.region",
+				"applicationData.addresses.actual.index",
+			],
+			content: (
+				<div className="space-y-4">
+					<FormCheckbox
+						name="applicationData.addresses.isSame"
+						label="Совпадает с фактическим адресом"
+					/>
+					<AddressFieldsGroup prefix="applicationData.addresses.actual" />
+				</div>
+			),
+		} as SectionDef,
 		{
 			id: "contacts",
-			title: "Соцсети и контакты",
+			title: "Соцсети и согласие",
 			dotColor: "bg-sky-400",
 			fields: [
 				"applicationData.contacts.socials",
@@ -202,25 +225,27 @@ export function MobileClientForm() {
 		},
 	];
 
-	const handleValueChange = (values: string[]) => {
-		const closed = openPanels.filter((id) => !values.includes(id));
-		for (const id of closed) {
-			const sec = sections.find((s) => s.id === id);
+	// handleValueChange — было (values: string[]):
+	const handleValueChange = (value: string) => {
+		const wasOpen = openPanel;
+		// Валидируем секцию когда закрываем
+		if (wasOpen && wasOpen !== value) {
+			const sec = sections.find((s) => s.id === wasOpen);
 			if (sec) trigger(sec.fields as Parameters<typeof trigger>[0]);
 			setVisitedSections((prev) => {
 				const n = new Set(prev);
-				n.add(id);
+				n.add(wasOpen);
 				return n;
 			});
 		}
-		for (const id of values) {
+		if (value) {
 			setVisitedSections((prev) => {
 				const n = new Set(prev);
-				n.add(id);
+				n.add(value);
 				return n;
 			});
 		}
-		setOpenPanels(values);
+		setOpenPanel(value);
 	};
 
 	return (
@@ -229,13 +254,14 @@ export function MobileClientForm() {
 				Анкета
 			</h1>
 			<Accordion
-				type="multiple"
-				value={openPanels}
+				type="single"
+				collapsible
+				value={openPanel}
 				onValueChange={handleValueChange}
 				className="space-y-2"
 			>
 				{sections.map((section) => {
-					const isOpen = openPanels.includes(section.id);
+					const isOpen = openPanel.includes(section.id);
 					const status = getSectionStatus(
 						section.fields,
 						errors,
@@ -255,16 +281,10 @@ export function MobileClientForm() {
 						>
 							<AccordionTrigger
 								className={cn(
-									"flex items-center gap-3 px-4 py-4",
-									"hover:no-underline hover:bg-transparent [&>svg:last-child]:hidden"
+									"flex items-center gap-3 px-4 py-4 cursor-pointer shadow-md shadow-muted-foreground/20 rounded-2xl",
+									"hover:no-underline hover:bg-transparent [&>svg:last-child]:hidden "
 								)}
 							>
-								<div
-									className={cn(
-										"w-2 h-2 rounded-full shrink-0 transition-colors duration-300",
-										isOpen ? section.dotColor : DOT_COLOR[status]
-									)}
-								/>
 								<span
 									className={cn(
 										"flex-1 text-sm font-bold text-left transition-colors",
@@ -273,20 +293,27 @@ export function MobileClientForm() {
 								>
 									{section.title}
 								</span>
-								{!isOpen && status !== "untouched" && (
-									<span
-										className={cn(
-											"text-[10px] font-bold mr-1",
-											status === "error"
-												? "text-orange-400"
-												: "text-emerald-500"
-										)}
-									>
-										{status === "error" ? "Проверьте" : "✓"}
-									</span>
-								)}
+								<span
+									className={cn(
+										"text-[20px] font-bold mr-1 rounded-full",
+										isOpen ? section.dotColor : DOT_COLOR[status]
+									)}
+								>
+									{status === "error" ? (
+										<ExclamationMarkIcon
+											size={18}
+											className="text-background"
+										/>
+									) : status === "untouched" ? (
+										<DotsThreeIcon size={18} className="text-background" />
+									) : isOpen ? (
+										<CaretDownIcon size={18} className="text-background" />
+									) : (
+										<CheckIcon size={18} className="text-background" />
+									)}
+								</span>
 							</AccordionTrigger>
-							<AccordionContent className="px-4 pb-5 pt-1 overflow-visible">
+							<AccordionContent className="p-4 overflow-visible">
 								{section.content}
 							</AccordionContent>
 						</AccordionItem>

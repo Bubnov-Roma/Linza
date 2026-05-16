@@ -1,4 +1,3 @@
-import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { Stepper } from "@/components/forms/client-forms/shared";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -29,13 +28,12 @@ export const FormNavigation = ({
 				onClick={prev}
 				disabled={currentStep === 0}
 				className={cn(
-					"z-10 h-10 transition-all md:h-11 md:w-auto  rounded-xl ",
+					"h-10 transition-all md:h-11 md:w-auto rounded-xl",
 					currentStep === 0
 						? "invisible"
 						: "text-foreground/60 hover:text-foreground group"
 				)}
 			>
-				<CaretLeftIcon className="w-6 h-6 md:mr-2 md:h-4 md:w-4 transition-transform group-hover:-translate-x-1" />
 				<span className="hidden md:inline">Назад</span>
 			</Button>
 			<div className="flex flex-1 md:flex-initial bg-muted-foreground/20 rounded-3xl p-2">
@@ -55,7 +53,6 @@ export const FormNavigation = ({
 				)}
 			>
 				<span className="hidden md:inline">Далее</span>
-				<CaretRightIcon className="h-5 w-5 md:ml-2 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
 			</Button>
 		</div>
 	);

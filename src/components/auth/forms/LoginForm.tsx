@@ -1,7 +1,11 @@
 "use client";
 
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
-import Link from "next/link";
+import {
+	EnvelopeIcon,
+	EyeClosedIcon,
+	EyeIcon,
+	LockIcon,
+} from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
@@ -101,7 +105,7 @@ export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 						if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
 					}}
 					error={errors.email ?? ""}
-					icon={<Mail className="h-4 w-4" />}
+					icon={<EnvelopeIcon className="h-4 w-4" />}
 					required
 				/>
 
@@ -117,7 +121,7 @@ export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 								setErrors((prev) => ({ ...prev, password: "" }));
 						}}
 						error={errors.password ?? ""}
-						icon={<Lock className="h-4 w-4" />}
+						icon={<LockIcon className="h-4 w-4" />}
 						required
 						suffix={
 							<button
@@ -127,19 +131,13 @@ export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 								tabIndex={-1}
 							>
 								{showPassword ? (
-									<EyeOff className="h-4 w-4" />
+									<EyeClosedIcon className="h-4 w-4" />
 								) : (
-									<Eye className="h-4 w-4" />
+									<EyeIcon className="h-4 w-4" />
 								)}
 							</button>
 						}
 					/>
-					<Link
-						href="/auth?view=register"
-						className="absolute right-0 -top-0.5 pb-1 text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
-					>
-						Забыли пароль?
-					</Link>
 				</div>
 
 				<Button

@@ -10,7 +10,7 @@ export const AddressFieldsGroup = ({
 	return (
 		<div className="space-y-4 flex-col items-stretch h-full">
 			<AddressInput
-				label="Поиск адреса"
+				label="Адрес (улица, номер дома)"
 				name={`${prefix}.address`}
 				prefix={prefix}
 				placeholder="Начните вводить адрес..."

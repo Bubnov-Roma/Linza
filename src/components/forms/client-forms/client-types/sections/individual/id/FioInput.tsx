@@ -7,8 +7,8 @@ import {
 	useFormContext,
 	useWatch,
 } from "react-hook-form";
+import { ValidatedTextarea } from "@/components/forms/shared";
 import { SuggestionsDropdown } from "@/components/forms/shared/SuggestionsDropdown";
-import { ValidatedInput } from "@/components/forms/shared/ValidatedInput";
 import { useDadataFioSuggestions } from "@/hooks/use-dadata-suggestions";
 import type { ClientFormValues } from "@/schemas";
 
@@ -47,7 +47,7 @@ export const FioInput = ({ name, label, required = false }: FioProps) => {
 
 	return (
 		<div className="relative w-full">
-			<ValidatedInput
+			<ValidatedTextarea
 				required={required}
 				label={label}
 				{...register(name)}

@@ -7,18 +7,16 @@ import {
 	MagnifyingGlassIcon,
 	PackageIcon,
 	ShoppingCartSimpleIcon,
-	SignInIcon,
 	SquaresFourIcon,
 	UserIcon,
 	VideoIcon,
 	XCircleIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { UserMenuDropdown } from "@/components/shared";
+import { UserMenu } from "@/components/layouts/UserMenu";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -34,10 +32,8 @@ import {
 import { getCategoryIcon } from "@/constants";
 import { MOBILE_NAV } from "@/constants/navigation";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useAdminNotificationsStore } from "@/store";
-import { useAuthModalStore } from "@/store/auth-modal.store";
 import { useCartStore } from "@/store/use-cart.store";
 import { MobileSearch, type MobileSearchHandle } from "./MobileSearch";
 
@@ -115,18 +111,10 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 
 	const pathname = usePathname();
 	const router = useRouter();
-	const { open } = useAuthModalStore();
 	const [searchOpen, setSearchOpen] = useState(false);
-	const [userMenuOpen, setUserMenuOpen] = useState(false);
 	const [catalogDrawerOpen, setCatalogDrawerOpen] = useState(false);
 
 	const searchRef = useRef<MobileSearchHandle>(null);
-	const { user, profile } = useAuth();
-	const userBtnRef = useRef<HTMLButtonElement>(null);
-
-	const avatarUrl = user?.user_metadata?.avatar_url;
-	const name =
-		profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0];
 
 	const pendingBookings = useAdminNotificationsStore((s) => s.pendingBookings);
 	const pendingApps = useAdminNotificationsStore((s) => s.pendingApps);
@@ -187,56 +175,7 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 				>
 					{/* ── Левый закрепленный блок (User) ── */}
 					<div className="shrink-0 w-14 flex items-center justify-center border-r border-muted-foreground/5">
-						{user ? (
-							<UserMenuDropdown
-								align="start"
-								side="top"
-								sideOffset={16}
-								isAdmin={isAdmin}
-							>
-								<button
-									ref={userBtnRef}
-									type="button"
-									onClick={() => setUserMenuOpen((v) => !v)}
-									className="relative w-9 h-9 rounded-xl overflow-hidden border transition-all active:scale-90"
-									style={{
-										borderColor: userMenuOpen
-											? "hsl(var(--primary) / 0.7)"
-											: "hsl(var(--foreground) / 0.12)",
-									}}
-								>
-									{avatarUrl ? (
-										<Image
-											src={avatarUrl}
-											alt={name ?? ""}
-											width={36}
-											height={36}
-											className="object-cover w-full h-full"
-										/>
-									) : (
-										<div className="flex h-full w-full items-center justify-center bg-primary/30 text-foreground text-sm font-bold">
-											{name?.charAt(0).toUpperCase()}
-										</div>
-									)}
-									<span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
-								</button>
-							</UserMenuDropdown>
-						) : (
-							<button
-								type="button"
-								onClick={() => open({ type: "auth" })}
-								className="flex flex-col items-center gap-1 group"
-							>
-								<SignInIcon
-									size={22}
-									strokeWidth={2}
-									className="text-muted-foreground group-active:scale-90 transition-transform"
-								/>
-								<span className="text-[9px] font-semibold text-muted-foreground leading-none">
-									Войти
-								</span>
-							</button>
-						)}
+						<UserMenu isAdmin={isAdmin} variant="mobile" />
 					</div>
 
 					{/* ── Прокручиваемые пункты меню ── */}

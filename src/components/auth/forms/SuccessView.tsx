@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircleIcon, CircleNotchIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { AuthCard } from "@/components/auth/AuthCard";
@@ -25,7 +25,7 @@ export function SuccessView() {
 				<div className="relative">
 					<div className="absolute inset-0 blur-2xl bg-green-500/20 rounded-full" />
 					<div className="relative bg-background rounded-full p-2 border border-green-500/20">
-						<CheckCircle2 size={64} className="text-green-500" />
+						<CheckCircleIcon size={64} className="text-green-500" />
 					</div>
 				</div>
 
@@ -36,7 +36,7 @@ export function SuccessView() {
 					<p className="text-muted-foreground">Выполняется вход в систему...</p>
 				</div>
 
-				<Loader2 className="w-6 h-6 animate-spin text-muted-foreground/50" />
+				<CircleNotchIcon className="w-6 h-6 animate-spin text-primary" />
 			</div>
 		</AuthCard>
 	);

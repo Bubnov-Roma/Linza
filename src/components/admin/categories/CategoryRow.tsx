@@ -379,7 +379,7 @@ export function CategoryRow({
 					))}
 					<InlineEditField
 						value={newSubName}
-						onChange={(e) => setNewSubName(e.target.value)}
+						onChange={(e) => setNewSubName(e)}
 						onAdd={async (name) => {
 							if (!name.trim()) return;
 							await onAddSub(cat.id, name.trim());

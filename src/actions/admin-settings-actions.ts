@@ -25,6 +25,11 @@ export interface SiteSettingsInfo {
 	workStart: number;
 	workEnd: number;
 	disabledDates: string[];
+	companyName: string;
+	inn: string;
+	ogrn: string;
+	legalAddress: string;
+	legalDocsUpdatedAt: string;
 }
 
 export async function getSiteSettings(): Promise<SiteSettingsInfo> {
@@ -41,6 +46,11 @@ export async function getSiteSettings(): Promise<SiteSettingsInfo> {
 					"workStart",
 					"workEnd",
 					"disabledDates",
+					"companyName",
+					"inn",
+					"ogrn",
+					"legalAddress",
+					"legalDocsUpdatedAt",
 				],
 			},
 		},
@@ -66,6 +76,11 @@ export async function getSiteSettings(): Promise<SiteSettingsInfo> {
 		workStart: map.workStart ? Number(map.workStart) : WORK_START,
 		workEnd: map.workEnd ? Number(map.workEnd) : WORK_END,
 		disabledDates: parsedDates,
+		companyName: map.companyName ?? "",
+		inn: map.inn ?? "",
+		ogrn: map.ogrn ?? "",
+		legalAddress: map.legalAddress ?? "",
+		legalDocsUpdatedAt: map.legalDocsUpdatedAt ?? new Date().toISOString(),
 	};
 }
 
@@ -103,7 +118,18 @@ export async function updateSiteSettingsAction(
 			addPromise("workEnd", String(patch.workEnd));
 		if (patch.disabledDates !== undefined)
 			addPromise("disabledDates", JSON.stringify(patch.disabledDates));
-
+		if (patch.companyName !== undefined)
+			addPromise("companyName", patch.companyName);
+		if (patch.inn !== undefined) addPromise("inn", patch.inn);
+		if (patch.ogrn !== undefined) addPromise("ogrn", patch.ogrn);
+		if (patch.legalAddress !== undefined)
+			addPromise("legalAddress", patch.legalAddress);
+		if (
+			patch.privacyPolicy !== undefined ||
+			patch.termsOfService !== undefined
+		) {
+			addPromise("legalDocsUpdatedAt", new Date().toISOString());
+		}
 		if (promises.length === 0) return { success: true };
 
 		await prisma.$transaction(promises);

@@ -79,9 +79,16 @@ function parseLine(line: string, lineIdx: number) {
 
 		const nextSpecial = rest.search(/\[|\*|`/);
 		if (nextSpecial === -1) {
+			// Спецсимволов больше нет, забираем весь остаток
 			parts.push(<span key={`${lineIdx}-${i++}`}>{rest}</span>);
 			rest = "";
+		} else if (nextSpecial === 0) {
+			// Спецсимвол стоит прямо сейчас, но регулярки выше его не распознали
+			// (например, одиночная звездочка). Отрезаем ровно один этот символ как обычный текст!
+			parts.push(<span key={`${lineIdx}-${i++}`}>{rest[0]}</span>);
+			rest = rest.slice(1);
 		} else {
+			// Спецсимвол где-то дальше. Забираем обычный текст до него
 			parts.push(
 				<span key={`${lineIdx}-${i++}`}>{rest.slice(0, nextSpecial)}</span>
 			);

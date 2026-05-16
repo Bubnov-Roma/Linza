@@ -89,10 +89,11 @@ export function SettingsClient({
 						<CardHeader>
 							<CardTitle>Часы работы</CardTitle>
 							<CardDescription>
-								Влияет на автоматический перенос аренды
+								Влияет на автоматическое форматирование срока аренды при
+								оформлении заказов клиентом
 							</CardDescription>
 						</CardHeader>
-						<CardContent className="flex gap-4">
+						<CardContent className="flex gap-4  pt-6">
 							<div className="space-y-2 flex-1">
 								<Label>Открытие (ч)</Label>
 								<Input
@@ -130,10 +131,10 @@ export function SettingsClient({
 						<CardHeader>
 							<CardTitle>Нерабочие дни</CardTitle>
 							<CardDescription>
-								Заблокированы для выдачи и возврата
+								Заблокированы на сайте для оформления заказов
 							</CardDescription>
 						</CardHeader>
-						<CardContent className="flex flex-col items-center">
+						<CardContent className="flex flex-col items-center pt-6">
 							{mounted ? (
 								<Calendar
 									mode="multiple"
@@ -149,13 +150,16 @@ export function SettingsClient({
 					</Card>
 				</div>
 
-				{/* Контакты */}
 				<div className="space-y-6">
+					{/* Контакты */}
 					<Card className="py-6">
 						<CardHeader>
 							<CardTitle>Контактная информация</CardTitle>
+							<CardDescription>
+								Отображается клиентам на сайте для связи с поддержкой
+							</CardDescription>
 						</CardHeader>
-						<CardContent className="space-y-4">
+						<CardContent className="space-y-4 pt-6">
 							<div className="space-y-2">
 								<Label>Email поддержки</Label>
 								<Input
@@ -185,11 +189,62 @@ export function SettingsClient({
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Адрес самовывоза</Label>
+								<Label>Адрес офиса</Label>
 								<Input
 									value={formData.address}
 									onChange={(e) =>
 										setFormData({ ...formData, address: e.target.value })
+									}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+
+					{/* Юридические реквизиты */}
+					<Card className="py-6">
+						<CardHeader>
+							<CardTitle>Юридические реквизиты</CardTitle>
+							<CardDescription>
+								Используются для подстановки в договоры и оферту
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4 pt-6">
+							<div className="space-y-2">
+								<Label>Наименование (ИП / ООО)</Label>
+								<Input
+									value={formData.companyName}
+									onChange={(e) =>
+										setFormData({ ...formData, companyName: e.target.value })
+									}
+									placeholder=""
+								/>
+							</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label>ИНН</Label>
+									<Input
+										value={formData.inn}
+										onChange={(e) =>
+											setFormData({ ...formData, inn: e.target.value })
+										}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>ОГРН / ОГРНИП</Label>
+									<Input
+										value={formData.ogrn}
+										onChange={(e) =>
+											setFormData({ ...formData, ogrn: e.target.value })
+										}
+									/>
+								</div>
+							</div>
+							<div className="space-y-2">
+								<Label>Юридический адрес</Label>
+								<Input
+									value={formData.legalAddress}
+									onChange={(e) =>
+										setFormData({ ...formData, legalAddress: e.target.value })
 									}
 								/>
 							</div>

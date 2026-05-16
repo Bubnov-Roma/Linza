@@ -1,4 +1,5 @@
 import { getSiteSettings } from "@/actions/admin-settings-actions";
+import { ClientTime } from "@/components/shared";
 import { SimpleMarkdown } from "@/components/shared/MarkdownEditor";
 
 export const metadata = {
@@ -9,12 +10,14 @@ export const revalidate = 3600;
 
 export default async function PrivacyPage() {
 	const settings = await getSiteSettings();
-
+	const formattedDate = new Date(settings.legalDocsUpdatedAt);
 	return (
-		<div className="max-w-7xl mx-auto px-4 py-6 md:py-10 space-y-6">
-			<h1 className="text-2xl md:text-3xl lg:text-4xl font-black italic uppercase tracking-tight">
-				Политика конфиденциальности
-			</h1>
+		<div className="max-w-4xl mx-auto px-4 py-12 space-y-8 text-foreground/80">
+			<h1 className="text-3xl font-black mb-8">Политика конфиденциальности</h1>
+			<p className="text-muted-foreground">
+				Дата последнего обновления:{" "}
+				{<ClientTime iso={formattedDate} fmt="full" />}
+			</p>
 			<SimpleMarkdown
 				text={settings.privacyPolicy}
 				className="prose dark:prose-invert max-w-none"

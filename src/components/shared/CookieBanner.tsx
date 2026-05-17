@@ -1,6 +1,7 @@
 "use client";
 
 import { CookieIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 
@@ -25,10 +26,21 @@ export default function CookieBanner() {
 				Мы используем файлы <strong>cookies</strong> чтобы улучшить работу
 				сервиса. Вы можете отключить cookies в настройках вашего браузера.
 				<br />
-				Продолжая использовать сайт, вы принимаете нашу{" "}
-				<a href="/privacy" className="underline hover:text-blue-400 font-black">
-					политику конфиденциальности
-				</a>
+				Продолжая использовать сайт, вы принимаете{" "}
+				<Link
+					href="/privacy"
+					className="underline hover:text-blue-400 font-black"
+				>
+					Политику конфиденциальности
+				</Link>{" "}
+				и
+				<Link
+					href="/terms"
+					className="underline hover:text-blue-400 font-black"
+				>
+					Правила использования
+				</Link>
+				.
 			</div>
 			<Button size="md" onClick={acceptCookies} className="rounded-2xl">
 				<CookieIcon size={13} weight="duotone" />

@@ -148,6 +148,7 @@ function EventModal({
 						bannerId: banner.id,
 						url: banner.imageUrl,
 						orderIndex: 0,
+						videoUrl: banner.videoUrl,
 					},
 				]
 			: [];

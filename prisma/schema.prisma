@@ -555,9 +555,11 @@ model Banner {
   subtitle   String?
   body       String?   @db.Text
   imageUrl   String?
+  videoUrl   String?                        // URL видео (S3 или YouTube/внешний)
   linkUrl    String?
   linkLabel  String?
   type       String    @default("info")
+  placement  String    @default("both")     // "hero" | "studio" | "both"
   isActive   Boolean   @default(true)
   sortOrder  Int       @default(0)
   eventDate  DateTime?
@@ -572,12 +574,14 @@ model Banner {
 model BannerImage {
   id         String   @id @default(uuid())
   bannerId   String
-  url        String
+  url        String                         // URL фото или видео в S3
+  videoUrl   String?                        // если заполнено — элемент является видео
   orderIndex Int      @default(0)
   createdAt  DateTime @default(now())
 
   banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
 }
+
 
 model UserAdminNote {
   id        String   @id @default(uuid())

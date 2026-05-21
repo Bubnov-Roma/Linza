@@ -72,11 +72,11 @@ export function BannerCard({
 							sizes="480px"
 							loading="eager"
 							className={cn(
-								"object-cover opacity-50 transition-opacity duration-500"
+								"object-cover opacity-60 transition-opacity duration-500"
 							)}
 						/>
 					</div>
-					<div className="absolute inset-0 transition-color duration-200 bg-linear-to-r from-black/60 to-transparent group-hover:bg-black/0 backdrop-blur-xs" />
+					<div className="absolute inset-0 transition-color duration-200 bg-linear-to-r from-black/60 to-transparent bg-black/10 backdrop-blur-xs" />
 				</>
 			)}
 
@@ -124,7 +124,7 @@ export function BannerCard({
 					</div>
 
 					{/* Заголовок — прижат к нижней части карточки */}
-					<div className="flex-1 flex flex-col justify-end gap-1.5">
+					<div className="flex-1 flex flex-col justify-center gap-1.5">
 						<h3
 							className={cn(
 								"text-2xl md:text-3xl font-black tracking-tight leading-snug italic text-white"
@@ -149,16 +149,6 @@ export function BannerCard({
 							</span>
 						)}
 					</div>
-
-					{banner.linkLabel && (
-						<span
-							className={cn(
-								"self-start text-sm font-bold py-2.5 px-4 rounded-2xl mt-1 bg-white/15 text-white group-hover:bg-gray-300/50 duration-200"
-							)}
-						>
-							{banner.linkLabel}
-						</span>
-					)}
 				</div>
 			</button>
 		</div>

@@ -45,7 +45,7 @@ export function EquipmentActionButtons({
 	};
 
 	return (
-		<div className={cn("flex z-2 justify-between", className)}>
+		<div className={cn("flex z-2 justify-between py-2", className)}>
 			<Tooltip>
 				<TooltipTrigger>
 					<Button

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { EquipmentCard } from "@/components/shared";
+import { EquipmentCard, SliderPagination } from "@/components/shared";
 import { Button } from "@/components/ui";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,15 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 		updatePagination();
 	};
 
+	const handlePageChange = (pageIndex: number) => {
+		const container = scrollRef.current;
+		if (!container) return;
+		const target =
+			(pageIndex / (totalPages - 1)) *
+			(container.scrollWidth - container.clientWidth);
+		container.scrollTo({ left: target, behavior: "smooth" });
+	};
+
 	if (popular.length === 0) return null;
 
 	return (
@@ -66,8 +75,8 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 				ref={scrollRef}
 				onScroll={handleScroll}
 				className={cn(
-					"flex gap-4 overflow-x-auto pb-6 px-6 scroll-px-6 scroll-smooth no-scrollbar",
-					"snap-x snap-mandatory touch-pan-x",
+					"flex gap-4 overflow-x-auto pb-6 px-4 scroll-px-4 scroll-smooth no-scrollbar",
+					"snap-x snap-mandatory",
 					"mask-[linear-gradient(to_right,transparent,white_4%,white_96%,transparent)]"
 				)}
 			>
@@ -85,8 +94,8 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 			</div>
 
 			{/* Точки навигации ( px-4 на случай если точек будет очень много на мобилках) */}
-			{totalPages > 1 && (
-				<div className="flex items-center justify-center gap-1.5 pt-2 flex-wrap px-4">
+			{/* {totalPages > 1 && (
+				<div className="flex items-center justify-center gap-2 pt-2 flex-wrap px-4">
 					{Array.from({ length: totalPages }).map((_, i) => (
 						<button
 							key={i}
@@ -100,16 +109,21 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 								container.scrollTo({ left: targetScroll, behavior: "smooth" });
 							}}
 							className={cn(
-								"h-1.5 rounded-full transition-all duration-300",
+								"h-3 rounded-full transition-all duration-300",
 								i === currentPage
-									? "w-6 bg-primary"
-									: "w-1.5 bg-foreground/20 hover:bg-foreground/40"
+									? "w-6 bg-foreground"
+									: "w-3 bg-foreground/20 hover:bg-foreground/40"
 							)}
 							aria-label={`Перейти к странице ${i + 1}`}
 						/>
 					))}
 				</div>
-			)}
+			)} */}
+			<SliderPagination
+				totalPages={totalPages}
+				currentPage={currentPage}
+				onPageClick={handlePageChange}
+			/>
 		</section>
 	);
 };

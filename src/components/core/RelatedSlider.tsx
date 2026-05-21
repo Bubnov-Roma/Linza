@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getRelatedEquipmentAction } from "@/actions/admin-equipment-actions";
-import { EquipmentCard } from "@/components/shared";
+import { EquipmentCard, SliderPagination } from "@/components/shared";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
 
@@ -32,13 +32,30 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 		const container = scrollRef.current;
 		if (!container) return;
 		const { scrollLeft, clientWidth, scrollWidth } = container;
+
+		const maxScrollLeft = scrollWidth - clientWidth;
+		if (maxScrollLeft <= 0) {
+			setTotalPages(0);
+			setCurrentPage(0);
+			return;
+		}
+
 		const pagesCount = Math.ceil(scrollWidth / clientWidth);
 		setTotalPages(pagesCount);
-		setCurrentPage(
-			Math.round(
-				(scrollLeft / (scrollWidth - clientWidth)) * (pagesCount - 1)
-			) || 0
-		);
+
+		const activePage =
+			Math.round((scrollLeft / maxScrollLeft) * (pagesCount - 1)) || 0;
+
+		// Тактильный клик при свайпе пальцем, когда точка реально переключается
+		setCurrentPage((prev) => {
+			if (prev !== activePage) {
+				if (typeof window !== "undefined" && navigator.vibrate) {
+					navigator.vibrate(6); // Микро-клик, как на колесиках в iOS
+				}
+				return activePage;
+			}
+			return prev;
+		});
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
@@ -47,6 +64,15 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 		window.addEventListener("resize", updatePagination);
 		return () => window.removeEventListener("resize", updatePagination);
 	}, [items]);
+
+	const handlePageChange = (pageIndex: number) => {
+		const container = scrollRef.current;
+		if (!container) return;
+		const target =
+			(pageIndex / (totalPages - 1)) *
+			(container.scrollWidth - container.clientWidth);
+		container.scrollTo({ left: target, behavior: "smooth" });
+	};
 
 	if (loading || !items.length)
 		return (
@@ -60,13 +86,15 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 				"mask-[linear-gradient(to_right,transparent,white_3%,white_97%,transparent)]"
 			)}
 		>
-			<div className={cn("relative group")}>
-				{/* Контейнер с карточками */}
+			<div className="relative group">
 				<div className="overflow-hidden pb-6">
 					<div
 						ref={scrollRef}
 						onScroll={updatePagination}
-						className="flex gap-4 overflow-x-auto no-scrollbar px-6"
+						className={cn(
+							"flex gap-4 overflow-x-auto no-scrollbar px-6",
+							"snap-x snap-mandatory scroll-px-6 scroll-smooth"
+						)}
 					>
 						{items.map((item) => (
 							<div
@@ -80,30 +108,11 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 				</div>
 			</div>
 
-			{totalPages > 1 && (
-				<div className="flex items-center justify-center gap-1.5">
-					{Array.from({ length: totalPages }).map((_, i) => (
-						<button
-							key={i}
-							type="button"
-							onClick={() => {
-								const container = scrollRef.current;
-								if (!container) return;
-								const target =
-									(i / (totalPages - 1)) *
-									(container.scrollWidth - container.clientWidth);
-								container.scrollTo({ left: target, behavior: "smooth" });
-							}}
-							className={cn(
-								"rounded-full transition-all duration-300",
-								i === currentPage
-									? "w-6 h-3 bg-foreground/80"
-									: "w-3 h-3 bg-foreground/20"
-							)}
-						/>
-					))}
-				</div>
-			)}
+			<SliderPagination
+				totalPages={totalPages}
+				currentPage={currentPage}
+				onPageClick={handlePageChange}
+			/>
 		</div>
 	);
 }

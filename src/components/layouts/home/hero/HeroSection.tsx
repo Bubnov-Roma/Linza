@@ -16,20 +16,21 @@ export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 	const initialIsPlaying =
 		savedPlayingState !== undefined ? savedPlayingState === "true" : true;
 	return (
-		<section className="container mx-auto pt-6 md:pt-10 px-2">
-			<div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] items-start">
+		<section className="container mx-auto pt-6 md:pt-10">
+			<div className="grid grid-cols-1 px-2 md:px-4 lg:grid-cols-[1fr_440px] items-start">
 				{/* Левая колонка — текст */}
-				<div className="max-w-2xl px-2 space-y-6">
+				<div className="max-w-2xl space-y-6">
 					<h1 className="text-xs font-bold uppercase tracking-wider sm:tracking-[0.2em] text-primary-accent/70">
 						Прокат фото- видеооборудования в Самаре
 					</h1>
 
-					<div className="space-y-2">
+					<div className="flex flex-row gap-4 md:flex-col items-center md:items-start">
 						<h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] uppercase italic text-primary tracking-tighter">
 							LINZA
 						</h2>
-						<p className="text-base sm:text-lg md:text-2xl font-black text-foreground tracking-wider">
-							Готовые решения для вашей съёмки
+						<p className="italic text-base sm:text-lg md:text-2xl font-black text-foreground tracking-wider">
+							Готовые решения
+							<br className="md:hidden" /> для вашей съёмки
 						</p>
 					</div>
 

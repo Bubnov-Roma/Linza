@@ -515,7 +515,7 @@ export default function EquipmentDetails({
 								id={equipment.id}
 								slug={equipment.slug}
 								title={equipment.title}
-								className="absolute top-4 right-4 left-4"
+								className="absolute top-2 right-4 left-4"
 							/>
 						</div>
 						{/* Mobile price + cart */}

@@ -82,13 +82,13 @@ export function EquipmentCard({
 							className={cn(
 								"px-3 pt-3 flex flex-col gap-2",
 								variant === "slider"
-									? "absolute bottom-0 left-0 right-0 pt-10 pb-3"
+									? "absolute bottom-0 left-0 right-0 pt-10 pb-4"
 									: "flex-1"
 							)}
 						>
 							<h3
 								className={cn(
-									"font-bold leading-tight line-clamp-2",
+									"font-bold leading-tight line-clamp-2 px-1",
 									variant === "slider"
 										? "text-sm text-foreground"
 										: "text-sm text-foreground/80"

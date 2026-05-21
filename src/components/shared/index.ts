@@ -19,5 +19,6 @@ export * from "./RentalPeriod";
 export * from "./Section";
 export * from "./SectionCard";
 export * from "./SignOutButton";
+export * from "./SliderPagination";
 export * from "./ThemeToggle";
 export * from "./ValidatedInputGroup";

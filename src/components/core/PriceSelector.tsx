@@ -75,7 +75,7 @@ export function PriceSelector({
 			: null;
 
 	return (
-		<div className={cn("flex flex-col gap-6", className)}>
+		<div className={cn("flex flex-col gap-3", className)}>
 			{/* ── Tabs/Pills */}
 			<div className="flex p-1 gap-1 rounded-2xl bg-secondary/50 border border-foreground/5">
 				{OPTIONS.map((opt) => {
@@ -106,7 +106,7 @@ export function PriceSelector({
 
 			{/* Динамический бенефит (MD3 Low-emphasis) */}
 			{isDetails && (
-				<div className="min-h-5">
+				<>
 					{currentBenefit ? (
 						<div className="flex items-center gap-1.5 text-lime-600 dark:text-lime-400">
 							<span className="text-[11px] font-bold">
@@ -121,7 +121,7 @@ export function PriceSelector({
 							</span>
 						</div>
 					) : null}
-				</div>
+				</>
 			)}
 
 			{/* ── Price Display ── */}

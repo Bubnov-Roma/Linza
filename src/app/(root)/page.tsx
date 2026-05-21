@@ -31,7 +31,7 @@ export default async function HomePage() {
 	);
 
 	return (
-		<div className="flex flex-col gap-8 pb-20">
+		<div className="flex flex-col gap-8 pb-10">
 			<LocalBusinessSchema />
 			<HeroSection isAdmin={isAdmin} banners={heroBanners} />
 			<CategoriesGrid categories={categories} />
@@ -39,7 +39,6 @@ export default async function HomePage() {
 			<Suspense fallback={<PopularItemsSkeleton />}>
 				<PopularItemsSection />
 			</Suspense>
-
 			<StudioSection
 				banners={allBanners.filter(
 					(b) => b.placement === "studio" || b.placement === "both"

@@ -198,7 +198,7 @@ export function MobileClientForm() {
 				<div className="space-y-4">
 					<FormCheckbox
 						name="applicationData.addresses.isSame"
-						label="Совпадает с фактическим адресом"
+						label="Совпадает с адресом регистрации"
 					/>
 					<AddressFieldsGroup prefix="applicationData.addresses.actual" />
 				</div>

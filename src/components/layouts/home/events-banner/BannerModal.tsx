@@ -153,7 +153,7 @@ export function BannerModal({
 				exit={{ opacity: 0, scale: 0.95, y: 8 }}
 				transition={{ type: "spring", stiffness: 400, damping: 30 }}
 				onClick={(e) => e.stopPropagation()}
-				className="relative z-10 w-full max-w-2xl max-h-[95vh] overflow-y-auto rounded-3xl card-surface bg-background/90 shadow-2xl shadow-muted-foreground/40 no-scrollbar overscroll-none overflow-hidden"
+				className="relative z-10 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl card-surface bg-background/90 shadow-2xl shadow-muted-foreground/40 no-scrollbar overscroll-none overflow-hidden"
 			>
 				{/* Медиа-шапка */}
 				{activeMedia && (

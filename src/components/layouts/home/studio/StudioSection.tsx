@@ -25,8 +25,8 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 		savedPlayingState !== undefined ? savedPlayingState === "true" : true;
 
 	return (
-		<section className="container mx-auto px-4 space-y-4">
-			<div className="flex items-baseline justify-between">
+		<section className="container mx-auto space-y-4 px-2 md:px-4">
+			<div className="flex items-baseline justify-between px-2 md:px-0">
 				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
 					Студия
 				</h2>
@@ -41,15 +41,15 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 			</div>
 			<div
 				className={cn(
-					"relative overflow-hidden rounded-3xl bg-transparent text-background gap-4",
+					"relative overflow-hidden rounded-3xl bg-foreground not-first:text-background",
 					hasBanners ? "grid grid-cols-1 lg:grid-cols-2" : "flex flex-col"
 				)}
 			>
-				<div className="absolute inset-0 bg-linear-to-t md:bg-linear-to-l from-background/40 via-background/20 to-transparent z-0" />
+				<div className="absolute inset-0 bg-linear-to-t md:bg-linear-to-l from-background/60  to-transparent z-0" />
 				{/* ── Левая колонка: текст ── */}
 				<div
 					className={cn(
-						"flex flex-col justify-between gap-6 px-6 sm:px-10 py-8 sm:py-10 bg-foreground rounded-3xl",
+						"flex flex-col justify-between gap-6 px-6 sm:px-10 py-8 sm:py-10 rounded-3xl ",
 						!hasBanners && "md:flex-row"
 					)}
 				>
@@ -79,7 +79,7 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 						variant="outline"
 						size="xl"
 						className={cn(
-							"z-10 relatives bg-transparent border-background/30 text-background hover:bg-background/25 uppercase font-bold rounded-2xl w-full sm:w-auto transition-colors italic",
+							"z-10 relatives bg-foreground/10 border-background/30 text-background hover:bg-foreground/50 uppercase font-bold rounded-2xl w-full sm:w-auto transition-colors italic",
 							!hasBanners ? "self-end" : "self-start"
 						)}
 					>

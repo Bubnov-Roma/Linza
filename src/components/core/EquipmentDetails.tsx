@@ -1,21 +1,14 @@
 "use client";
-
 import {
 	BriefcaseMetalIcon,
-	CaretLeftIcon,
-	CaretRightIcon,
-	HeartIcon,
 	InfoIcon,
 	LightningIcon,
-	ShareFatIcon,
 	VideoIcon,
 } from "@phosphor-icons/react";
-import { motion } from "framer-motion";
 import Image from "next/image";
 import NProgress from "nprogress";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getRelatedEquipmentAction } from "@/actions/admin-equipment-actions";
 import {
 	checkAvailabilityAction,
 	submitBookingAction,
@@ -23,17 +16,18 @@ import {
 import { AddToCartButton } from "@/components/core/AddToCartButton";
 import { Lightbox } from "@/components/core/Lightbox";
 import { PriceSelector } from "@/components/core/PriceSelector";
+import { RelatedSlider } from "@/components/core/RelatedSlider";
 import { BookingSuccessScreen } from "@/components/dashboard/bookings/BookingSuccessScreen";
 import {
 	type AppliedPromo,
 	applyPromoDiscount,
 	BookingButton,
+	EquipmentActionButtons,
 	getDefaultRentalPeriod,
 	PromoCodeField,
 	RentalPeriod,
 	SimpleMarkdown,
 } from "@/components/shared";
-import { EquipmentCard } from "@/components/shared/EquipmentCard";
 import {
 	Card,
 	Carousel,
@@ -47,7 +41,7 @@ import {
 	DialogTitle,
 } from "@/components/ui";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
-import { useFavorite, useRequireAuth } from "@/hooks";
+import { useRequireAuth } from "@/hooks";
 import {
 	calculateItemPrice,
 	cn,
@@ -179,114 +173,6 @@ const INFO_TABS = [
 
 type InfoTabId = (typeof INFO_TABS)[number]["id"];
 
-// ─── Related slider — настоящая карусель с точками ───────────────────────────
-function RelatedSlider({ ids }: { ids: string[] }) {
-	const [items, setItems] = useState<GroupedEquipment[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [slideIdx, setSlideIdx] = useState(0);
-	const VISIBLE = 4;
-
-	useEffect(() => {
-		if (!ids.length) return;
-		let cancelled = false;
-		setLoading(true);
-		getRelatedEquipmentAction(ids).then((data) => {
-			if (!cancelled) {
-				setItems(data.filter((i): i is GroupedEquipment => i !== undefined));
-				setLoading(false);
-			}
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [ids]);
-
-	if (loading) {
-		return (
-			<div className="flex gap-4 overflow-hidden">
-				{ids.slice(0, 4).map((id) => (
-					<div
-						key={id}
-						className="min-w-50 flex-1 rounded-2xl bg-foreground/5 animate-pulse aspect-3/4"
-					/>
-				))}
-			</div>
-		);
-	}
-
-	if (!items.length) return null;
-
-	const maxIdx = Math.max(0, items.length - VISIBLE);
-	const prev = () => setSlideIdx((i) => Math.max(0, i - 1));
-	const next = () => setSlideIdx((i) => Math.min(maxIdx, i + 1));
-	const dots = Array.from({ length: maxIdx + 1 });
-
-	return (
-		<div className="space-y-4">
-			<div className="overflow-hidden">
-				<motion.div
-					className="flex gap-4"
-					animate={{
-						x: `calc(-${slideIdx} * (100% / ${Math.min(VISIBLE, items.length)} + 16px / ${Math.min(VISIBLE, items.length)}))`,
-					}}
-					transition={{ type: "spring", stiffness: 300, damping: 30 }}
-				>
-					{items.map((item) => (
-						<div
-							key={item.id}
-							className="shrink-0"
-							style={{
-								width: `calc(${100 / Math.min(VISIBLE, items.length)}% - ${((VISIBLE - 1) * 16) / Math.min(VISIBLE, items.length)}px)`,
-							}}
-						>
-							<EquipmentCard item={item} variant="slider" />
-						</div>
-					))}
-				</motion.div>
-			</div>
-
-			{/* Навигация */}
-			{items.length > VISIBLE && (
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-1.5">
-						{dots.map((_, i) => (
-							<button
-								key={i}
-								type="button"
-								onClick={() => setSlideIdx(i)}
-								className={cn(
-									"rounded-full transition-all duration-300",
-									i === slideIdx
-										? "w-5 h-1.5 bg-primary"
-										: "w-1.5 h-1.5 bg-foreground/20 hover:bg-foreground/40"
-								)}
-							/>
-						))}
-					</div>
-					<div className="flex gap-2">
-						<button
-							type="button"
-							onClick={prev}
-							disabled={slideIdx === 0}
-							className="h-8 w-8 rounded-full border border-foreground/10 flex items-center justify-center hover:bg-foreground/8 disabled:opacity-30 transition-colors"
-						>
-							<CaretLeftIcon size={14} />
-						</button>
-						<button
-							type="button"
-							onClick={next}
-							disabled={slideIdx === maxIdx}
-							className="h-8 w-8 rounded-full border border-foreground/10 flex items-center justify-center hover:bg-foreground/8 disabled:opacity-30 transition-colors"
-						>
-							<CaretRightIcon size={14} />
-						</button>
-					</div>
-				</div>
-			)}
-		</div>
-	);
-}
-
 export type EquipmentFormState = GroupedEquipment & {
 	relatedIds: string[];
 };
@@ -299,13 +185,14 @@ export default function EquipmentDetails({
 	const requireAuth = useRequireAuth();
 	const { items: cartItems, clearCart } = useCartStore();
 
+	const titleRef = useRef<HTMLHeadingElement>(null);
+
 	const { workStart, workEnd } = useSiteSettingsStore();
 
 	const [activeInfoTab, setActiveInfoTab] = useState<InfoTabId>("description");
 	const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 	const [imgErrors, setImgErrors] = useState<Set<number>>(new Set());
 
-	const { isFavorite, toggle: toggleFavorite } = useFavorite(equipment.id);
 	const images = equipment.images?.length
 		? equipment.images
 		: [equipment.imageUrl];
@@ -320,6 +207,20 @@ export default function EquipmentDetails({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [bookingId, setBookingId] = useState<string | null>(null);
 	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+
+	useEffect(() => {
+		if (window.innerWidth < 1024 && titleRef.current) {
+			const timer = setTimeout(() => {
+				titleRef.current?.scrollIntoView({
+					behavior: "smooth",
+					block: "start",
+				});
+			}, 100);
+
+			return () => clearTimeout(timer);
+		}
+		return;
+	}, []);
 
 	const quantity = useMemo(() => {
 		const inCart = cartItems.find((i) => i.equipment.id === equipment.id);
@@ -452,11 +353,6 @@ export default function EquipmentDetails({
 		}
 	};
 
-	const handleShare = () => {
-		navigator.clipboard.writeText(window.location.href);
-		toast.success("Ссылка скопирована");
-	};
-
 	// const specEntries = useMemo(() => {
 	// 	const s = equipment.specifications;
 	// 	if (!s || typeof s !== "object") return [];
@@ -565,17 +461,24 @@ export default function EquipmentDetails({
 					onClose={() => setLightboxSrc(null)}
 				/>
 			)}
-			{/* Mobile title */}
-			<div className="lg:px-6 max-w-7xl mx-auto px-4 py-4 flex-col gap-4 space-y-6 items-center animate-in fade-in duration-500 lg:overflow-visible">
-				<div className="flex w-full items-baseline h-full gap-2">
-					<h1 className="text-3xl font-black italic uppercase tracking-tighter leading-tight">
+			{/* Title */}
+			<div
+				className={cn(
+					"lg:px-6 max-w-6xl mx-auto py-4 flex-col gap-4 space-y-6 items-center animate-in fade-in duration-500 lg:overflow-visible"
+				)}
+			>
+				<div className="flex px-4 w-full items-baseline h-full gap-2">
+					<h1
+						ref={titleRef}
+						className="text-3xl font-black italic uppercase tracking-tighter leading-tight scroll-mt-16"
+					>
 						{equipment.title}
 					</h1>
 				</div>
 				{/* ── 12-Column Grid (Left: 7, Right: 5) ── */}
-				<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start min-h-0 flex-1 relative">
+				<div className="grid px-4 grid-cols-1 md:grid-cols-12 gap-8 items-start min-h-0 flex-1 relative">
 					{/* ━━ LEFT COLUMN: Gallery & Info Tabs ━━ */}
-					<div className="order-1 lg:col-span-7 space-y-8">
+					<div className="order-1 md:col-span-6 lg:col-span-7 space-y-8">
 						{/* Gallery */}
 						<div className="relative rounded-3xl overflow-hidden bg-foreground/5">
 							<Carousel className="w-full">
@@ -608,33 +511,15 @@ export default function EquipmentDetails({
 									</>
 								)}
 							</Carousel>
-							<div className="absolute top-4 left-4 right-4 flex justify-between z-2">
-								<button
-									type="button"
-									onClick={handleShare}
-									className="w-9 h-9 rounded-full bg-background/80 backdrop-blur-md flex items-center justify-center hover:bg-background transition-colors shadow-sm"
-								>
-									<ShareFatIcon className="text-foreground/70 w-4 h-4" />
-								</button>
-								<button
-									type="button"
-									onClick={(e) =>
-										toggleFavorite(e as unknown as React.MouseEvent)
-									}
-									className="w-9 h-9 rounded-full bg-background/80 backdrop-blur-md flex items-center justify-center hover:bg-background transition-colors shadow-sm"
-								>
-									<HeartIcon
-										weight={`${isFavorite ? "fill" : "regular"}`}
-										className={cn(
-											"w-4 h-4 transition-all duration-200",
-											isFavorite ? "text-primary" : "text-foreground/70"
-										)}
-									/>
-								</button>
-							</div>
+							<EquipmentActionButtons
+								id={equipment.id}
+								slug={equipment.slug}
+								title={equipment.title}
+								className="absolute top-4 right-4 left-4"
+							/>
 						</div>
 						{/* Mobile price + cart */}
-						<div className="lg:hidden">
+						<div className="md:hidden">
 							<PriceSelector
 								prices={{
 									day: equipment.pricePerDay,
@@ -655,54 +540,64 @@ export default function EquipmentDetails({
 								}
 							/>
 						</div>
-						<div className="hidden lg:block pt-4">
-							<div className="flex overflow-x-auto no-scrollbar pb-0.5">
+						{/* ── Tabs (описание, характеристики, обзоры) — полная ширина ── */}
+						<div className="mt-8 px-0">
+							{/* Навигация вкладок */}
+							<div className="flex overflow-x-auto no-scrollbar justify-center">
 								{visibleTabs.map(({ id, label, icon: Icon }) => (
 									<button
 										key={id}
 										type="button"
 										onClick={() => setActiveInfoTab(id)}
 										className={cn(
-											"flex cursor-pointer items-center gap-2 px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
+											"cursor-pointer flex flex-1 items-center justify-center gap-2 px-2 md:px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
 											activeInfoTab === id
-												? "text-primary"
+												? "text-foreground"
 												: "text-foreground/50 hover:text-foreground"
 										)}
 									>
 										<Icon
-											size={16}
+											size={14}
 											weight={activeInfoTab === id ? "fill" : "regular"}
-										/>{" "}
+										/>
 										{label}
-										{activeInfoTab === id && (
-											<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
-										)}
+										<div
+											className={`absolute brightness-110 bottom-0 left-0 right-0 rounded-full h-0.5 ${activeInfoTab === id ? "bg-foreground shadow-[0_0_10px_gray] dark:bg-primary dark:shadow-[0_0_10px_yellow] " : "bg-transparent"}`}
+											style={{
+												transform:
+													activeInfoTab === id ? "scale(1)" : "scale(0.1)",
+												transition:
+													"transform 0.2s ease-in-out, color 0.1s ease-in-out",
+											}}
+										/>
 									</button>
 								))}
 							</div>
+
+							{/* Контент вкладок */}
 							<div className="py-6">
 								{activeInfoTab === "description" && (
-									<div className="max-w-3xl text-sm leading-relaxed">
+									<div className="max-w-3xl">
 										<MD>{equipment.description}</MD>
 									</div>
 								)}
 								{/* {activeInfoTab === "specs" &&
-									(specEntries.length > 0 ? (
-										<dl className="divide-y divide-foreground/5 max-w-2xl">
-											{specEntries.map(([key, val]) => (
-												<div key={key} className="flex gap-4 py-3">
-													<dt className="text-xs text-muted-foreground w-1/3 shrink-0 font-medium">
-														{key}
-													</dt>
-													<dd className="text-sm font-bold">{val}</dd>
-												</div>
-											))}
-										</dl>
-									) : (
-										<div className="max-w-3xl">
-											<MD>{specDesc}</MD>
+							(specEntries.length > 0 ? (
+								<dl className="divide-y divide-foreground/5 max-w-2xl">
+									{specEntries.map(([key, val]) => (
+										<div key={key} className="flex gap-4 py-3">
+											<dt className="text-xs text-muted-foreground w-1/3 shrink-0 font-medium">
+												{key}
+											</dt>
+											<dd className="text-sm font-bold">{val}</dd>
 										</div>
-									))} */}
+									))}
+								</dl>
+							) : (
+								<div className="max-w-3xl">
+									<MD>{specDesc}</MD>
+								</div>
+							))} */}
 								{activeInfoTab === "kit" && (
 									<div className="max-w-3xl text-sm leading-relaxed">
 										<MD>{equipment.kit}</MD>
@@ -719,8 +614,8 @@ export default function EquipmentDetails({
 					</div>
 
 					{/* ━━ RIGHT COLUMN: Sticky Booking Panel ━━ */}
-					<div className="hidden lg:block order-2 lg:col-span-5 relative">
-						<div className="lg:sticky lg:top-24 flex flex-col gap-6">
+					<div className="hidden md:block order-2 md:col-span-6 lg:col-span-5 relative">
+						<div className="md:sticky md:top-24 flex flex-col gap-6">
 							{/* Основной блок выбора дат */}
 							<div className="card-surface p-3 xl:p-6 rounded-[2rem] border border-foreground/5 shadow-xl shadow-foreground/5 space-y-6">
 								<div className="flex items-center justify-between px-1">
@@ -737,74 +632,64 @@ export default function EquipmentDetails({
 								<div className="h-px bg-foreground/5 -mx-6" />
 
 								{equipment.price4h > 0 && equipment.price8h > 0 && (
-									<>
-										<div className="hidden lg:grid grid-cols-2 gap-3 pt-2">
-											{equipment.price4h > 0 && (
-												<div className="glass-card rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
-													<div className="flex items-center justify-between mb-2">
-														<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-															4 часа
-														</span>
-														<span className="text-[9px] font-black bg-lime-500/15 text-lime-600 dark:text-lime-400 px-2 py-0.5 rounded-full">
-															−
-															{Math.round(
-																(1 -
-																	equipment.price4h / equipment.pricePerDay) *
-																	100
-															)}
-															%
-														</span>
-													</div>
-													<div>
-														<p className="text-xl font-black italic tracking-tighter leading-none">
-															{fmtRub(equipment.price4h)}
-														</p>
-														<p className="text-[10px] text-muted-foreground mt-1 font-medium">
-															Экономия{" "}
-															{fmtRub(
-																equipment.pricePerDay - equipment.price4h
-															)}
-														</p>
-													</div>
+									<div className="hidden md:grid grid-cols-2 gap-3 pt-2">
+										{equipment.price4h > 0 && (
+											<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
+												<div className="flex items-center justify-between mb-2">
+													<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+														4 часа
+													</span>
+													<span className="text-[9px] font-black bg-lime-500/15 text-lime-600 dark:text-lime-400 px-2 py-0.5 rounded-full">
+														−
+														{Math.round(
+															(1 - equipment.price4h / equipment.pricePerDay) *
+																100
+														)}
+														%
+													</span>
 												</div>
-											)}
-											{equipment.price8h > 0 && (
-												<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
-													<div className="flex items-center justify-between mb-2">
-														<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-															8 часов
-														</span>
-														<span className="text-[9px] font-black bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 px-2 py-0.5 rounded-full">
-															−
-															{Math.round(
-																(1 -
-																	equipment.price8h / equipment.pricePerDay) *
-																	100
-															)}
-															%
-														</span>
-													</div>
-													<div>
-														<p className="text-xl font-black italic tracking-tighter leading-none">
-															{fmtRub(equipment.price8h)}
-														</p>
-														<p className="text-[10px] text-muted-foreground mt-1 font-medium">
-															Экономия{" "}
-															{fmtRub(
-																equipment.pricePerDay - equipment.price8h
-															)}
-														</p>
-													</div>
+												<div>
+													<p className="text-xl font-black italic tracking-tighter leading-none">
+														{fmtRub(equipment.price4h)}
+													</p>
+													<p className="text-[10px] text-muted-foreground mt-1 font-medium">
+														Экономия{" "}
+														{fmtRub(equipment.pricePerDay - equipment.price4h)}
+													</p>
 												</div>
-											)}
-										</div>
-
-										<div className="h-px bg-foreground/5 -mx-6" />
-									</>
+											</div>
+										)}
+										{equipment.price8h > 0 && (
+											<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
+												<div className="flex items-center justify-between mb-2">
+													<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+														8 часов
+													</span>
+													<span className="text-[9px] font-black bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 px-2 py-0.5 rounded-full">
+														−
+														{Math.round(
+															(1 - equipment.price8h / equipment.pricePerDay) *
+																100
+														)}
+														%
+													</span>
+												</div>
+												<div>
+													<p className="text-xl font-black italic tracking-tighter leading-none">
+														{fmtRub(equipment.price8h)}
+													</p>
+													<p className="text-[10px] text-muted-foreground mt-1 font-medium">
+														Экономия{" "}
+														{fmtRub(equipment.pricePerDay - equipment.price8h)}
+													</p>
+												</div>
+											</div>
+										)}
+									</div>
 								)}
 
 								{/* Итоговая цена и кнопка (Десктоп) */}
-								<div className="hidden lg:flex flex-col gap-4">
+								<div className="hidden md:flex flex-col gap-4">
 									<div className="flex items-end justify-between px-1">
 										<span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
 											Итого
@@ -834,78 +719,13 @@ export default function EquipmentDetails({
 
 				{/* ── Related — полная ширина с врапером ── */}
 				{hasRelated && equipment.relatedIds && (
-					<div className="mt-10 px-0 lg:px-6 p-6 space-y-4">
-						<h3 className="text-lg font-black italic uppercase tracking-tight">
+					<div className={cn("mt-10 px-0 py-6 space-y-4")}>
+						<h3 className="px-6 text-lg font-black italic uppercase tracking-tight">
 							Вместе с этим арендуют
 						</h3>
 						<RelatedSlider ids={equipment.relatedIds} />
 					</div>
 				)}
-
-				{/* ── Tabs (описание, характеристики, обзоры) — полная ширина ── */}
-				<div className="mt-8 px-0 lg:hidden">
-					{/* Навигация вкладок */}
-					<div className="flex overflow-x-auto no-scrollbar justify-center">
-						{visibleTabs.map(({ id, label, icon: Icon }) => (
-							<button
-								key={id}
-								type="button"
-								onClick={() => setActiveInfoTab(id)}
-								className={cn(
-									"flex flex-1 items-center justify-center gap-2 px-2 md:px-5 py-3.5 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
-									activeInfoTab === id
-										? "text-primary"
-										: "text-foreground/50 hover:text-foreground"
-								)}
-							>
-								<Icon
-									size={14}
-									weight={activeInfoTab === id ? "fill" : "regular"}
-								/>
-								{label}
-								{activeInfoTab === id && (
-									<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
-								)}
-							</button>
-						))}
-					</div>
-
-					{/* Контент вкладок */}
-					<div className="py-6">
-						{activeInfoTab === "description" && (
-							<div className="max-w-3xl">
-								<MD>{equipment.description}</MD>
-							</div>
-						)}
-						{/* {activeInfoTab === "specs" &&
-							(specEntries.length > 0 ? (
-								<dl className="divide-y divide-foreground/5 max-w-2xl">
-									{specEntries.map(([key, val]) => (
-										<div key={key} className="flex gap-4 py-3">
-											<dt className="text-xs text-muted-foreground w-1/3 shrink-0 font-medium">
-												{key}
-											</dt>
-											<dd className="text-sm font-bold">{val}</dd>
-										</div>
-									))}
-								</dl>
-							) : (
-								<div className="max-w-3xl">
-									<MD>{specDesc}</MD>
-								</div>
-							))} */}
-						{activeInfoTab === "kit" && (
-							<div className="max-w-3xl text-sm leading-relaxed">
-								<MD>{equipment.kit}</MD>
-							</div>
-						)}
-						{activeInfoTab === "reviews" && equipment.videoUrls.length > 0 && (
-							<VideoReviews
-								urls={(equipment.videoUrls as string[] | undefined) ?? []}
-							/>
-						)}
-					</div>
-				</div>
 			</div>
 			<Dialog open={isQuickBookOpen} onOpenChange={setIsQuickBookOpen}>
 				<DialogContent className="max-w-md p-6 sm:rounded-3xl">

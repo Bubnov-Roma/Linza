@@ -14,9 +14,14 @@ import { UnsavedChangesGuard } from "@/providers/unsaved-changes-guard";
 interface RootProviderProps {
 	children: React.ReactNode;
 	session: Session | null;
+	defaultOpen?: boolean;
 }
 
-export function RootProvider({ children, session }: RootProviderProps) {
+export function RootProvider({
+	children,
+	session,
+	defaultOpen = true,
+}: RootProviderProps) {
 	return (
 		<NuqsAdapter>
 			<SessionProvider
@@ -34,7 +39,7 @@ export function RootProvider({ children, session }: RootProviderProps) {
 					>
 						<UnsavedChangesGuard />
 						<AuthModalProvider />
-						<SidebarProvider>
+						<SidebarProvider defaultOpen={defaultOpen}>
 							{children}
 							<Toaster
 								position="top-center"

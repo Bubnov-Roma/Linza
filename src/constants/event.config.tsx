@@ -1,32 +1,60 @@
+"use client";
+
 import {
 	CalendarIcon,
+	CameraIcon,
+	HouseSimpleIcon,
+	IntersectIcon,
 	LightningIcon,
 	MegaphoneIcon,
 } from "@phosphor-icons/react/dist/ssr";
+
 import type { JSX } from "react";
 import type { BannerType } from "@/actions/admin-banner-actions";
+
+export const PLACEMENT_OPTIONS: {
+	value: "hero" | "studio" | "both";
+	label: string;
+	icon: React.ReactNode;
+}[] = [
+	{
+		value: "hero",
+		label: "Главный экран",
+		icon: <HouseSimpleIcon size={14} />,
+	},
+	{
+		value: "studio",
+		label: "Студия",
+		icon: <CameraIcon size={14} />,
+	},
+	{
+		value: "both",
+		label: "Везде",
+		icon: <IntersectIcon size={14} />,
+	},
+];
 
 export const EVENT_CONFIG = {
 	info: {
 		label: "Новости",
 		icon: MegaphoneIcon,
-		gradient: "from-background/80 via-olive-500/20 to-transparent",
+		gradient: "from-olive-500/10 via-olive-500/40 to-transparent",
 		accent: "bg-olive-500",
-		badge: "bg-olive-500/15 text-olive-500 border-olive-500/20",
+		badge: "bg-olive-500/25 text-olive-500 border-olive-500/50",
 	},
 	event: {
 		label: "Событие",
 		icon: CalendarIcon,
-		gradient: "from-background/80 via-violet-500/10 to-transparent",
-		accent: "bg-violet-500",
-		badge: "bg-violet-500/15 text-violet-400 border-violet-500/20",
+		gradient: "from-blue-500/10 via-blue-500-500/40 to-transparent",
+		accent: "bg-blue-500",
+		badge: "bg-blue-500/25 text-blue-500 border-blue-500/50",
 	},
 	promo: {
 		label: "Акция",
 		icon: LightningIcon,
-		gradient: "from-background/80 via-lime-500/10 to-transparent",
+		gradient: "from-lime-500/10 via-lime-500-500/40 to-transparent",
 		accent: "bg-lime-500",
-		badge: "bg-lime-500/15 text-lime-400 border-lime-500/20",
+		badge: "bg-lime-500/25 text-lime-400 border-lime-500/50",
 	},
 } as const;
 

@@ -1,107 +1,166 @@
-import { motion } from "framer-motion";
+"use client";
+
+import { PlayCircleIcon } from "@phosphor-icons/react";
 import Image from "next/image";
+import { useRef } from "react";
 import type { Banner } from "@/actions/admin-banner-actions";
+import { ClientTime } from "@/components/shared";
 import { EVENT_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
+import { getMediaType } from "@/utils/admin-banner-helpers";
 
 export function BannerCard({
 	banner,
 	onClick,
 	isActive,
+	variant = "hero",
+	hasNav = false,
 }: {
 	banner: Banner;
 	onClick: () => void;
 	isActive: boolean;
+	variant?: "hero" | "studio";
+	hasNav?: boolean;
 }) {
 	const config =
 		EVENT_CONFIG[banner.type as keyof typeof EVENT_CONFIG] ?? EVENT_CONFIG.info;
-	const Icon = config.icon;
+	const videoRef = useRef<HTMLVideoElement>(null);
+
+	const isStudio = variant === "studio";
+	const mediaType = banner.videoUrl ? getMediaType(banner.videoUrl) : "image";
+	const hasVideo = mediaType === "video" || mediaType === "youtube";
+	const bgVideo = mediaType === "video" ? banner.videoUrl : null;
+	const navHeight = hasNav ? "pb-14" : "pb-5";
 
 	return (
-		<motion.button
-			type="button"
-			onClick={onClick}
-			initial={false}
-			animate={{ opacity: isActive ? 1 : 0.4, scale: isActive ? 1 : 0.97 }}
-			transition={{ duration: 0.3 }}
+		<div
 			className={cn(
-				"relative w-full text-left overflow-hidden rounded-2xl border cursor-pointer",
-				"transition-colors duration-300 group",
-				// "bg-linear from-background/80 via:background/20 to-transparent",
-				isActive
-					? "border-foreground/15 bg-foreground/3"
-					: "border-foreground/8 bg-foreground/2"
+				"relative w-full h-full overflow-hidden border group rounded-2xl flex flex-col justify-stretch",
+				isStudio
+					? "border-0"
+					: isActive
+						? "border-foreground/15"
+						: "border-foreground/8"
 			)}
 		>
-			{/* Фоновое изображение */}
-			{banner.imageUrl && (
+			{/* ── Фоновое видео (S3) ── */}
+			{bgVideo && (
 				<>
-					<div className="absolute inset-0">
-						<Image
-							src={banner.imageUrl}
-							alt={banner.title}
-							fill
-							sizes="380px"
-							loading="eager"
-							className="object-cover opacity-20 group-hover:opacity-55 transition-opacity duration-500"
-						/>
-					</div>
+					<video
+						ref={videoRef}
+						src={bgVideo}
+						autoPlay
+						muted
+						loop
+						playsInline
+						className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-15 transition-opacity duration-500 pointer-events-none"
+					/>
 					<div
-						className={cn("absolute inset-0 bg-linear-to-r", config.gradient)}
+						className={cn("absolute inset-0 bg-linear-to-b", config.gradient)}
 					/>
 				</>
 			)}
 
-			{/* Цветная полоска слева */}
-			<div
-				className={cn(
-					"absolute left-0 top-0 bottom-0 w-0.5 rounded-l-2xl",
-					config.accent
-				)}
-			/>
+			{/* ── Фоновое изображение ── */}
+			{!bgVideo && banner.imageUrl && (
+				<>
+					<div className={cn("absolute inset-0")}>
+						<Image
+							src={banner.imageUrl}
+							alt={banner.title}
+							fill
+							sizes="480px"
+							loading="eager"
+							className={cn(
+								"object-cover opacity-50 transition-opacity duration-500"
+							)}
+						/>
+					</div>
+					<div className="absolute inset-0 transition-color duration-200 bg-linear-to-r from-black/60 to-transparent group-hover:bg-black/0 backdrop-blur-xs" />
+				</>
+			)}
 
-			<div className="relative p-4 md:p-6 flex flex-col gap-3 min-h-45 md:min-h-55">
-				{/* Контент */}
-				<div className="flex-1">
-					<h3 className="inline text-xl md:text-2xl font-black tracking-tight leading-snug mb-1.5 italic backdrop-shadow-xl">
-						{banner.title}
-					</h3>
-					{banner.subtitle && (
-						<p className="text-sm text-muted-foreground line-clamp-2 uppercase tracking-wide">
-							{banner.subtitle}
-						</p>
+			{/* ── Цветная полоска слева ── */}
+			{!isStudio && (
+				<div
+					className={cn(
+						"absolute left-0 top-0 bottom-0 w-0.5 z-10",
+						config.accent
 					)}
-				</div>
+				/>
+			)}
 
-				{/* Footer */}
-				<div className="flex items-center justify-between">
-					{/* Бейдж */}
-					<div
-						className={cn(
-							"self-start inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold",
-							config.badge
+			{/* ── Кликабельный контент ── */}
+			<button
+				type="button"
+				onClick={onClick}
+				className={cn(
+					"relative w-full text-left block cursor-pointer h-full flex-1"
+				)}
+			>
+				<div
+					className={cn(
+						"px-5 pt-4 md:px-7 flex flex-col gap-3 min-h-70 md:min-h-70 h-full",
+						navHeight
+					)}
+				>
+					{/* Верхняя строка: бейдж типа + видео-метка */}
+					<div className="flex items-start justify-between gap-2">
+						<span
+							className={cn(
+								"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border",
+								config.badge
+							)}
+						>
+							{config.label}
+						</span>
+
+						{hasVideo && (
+							<span className="inline-flex items-center gap-1 text-[11px] font-bold text-white/60 bg-black/25 backdrop-blur-sm px-2 py-0.5 rounded-full">
+								<PlayCircleIcon size={11} weight="fill" />
+								Видео
+							</span>
 						)}
-					>
-						<Icon size={10} weight="fill" />
-						{config.label}
+					</div>
+
+					{/* Заголовок — прижат к нижней части карточки */}
+					<div className="flex-1 flex flex-col justify-end gap-1.5">
+						<h3
+							className={cn(
+								"text-2xl md:text-3xl font-black tracking-tight leading-snug italic text-white"
+							)}
+						>
+							{banner.title}
+						</h3>
+
+						{banner.subtitle && (
+							<p
+								className={cn(
+									"text-xs md:text-sm uppercase tracking-wide line-clamp-2 font-medium text-white"
+								)}
+							>
+								{banner.subtitle}
+							</p>
+						)}
+
 						{banner.eventDate && (
-							<span className="opacity-70">
-								·{" "}
-								{new Date(banner.eventDate).toLocaleDateString("ru-RU", {
-									day: "numeric",
-									month: "short",
-								})}
+							<span className={cn("text-xs font-bold opacity-60 text-white")}>
+								<ClientTime iso={banner.eventDate} fmt="full" />
 							</span>
 						)}
 					</div>
 
 					{banner.linkLabel && (
-						<span className="text-xs font-bold text-muted-foreground shadow-neumorph-inset/5 py-0.5 px-2 rounded-2xl bg-muted-foreground/20">
+						<span
+							className={cn(
+								"self-start text-sm font-bold py-2.5 px-4 rounded-2xl mt-1 bg-white/15 text-white group-hover:bg-gray-300/50 duration-200"
+							)}
+						>
 							{banner.linkLabel}
 						</span>
 					)}
 				</div>
-			</div>
-		</motion.button>
+			</button>
+		</div>
 	);
 }

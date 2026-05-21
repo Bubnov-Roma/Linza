@@ -9,6 +9,7 @@ import { ApplicationInitializer } from "@/providers/application-initializer";
 import { RootProvider } from "@/providers/root-provider";
 import "./globals.css";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
@@ -39,6 +40,9 @@ export const metadata: Metadata = {
 		"прокат фото видео оборудования",
 		"аренда фото-видео техники в Самаре",
 		"аренда фотостудии Самара",
+		"прокат фототехники Самара",
+		"аренда фототехники Самара",
+		"аренла видео Самара",
 		"Линза",
 		"Linza",
 	],
@@ -67,6 +71,10 @@ export default async function RootLayout({
 	const session = await auth();
 	const user = session?.user;
 	const support = await getSupportInfo();
+
+	const cookieStore = await cookies();
+	const sidebarState = cookieStore.get("sidebar_state")?.value;
+	const defaultOpen = sidebarState !== "false";
 
 	const [categories, initialApp] = await Promise.all([
 		getCategoriesFromDb(),
@@ -108,7 +116,7 @@ export default async function RootLayout({
 			</head>
 			<body suppressHydrationWarning>
 				<NextTopLoader color="#3b82f6" showSpinner={false} />
-				<RootProvider session={session}>
+				<RootProvider session={session} defaultOpen={defaultOpen}>
 					{isAdmin && (
 						<AdminNotificationsPoller
 							initialBookings={pendingBookings}

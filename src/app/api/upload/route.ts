@@ -6,21 +6,26 @@ import { NextResponse } from "next/server";
 import { uploadToS3 } from "@/actions/upload-actions";
 import { auth } from "@/auth";
 
-// В App Router лимит тела настраивается через route segment config:
-export const maxDuration = 60; // секунд
+export const maxDuration = 60;
 
-const ALLOWED_MIME = new Set([
+const ALLOWED_IMAGE_MIME = new Set([
 	"image/jpeg",
 	"image/png",
 	"image/webp",
 	"image/gif",
 ]);
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10 МБ
+const ALLOWED_VIDEO_MIME = new Set([
+	"video/mp4",
+	"video/webm",
+	"video/quicktime", // .mov
+]);
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 МБ
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 МБ
 
 export async function POST(req: Request) {
 	try {
-		// Только авторизованные
 		const session = await auth();
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,16 +39,21 @@ export async function POST(req: Request) {
 			return NextResponse.json({ error: "No file provided" }, { status: 400 });
 		}
 
-		if (!ALLOWED_MIME.has(file.type)) {
+		const isImage = ALLOWED_IMAGE_MIME.has(file.type);
+		const isVideo = ALLOWED_VIDEO_MIME.has(file.type);
+
+		if (!isImage && !isVideo) {
 			return NextResponse.json(
 				{ error: `Недопустимый тип файла: ${file.type}` },
 				{ status: 400 }
 			);
 		}
 
-		if (file.size > MAX_BYTES) {
+		const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+		if (file.size > maxBytes) {
+			const limitMb = maxBytes / 1024 / 1024;
 			return NextResponse.json(
-				{ error: "Файл слишком большой (максимум 10 МБ)" },
+				{ error: `Файл слишком большой (максимум ${limitMb} МБ)` },
 				{ status: 413 }
 			);
 		}

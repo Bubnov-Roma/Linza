@@ -1,9 +1,9 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <skeletons> */
 "use client";
 
+import { HeartIcon, PlusIcon } from "@phosphor-icons/react";
+import { CardsThreeIcon } from "@phosphor-icons/react/dist/ssr";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Heart, Layers, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -118,10 +118,15 @@ export default function ClientFavoritesPage() {
 		{
 			id: "favorites" as Tab,
 			label: "Избранное",
-			icon: Heart,
+			icon: HeartIcon,
 			count: favorites.length,
 		},
-		{ id: "sets" as Tab, label: "Сеты", icon: Layers, count: sets.length },
+		{
+			id: "sets" as Tab,
+			label: "Сеты",
+			icon: CardsThreeIcon,
+			count: sets.length,
+		},
 	];
 
 	const isEmptyFavs = favorites.length === 0;
@@ -131,55 +136,57 @@ export default function ClientFavoritesPage() {
 		<>
 			<div className="max-w-5xl mx-auto px-4 py-6 md:py-10 space-y-6 md:space-y-8">
 				{/* Header */}
-				<div className="flex items-end justify-between gap-4">
+				<div className="flex items-center justify-between gap-4">
 					<div>
 						<h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase italic">
 							Избранное
 						</h1>
 						<p className="text-muted-foreground mt-1 text-sm">
-							Сохранённая техника и готовые сеты
+							Сохранённая техника и сеты
 						</p>
 					</div>
 					{activeTab === "sets" && !isEmptyFavs && (
 						<Button
 							onClick={() => setCreatingSet(true)}
-							className="rounded-xl gap-2 shrink-0"
+							className="rounded-full gap-2 shrink-0"
+							size="icon-lg"
 						>
-							<Plus size={16} />
+							<PlusIcon size={16} />
 							<span className="hidden sm:inline">Новый сет</span>
 						</Button>
 					)}
 				</div>
 
 				{/* Tabs */}
-				<div className="tabs-group">
+				<div className="tabs-group w-full sm:w-fit">
 					{tabs.map(({ id, label, icon: Icon, count }) => (
-						<button
+						<Button
 							key={id}
+							variant="tab"
 							type="button"
 							onClick={() => setActiveTab(id)}
 							className={cn(
-								"flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+								"min-w-36 items-start transition-all duration-300 w-full flex-1 mx-auto",
 								activeTab === id
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
 							)}
 						>
-							<Icon size={15} />
+							<Icon size={15} weight={activeTab === id ? "fill" : "regular"} />
 							{label}
 							{count > 0 && (
 								<span
 									className={cn(
 										"flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold px-1",
 										activeTab === id
-											? "bg-primary/10 text-primary"
+											? "bg-foreground/10 text-foreground/80"
 											: "bg-foreground/10"
 									)}
 								>
 									{count}
 								</span>
 							)}
-						</button>
+						</Button>
 					))}
 				</div>
 
@@ -195,7 +202,7 @@ export default function ClientFavoritesPage() {
 						>
 							{isEmptyFavs ? (
 								<EmptyState
-									icon={Heart}
+									icon={HeartIcon}
 									title="Пусто"
 									description="Сохраняйте любимую технику в избранное чтобы всегда иметь под рукой"
 									action={{
@@ -233,7 +240,7 @@ export default function ClientFavoritesPage() {
 						>
 							{isEmptySets && !isEmptyFavsAndSets && (
 								<EmptyState
-									icon={Layers}
+									icon={CardsThreeIcon}
 									title="Нет сетов"
 									description="Собирайте сеты из избранного под разные сценарии съемок"
 									action={{
@@ -244,7 +251,7 @@ export default function ClientFavoritesPage() {
 							)}
 							{isEmptyFavsAndSets && (
 								<EmptyState
-									icon={Layers}
+									icon={CardsThreeIcon}
 									title="Нет сетов"
 									description="Добаьте любимые позиции в избранное чтобы собрать из них сет"
 									action={{

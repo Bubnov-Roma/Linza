@@ -8,7 +8,8 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground hover:bg-primary/90",
+				default:
+					"bg-primary brightness-100 text-primary-foreground hover:brightness-105",
 				destructive:
 					"bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
 				outline:
@@ -32,7 +33,9 @@ const buttonVariants = cva(
 				),
 				brand:
 					"bg-muted-foreground/10 text-foreground/80 hover:bg-primary hover:text-primary-foreground transition-all duration-200 group/auth",
-				tab: "rounded-2xl text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all duration-200",
+				tab: cn(
+					"flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-2xl text-muted-foreground hover:text-foreground transition-all duration-200"
+				),
 			},
 			isActive: {
 				true: "",

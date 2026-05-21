@@ -246,14 +246,17 @@ export function MarkdownEditor({
 									className={cn(
 										"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors hover:bg-muted-foreground/20",
 										tab === t
-											? "bg-secondary text-foreground shadow-md hover:bg-secondary/80"
+											? "bg-muted-foreground/20 text-foreground shadow-md hover:bg-muted-foreground/40"
 											: "text-muted-foreground hover:text-foreground"
 									)}
 								>
 									{t === "write" ? (
-										<PencilSimpleLineIcon size={9} />
+										<PencilSimpleLineIcon
+											size={9}
+											weight={tab === t ? "fill" : "regular"}
+										/>
 									) : (
-										<EyeIcon size={9} />
+										<EyeIcon size={9} weight={tab === t ? "fill" : "regular"} />
 									)}
 								</Button>
 							</TooltipTrigger>

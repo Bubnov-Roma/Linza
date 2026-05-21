@@ -25,7 +25,11 @@ interface AddToCartButtonProps {
 // ─── Animations & Toasts (оставляем логику) ──────────────────────────────────
 function flyToCart(sourceEl: HTMLElement | null, imageUrl?: string) {
 	if (!sourceEl || typeof document === "undefined") return;
-	const cartEl = document.querySelector<HTMLElement>("[data-cart-icon]");
+	const cartIcons = document.querySelectorAll("[data-cart-icon]");
+	const cartEl = Array.from(cartIcons).find(
+		(el) => el.getBoundingClientRect().width > 0
+	);
+
 	if (!cartEl) return;
 
 	const srcRect = sourceEl.getBoundingClientRect();
@@ -107,7 +111,7 @@ export function AddToCartButton({
 	const [pulse, setPulse] = useState(false);
 
 	const s = {
-		sm: { h: "h-10", side: "w-6", text: "text-xs", icon: 12 },
+		sm: { h: "h-10", side: "w-8", text: "text-xs", icon: 12 },
 		md: { h: "h-12", side: "w-10", text: "text-sm", icon: 14 },
 		lg: { h: "h-14", side: "w-12", text: "text-base", icon: 16 },
 	}[size];
@@ -139,7 +143,9 @@ export function AddToCartButton({
 	if (variant === "icon") {
 		const inCart = quantity > 0;
 		return (
-			<button
+			<Button
+				size="icon"
+				variant="ghost"
 				ref={btnRef}
 				type="button"
 				onClick={inCart ? handleRemove : handleAdd}
@@ -153,7 +159,7 @@ export function AddToCartButton({
 				)}
 			>
 				<ShoppingCartSimpleIcon size={s.icon} weight="duotone" />
-			</button>
+			</Button>
 		);
 	}
 
@@ -255,14 +261,13 @@ export function AddToCartButton({
 	// ── Catalog Variant (Grid Card) ──────────────────────────────────────────
 	if (quantity === 0) {
 		return (
-			<button
+			<Button
 				ref={btnRef}
 				type="button"
 				onClick={handleAdd}
 				className={cn(
-					"cursor-pointer w-full flex items-center justify-center gap-2 rounded-2xl px-2.5",
-					"bg-primary text-primary-foreground font-bold transition-all",
-					"hover:shadow-lg hover:shadow-primary/30 active:scale-95",
+					"rounded-2xl font-bold hover:shadow-lg hover:shadow-primary/30",
+					s.side,
 					s.h,
 					s.text,
 					className
@@ -270,7 +275,7 @@ export function AddToCartButton({
 			>
 				{size === "lg" ? "Добавить" : "В корзину"}
 				<ShoppingCartSimpleIcon size={s.icon + 2} weight="duotone" />
-			</button>
+			</Button>
 		);
 	}
 
@@ -279,44 +284,44 @@ export function AddToCartButton({
 			className={cn(
 				"w-full flex items-center rounded-2xl overflow-hidden border border-foreground/30 bg-foreground/5",
 				"animate-in fade-in zoom-in-95 duration-200",
+				s.side,
 				s.h,
 				className
 			)}
 		>
-			<button
-				type="button"
+			<Button
 				onClick={handleRemove}
-				className={cn(
-					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 rounded-2xl active:scale-80",
-					"w-10"
-				)}
+				variant="ghost"
+				size="icon"
+				className={cn("rounded-full w-12", s.text)}
 			>
 				<MinusIcon size={18} className="text-foreground" />
-			</button>
+			</Button>
 
 			<span
 				className={cn(
-					"flex items-center justify-center flex-1 font-black text-foreground leading-none px-1",
+					"flex items-center justify-center flex-1 font-black text-foreground leading-none px-0.5",
 					s.text
 				)}
 			>
 				{quantity}
 			</span>
 
-			<button
+			<Button
+				variant="ghost"
+				size="icon"
 				ref={btnRef}
 				type="button"
 				onClick={handleAdd}
 				disabled={quantity >= (item.availableCount || 99)}
 				className={cn(
-					"flex items-center cursor-pointer justify-center shrink-0 h-full transition-all hover:bg-foreground/10 rounded-2xl active:scale-80",
-					"disabled:opacity-20",
-					"w-10",
+					"rounded-2xl w-12",
+					s.text,
 					quantity >= (item.availableCount || 99) && "cursor-not-allowed"
 				)}
 			>
 				<PlusIcon size={18} />
-			</button>
+			</Button>
 		</div>
 	);
 }

@@ -5,7 +5,7 @@ import { PatternFormat } from "react-number-format";
 import { cn } from "@/lib/utils";
 
 interface BasePhoneInputProps {
-	value: string;
+	value?: string;
 	onChange: (formattedValue: string) => void;
 	className?: string;
 	onKeyDown?: (e: KeyboardEvent<Element>) => void;
@@ -29,7 +29,7 @@ export const BasePhoneInput = ({
 }: BasePhoneInputProps) => {
 	return (
 		<PatternFormat
-			value={externalValue}
+			value={externalValue ?? ""}
 			format="+#(###)###-##-##"
 			mask="_"
 			allowEmptyFormatting={false}
@@ -46,7 +46,8 @@ export const BasePhoneInput = ({
 				const { value: rawValue, formattedValue } = values;
 
 				if (sourceInfo.source === "event") {
-					const isFirstInput = !externalValue.replace(/\D/g, "");
+					// Добавили оператор || "", чтобы защититься от undefined ──>
+					const isFirstInput = !(externalValue || "").replace(/\D/g, "");
 
 					// Обработка "8" -> "7"
 					if (isFirstInput && rawValue === "8") {

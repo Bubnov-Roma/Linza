@@ -83,7 +83,6 @@ export function PriceSelector({
 					if (!hasPrice) return null;
 
 					const isSelected = currentActivePeriod === opt.id;
-					// const benefit = opt.id !== "day" ? benefits[opt.id] : null;
 
 					return (
 						<button
@@ -94,7 +93,7 @@ export function PriceSelector({
 								"relative flex-1 flex flex-col items-center py-2 px-1 rounded-xl transition-all duration-300 cursor-pointer",
 								isSelected
 									? "bg-background shadow-md text-foreground"
-									: "text-muted-foreground hover:bg-muted-foreground/10"
+									: "text-muted-foreground hover:text-foreground"
 							)}
 						>
 							<span className="text-[10px] font-bold uppercase tracking-tight">
@@ -137,7 +136,7 @@ export function PriceSelector({
 						<span
 							className={cn(
 								"font-black tracking-tighter italic uppercase",
-								isDetails ? "text-4xl" : "text-2xl"
+								isDetails ? "text-4xl" : "text-3xl"
 							)}
 						>
 							{currentPrice}

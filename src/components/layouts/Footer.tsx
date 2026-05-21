@@ -21,10 +21,11 @@ export async function Footer({ support }: { support: SupportInfo }) {
 				<div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
 					{/* Brand & Mission */}
 					<div className="lg:col-span-4 flex flex-col gap-6">
-						<Link href="/" className="flex items-center gap-3 group">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-primary-foreground transition-transform group-hover:scale-105">
-								<Logo className="text-background p-1" />
-							</div>
+						<Link
+							href="/"
+							className="flex text-background gap-3 group bg-foreground items-baseline justify-center rounded-full transition-transform group-hover:scale-105 w-fit px-6 py-2"
+						>
+							<Logo size={20} className="text-background" />
 							<span className="text-2xl font-black tracking-tighter">
 								LINZA
 							</span>
@@ -62,7 +63,7 @@ export async function Footer({ support }: { support: SupportInfo }) {
 										href="/equipment?category=lighting"
 										className={footerLinkClass}
 									>
-										Свет и звук
+										Свет
 									</Link>
 								</li>
 								<li>

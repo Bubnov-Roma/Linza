@@ -38,6 +38,7 @@ export const ClientForm = () => {
 			applicationData: {
 				personalData: {
 					email: user?.email ?? "",
+					phone: "",
 				},
 			},
 		},
@@ -45,15 +46,11 @@ export const ClientForm = () => {
 
 	const { handleSubmit, setError, watch, reset, setValue } = methods;
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <draft save>
 	useEffect(() => {
 		const registrationEmail = user?.email ?? "";
 
 		loadDraftAction().then(({ data, status }) => {
 			if (data && status === "DRAFT") {
-				// Merge draft into a full IndividualClient shape.
-				// Since clientFormSchema = individualClientSchema (no discriminated union),
-				// ClientFormValues IS IndividualClient — no cast needed.
 				const draft = data as Partial<ClientFormValues>;
 
 				reset(
@@ -65,6 +62,7 @@ export const ClientForm = () => {
 							personalData: {
 								...draft.applicationData?.personalData,
 								email: registrationEmail,
+								phone: draft.applicationData?.personalData?.phone ?? "",
 							},
 						},
 					},
@@ -74,7 +72,7 @@ export const ClientForm = () => {
 				setValue("applicationData.personalData.email", registrationEmail);
 			}
 		});
-	}, [user?.email]);
+	}, [user?.email, reset, setValue]);
 
 	// Autosave debounced 2s
 	const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

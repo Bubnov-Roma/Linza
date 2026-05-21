@@ -6,6 +6,7 @@ export * from "./booking/BlockedBanner";
 export * from "./booking/BookingButton";
 export * from "./ClientTime";
 export * from "./CustomInputGroup";
+export * from "./EquipmentActionButtons";
 export * from "./EquipmentCard";
 export * from "./GlobalErrorPage";
 export * from "./ImageUploader";

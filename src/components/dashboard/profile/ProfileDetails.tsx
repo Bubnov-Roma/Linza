@@ -195,10 +195,10 @@ export function ProfileDetails({
 							{uploading ? (
 								<div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-2xl animate-spin" />
 							) : avatarUrl ? (
-								<div className="w-full flex flex-row sm:flex-col gap-1 justify-between items-center my-auto">
+								<div className="w-full h-full flex flex-row sm:flex-col gap-1 justify-between items-center my-auto">
 									<Button
 										variant="brand"
-										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-background/60 rounded-2xl"
+										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-12 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
 									>
 										<ImageIcon size={14} />
 										<span className="text-[10px] font-bold uppercase tracking-wider">
@@ -212,7 +212,7 @@ export function ProfileDetails({
 											handleAvatarDelete();
 										}}
 										disabled={uploading}
-										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-background/50 rounded-2xl"
+										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
 									>
 										<TrashIcon size={14} />
 										<span className="text-[10px] font-bold uppercase tracking-wider">

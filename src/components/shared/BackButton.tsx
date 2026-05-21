@@ -25,11 +25,11 @@ export function BackButton({ fallback = "/", className }: BackButtonProps) {
 			type="button"
 			onClick={handleBack}
 			className={cn(
-				"w-10 h-10 rounded-xl border border-foreground/10 flex items-center justify-center hover:bg-foreground/5 transition-all shrink-0",
+				"w-8 h-8 rounded-xl border border-foreground/10 flex items-center justify-center text-center hover:bg-foreground/5 transition-all shrink-0",
 				className
 			)}
 		>
-			<ArrowLeft size={18} />
+			<ArrowLeft size={18} className="m-auto" />
 		</button>
 	);
 }

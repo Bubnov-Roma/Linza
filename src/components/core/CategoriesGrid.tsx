@@ -1,5 +1,4 @@
 import type { Icon } from "@phosphor-icons/react";
-import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui";
@@ -12,15 +11,18 @@ interface CategoriesGridProps {
 
 export function CategoriesGrid({ categories }: CategoriesGridProps) {
 	return (
-		<section className="container mx-auto px-4 space-y-4">
-			<div className="flex items-center justify-between">
-				<h2 className="text-2xl font-black uppercase italic tracking-tight">
+		<section className="container mx-auto px-4 space-y-6">
+			<div className="flex items-baseline justify-between">
+				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
 					Категории
 				</h2>
-				<Button asChild variant="ghost" size="sm" className="gap-1 text-xs">
-					<Link href="/equipment">
-						Весь каталог <ArrowRightIcon size={12} />
-					</Link>
+				<Button
+					asChild
+					variant="link"
+					size="xl"
+					className="text-sm text-foreground/80 px-2 uppercase font-black italic"
+				>
+					<Link href="/equipment">Весь каталог</Link>
 				</Button>
 			</div>
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6">
@@ -36,7 +38,7 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 						<Link
 							key={cat.id}
 							href={`/equipment?category=${cat.slug}`}
-							className="group relative h-48 rounded-3xl bg-background/5 border border-muted-foreground/20 overflow-hidden transition-all"
+							className="group relative h-48 rounded-3xl bg-foreground/5 border border-muted-foreground/20 overflow-hidden transition-all"
 						>
 							{cat.imageUrl ? (
 								<>
@@ -45,21 +47,21 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 										alt={cat.name}
 										fill
 										sizes="(max-width: 768px) 50vw, 25vw"
-										className="object-cover opacity-30 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
+										className="object-cover opacity-70 group-hover:opacity-95 transition-all duration-500"
 									/>
-									<div className="absolute inset-0 bg-linear-to-t from-background/40 via-transparent to-transparent opacity-100 group-hover:opacity-100 transition-opacity" />
+									<div className="absolute inset-0 bg-black/20 opacity-100 transition-opacity" />
 								</>
 							) : (
 								<div className="absolute inset-0 bg-linear-to-b from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 							)}
-							<div className="relative h-full flex flex-col items-center justify-center p-4 text-center">
+							<div className="relative h-full flex flex-col items-center justify-center px-4 py-2 text-center">
 								{!cat.imageUrl && (
 									<div className="mb-4 text-primary group-hover:scale-110 transition-transform text-4xl">
 										<IconComp weight="duotone" />
 									</div>
 								)}
 								<div className="absolute inset-0 bg-linear-to-t from-background/40 to-transparent opacity-100 group-hover:opacity-0 transition-opacity" />
-								<h3 className="relative font-semibold text-xl uppercase italic tracking-[0.2em] mt-auto transition-all group-hover:backdrop-brightness-130 group-hover:backdrop-blur-md dark:group-hover:backdrop-brightness-40 py-3 px-5 rounded-2xl duration-500">
+								<h3 className="relative font-semibold text-xl bg-background/80 uppercase italic tracking-[0.2em] mt-auto transition-all group-hover:backdrop-brightness-180 backdrop-blur-xl dark:group-hover:backdrop-brightness-90 py-3 px-5 rounded-2xl duration-500">
 									{cat.name}
 								</h3>
 							</div>

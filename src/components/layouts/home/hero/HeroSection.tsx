@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCarousel } from "@/components/layouts/home/events-banner/BannerCarousel";
@@ -8,39 +9,49 @@ interface HeroSectionProps {
 	isAdmin: boolean;
 }
 
-export const HeroSection = ({ banners, isAdmin }: HeroSectionProps) => {
+export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
+	const cookieStore = await cookies();
+	const savedPlayingState = cookieStore.get("banner_playing_hero")?.value;
+
+	const initialIsPlaying =
+		savedPlayingState !== undefined ? savedPlayingState === "true" : true;
 	return (
-		<section className="container mx-auto px-4 pt-8 md:pt-12">
-			<div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-6 items-start">
-				{/* Левая колонка — текст + поиск */}
-				<div className="space-y-6 max-w-2xl">
-					<p className="text-xs font-bold uppercase tracking-wider sm:tracking-[0.2em] text-primary-accent/70">
-						Прокат фото-видео оборудования · Самара
-					</p>
-					<h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.95] uppercase italic wrap items-center-safe flex ">
-						<span className="text-primary tracking-wider">LINZA</span>
-						<p className="pl-4 text-xs md:text-2xl font-black text-foreground tracking-wider">
-							Готовые решения для вашей съемки
-						</p>
+		<section className="container mx-auto pt-6 md:pt-10 px-2">
+			<div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] items-start">
+				{/* Левая колонка — текст */}
+				<div className="max-w-2xl px-2 space-y-6">
+					<h1 className="text-xs font-bold uppercase tracking-wider sm:tracking-[0.2em] text-primary-accent/70">
+						Прокат фото- видеооборудования в Самаре
 					</h1>
-					<div className="flex flex:col sm:flex-row gap-8 items-baseline">
-						<p className="text-muted-foreground text-xs sm:text-base max-w-md leading-relaxed">
-							Камеры, объективы, свет, звук и многое другое.
-							<br />
-							Более 500 позиций и студия с готовыми сетапами.
+
+					<div className="space-y-2">
+						<h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] uppercase italic text-primary tracking-tighter">
+							LINZA
+						</h2>
+						<p className="text-base sm:text-lg md:text-2xl font-black text-foreground tracking-wider">
+							Готовые решения для вашей съёмки
 						</p>
 					</div>
+
+					<p className="hidden lg:block text-muted-foreground text-sm sm:text-base max-w-md leading-relaxed">
+						Более 500 позиций фототехники и видеооборудования от проверенных
+						брендов + студия с готовыми сетапами.
+					</p>
 				</div>
 
 				{/* Правая колонка — баннеры */}
 				<div className="w-full">
 					{banners.length > 0 ? (
-						<BannerCarousel banners={banners} />
+						<BannerCarousel
+							banners={banners}
+							variant="hero"
+							initialIsPlaying={initialIsPlaying}
+						/>
 					) : isAdmin ? (
-						<div className="rounded-2xl border border-dashed border-foreground/15 p-8 text-center text-sm text-muted-foreground">
+						<div className="rounded-2xl border border-dashed border-foreground/15 p-6 text-center text-sm text-muted-foreground">
 							<p className="font-bold mb-1">Баннеры не добавлены</p>
 							<p className="text-xs mb-3">
-								Создайте новый баннер в панели администратора
+								Создайте баннер с размещением «Главный экран» или «Везде»
 							</p>
 							<Button asChild size="sm" variant="outline">
 								<Link href="/admin">Перейти в админку</Link>

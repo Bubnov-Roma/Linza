@@ -73,7 +73,7 @@ export default async function EquipmentDetailsPage({
 	const currentCategory = categories.find((c) => c.id === equipment.categoryId);
 
 	return (
-		<div className="min-h-screen bg-background text-foreground pb-20">
+		<div className="pb-8">
 			<ProductSchema
 				name={equipment.title}
 				description={

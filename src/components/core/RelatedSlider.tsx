@@ -50,7 +50,7 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 		setCurrentPage((prev) => {
 			if (prev !== activePage) {
 				if (typeof window !== "undefined" && navigator.vibrate) {
-					navigator.vibrate(6); // Микро-клик, как на колесиках в iOS
+					navigator.vibrate(6);
 				}
 				return activePage;
 			}
@@ -83,7 +83,7 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 		<div
 			className={cn(
 				"space-y-6",
-				"mask-[linear-gradient(to_right,transparent,white_3%,white_97%,transparent)]"
+				"mask-[linear-gradient(to_right,transparent,white_2%,white_98%,transparent)]"
 			)}
 		>
 			<div className="relative group">
@@ -99,7 +99,7 @@ export function RelatedSlider({ ids }: { ids: string[] }) {
 						{items.map((item) => (
 							<div
 								key={item.id}
-								className="shrink-0 snap-start w-[calc(50%-6px)] md:w-55"
+								className="shrink-0 snap-start w-[calc(50%-6px)] md:w-50"
 							>
 								<EquipmentCard item={item} variant="slider" />
 							</div>

@@ -17,7 +17,7 @@ export function BannerCard({
 	hasNav = false,
 }: {
 	banner: Banner;
-	onClick: () => void;
+	onClick?: () => void;
 	isActive: boolean;
 	variant?: "hero" | "studio";
 	hasNav?: boolean;
@@ -35,7 +35,7 @@ export function BannerCard({
 	return (
 		<div
 			className={cn(
-				"relative w-full h-full overflow-hidden border group rounded-2xl flex flex-col justify-stretch",
+				"relative w-full h-full overflow-hidden border group rounded-xl flex flex-col justify-stretch",
 				isStudio
 					? "border-0"
 					: isActive
@@ -76,7 +76,7 @@ export function BannerCard({
 							)}
 						/>
 					</div>
-					<div className="absolute inset-0 transition-color duration-200 bg-linear-to-r from-black/60 to-transparent bg-black/10 backdrop-blur-xs" />
+					<div className="absolute inset-0 transition-color duration-200 bg-linear-to-r from-black/60 to-transparent bg-black/10 backdrop-blur-xs rounded-xl" />
 				</>
 			)}
 
@@ -100,7 +100,7 @@ export function BannerCard({
 			>
 				<div
 					className={cn(
-						"px-5 pt-4 md:px-7 flex flex-col gap-3 min-h-70 md:min-h-70 h-full",
+						"px-5 pt-4 md:px-7 flex flex-col gap-3 min-h-60 md:min-h-70 h-full",
 						navHeight
 					)}
 				>

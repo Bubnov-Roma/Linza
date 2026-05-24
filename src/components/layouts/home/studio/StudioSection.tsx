@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCarousel } from "@/components/layouts/home/events-banner/BannerCarousel";
@@ -9,7 +8,6 @@ interface StudioSectionProps {
 	banners: Banner[];
 }
 
-// Преимущества студии — ротируемые строки под заголовком
 const STUDIO_FEATURES = [
 	"Циклорама · Хромакей · Импульсный и постоянный свет",
 	"Готовые сетапы для подкастов и стримов",
@@ -18,11 +16,6 @@ const STUDIO_FEATURES = [
 
 export const StudioSection = async ({ banners }: StudioSectionProps) => {
 	const hasBanners = banners.length > 0;
-
-	const cookieStore = await cookies();
-	const savedPlayingState = cookieStore.get("banner_playing_studio")?.value;
-	const initialIsPlaying =
-		savedPlayingState !== undefined ? savedPlayingState === "true" : true;
 
 	return (
 		<section className="container mx-auto space-y-4 px-2 md:px-4">
@@ -41,7 +34,7 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 			</div>
 			<div
 				className={cn(
-					"relative overflow-hidden rounded-3xl bg-foreground not-first:text-background",
+					"relative overflow-hidden rounded-2xl bg-foreground not-first:text-background text-background",
 					hasBanners ? "grid grid-cols-1 lg:grid-cols-2" : "flex flex-col"
 				)}
 			>
@@ -49,14 +42,16 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 				{/* ── Левая колонка: текст ── */}
 				<div
 					className={cn(
-						"flex flex-col justify-between gap-6 px-6 sm:px-10 py-8 sm:py-10 rounded-3xl ",
+						"flex flex-col justify-between gap-6 px-6 sm:px-10 py-8 sm:py-10 rounded-2xl",
 						!hasBanners && "md:flex-row"
 					)}
 				>
 					<div className="space-y-4">
-						<h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase italic tracking-tight leading-tight">
-							Включайся
-							<br className="hidden sm:block" /> в процесс
+						<p className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-50 italic">
+							Студия Linza · Самара
+						</p>
+						<h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase italic tracking-tight leading-tight select-none">
+							Включайся в процесс
 						</h2>
 
 						{/* Фичи — три строки с акцентом */}
@@ -89,16 +84,8 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 
 				{/* ── Правая колонка: баннер как визуальное продолжение блока ── */}
 				{hasBanners && (
-					<div className="relative">
-						<div className="h-full p-0 lg:p-0 flex flex-col justify-stretch">
-							<div className="flex-1 flex flex-col">
-								<BannerCarousel
-									banners={banners}
-									variant="studio"
-									initialIsPlaying={initialIsPlaying}
-								/>
-							</div>
-						</div>
+					<div className="relative w-full min-h-70 lg:h-full flex flex-col">
+						<BannerCarousel banners={banners} variant="studio" />
 					</div>
 				)}
 			</div>

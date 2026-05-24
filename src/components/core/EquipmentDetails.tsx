@@ -27,6 +27,7 @@ import {
 	PromoCodeField,
 	RentalPeriod,
 	SimpleMarkdown,
+	VideoEmbed,
 } from "@/components/shared";
 import {
 	Card,
@@ -56,117 +57,20 @@ function MD({ children }: { children: string | null | undefined }) {
 	return <SimpleMarkdown text={children} />;
 }
 
-// ─── Утилита: URL любой платформы → embed URL ────────────────────────────────
-function toEmbedUrl(url: string): string | null {
-	if (!url) return null;
-
-	try {
-		// 1.YouTube (shorts, watch, youtu.be)
-		const ytMatch = url.match(
-			/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]+)/
-		);
-		if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-		// 2. VK Video (vk.com/video-123_456)
-		// Формат: oid (id владельца) и id (id видео)
-		const vkMatch = url.match(
-			/(?:vk\.com\/video|vkvideo\.ru\/video_ext\.php\?oid=)(-?\d+)(?:_|&id=)(\d+)/
-		);
-		if (vkMatch) {
-			return `https://vk.com/video_ext.php?oid=${vkMatch[1]}&id=${vkMatch[2]}&hd=2`;
-		}
-
-		// 3. RuTube (rutube.ru/video/HASH/)
-		const rtMatch = url.match(/rutube\.ru\/video\/([\w\d]+)/);
-		if (rtMatch) return `https://rutube.ru/play/embed/${rtMatch[1]}`;
-
-		// 4. Vimeo (vimeo.com/12345678)
-		const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-		if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-
-		// 5. Reddit (простая попытка подставить /embed)
-		if (url.includes("reddit.com/r/")) {
-			// Reddit плееры капризные, часто лучше оставлять ссылкой,
-			// но можно попробовать такой формат:
-			const redditParts = url?.split("?")[0]?.replace(/\/$/, "");
-			return `${redditParts}/?ref_source=embed&amp;ref=share&amp;embed=true`;
-		}
-
-		// Если ссылка уже является embed-ссылкой (содержит iframe src)
-		if (
-			url.includes("/embed/") ||
-			url.includes("_ext.php") ||
-			url.includes("player.")
-		) {
-			return url;
-		}
-
-		return null;
-	} catch (e) {
-		console.error("Video URL parsing error:", e);
-		return null;
-	}
-}
-
-// ─── VideoReviews: рендерит список видео или заглушку ────────────────────────
 function VideoReviews({ urls }: { urls: string[] }) {
-	if (urls.length === 0) {
-		return (
-			<div className="py-12 text-center">
-				<VideoIcon
-					size={32}
-					className="text-muted-foreground/20 mx-auto mb-3"
-				/>
-				<p className="text-sm font-medium text-muted-foreground">
-					Видеообзоры появятся позже
-				</p>
-			</div>
-		);
-	}
+	if (urls.length === 0) return <p>Видеообзоров появятся позже</p>;
 
 	return (
 		<div className="space-y-4 py-2">
-			{urls.map((url, i) => {
-				const embedUrl = toEmbedUrl(url);
-				if (!embedUrl) {
-					// Не удалось распознать — показываем ссылку
-					return (
-						<a
-							key={i}
-							href={url}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-2 text-sm text-primary hover:underline"
-						>
-							<VideoIcon size={14} />
-							{url}
-						</a>
-					);
-				}
-				return (
-					<div
-						key={i}
-						className="relative rounded-2xl overflow-hidden bg-black"
-						style={{ paddingBottom: "56.25%" /* 16:9 */ }}
-					>
-						<iframe
-							src={embedUrl}
-							title={`Видеообзор ${i + 1}`}
-							className="absolute inset-0 w-full h-full"
-							allowFullScreen
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-							loading="lazy"
-						/>
-					</div>
-				);
-			})}
+			{urls.map((url, i) => (
+				<VideoEmbed key={i} url={url} />
+			))}
 		</div>
 	);
 }
 
-// ─── Info tabs ────────────────────────────────────────────────────────────────
 const INFO_TABS = [
 	{ id: "description", label: "Описание", icon: InfoIcon },
-	// { id: "specs", label: "Характеристики", icon: LightningIcon },
 	{ id: "kit", label: "Комплект", icon: BriefcaseMetalIcon },
 	{ id: "reviews", label: "Обзоры", icon: VideoIcon },
 ] as const;
@@ -184,9 +88,7 @@ export default function EquipmentDetails({
 }) {
 	const requireAuth = useRequireAuth();
 	const { items: cartItems, clearCart } = useCartStore();
-
 	const titleRef = useRef<HTMLHeadingElement>(null);
-
 	const { workStart, workEnd } = useSiteSettingsStore();
 
 	const [activeInfoTab, setActiveInfoTab] = useState<InfoTabId>("description");
@@ -216,7 +118,6 @@ export default function EquipmentDetails({
 					block: "start",
 				});
 			}, 100);
-
 			return () => clearTimeout(timer);
 		}
 		return;
@@ -353,23 +254,8 @@ export default function EquipmentDetails({
 		}
 	};
 
-	// const specEntries = useMemo(() => {
-	// 	const s = equipment.specifications;
-	// 	if (!s || typeof s !== "object") return [];
-	// 	return Object.entries(s as Record<string, string>).filter(
-	// 		([k]) => k !== "description"
-	// 	);
-	// }, [equipment.specifications]);
-
-	// const specDesc =
-	// 	typeof (equipment.specifications as Record<string, string>)?.description ===
-	// 	"string"
-	// 		? (equipment.specifications as Record<string, string>).description
-	// 		: null;
-
 	const visibleTabs = INFO_TABS.filter((tab) => {
 		if (tab.id === "description") return !!equipment.description;
-		// if (tab.id === "specs") return specEntries.length > 0 || !!specDesc;
 		if (tab.id === "kit") return !!equipment.kit;
 		if (tab.id === "reviews") return equipment.videoUrls.length > 0;
 		return true;
@@ -381,7 +267,6 @@ export default function EquipmentDetails({
 
 	if (bookingId) return <BookingSuccessScreen bookingId={bookingId} />;
 
-	/* ── Quick book sheet content (shared between Sheet and Dialog) ── */
 	const quickBookContent = (
 		<>
 			<div className="p-3 rounded-xl bg-foreground/5 flex items-center justify-between">
@@ -461,30 +346,25 @@ export default function EquipmentDetails({
 					onClose={() => setLightboxSrc(null)}
 				/>
 			)}
-			{/* Title */}
-			<div
-				className={cn(
-					"lg:px-6 max-w-6xl mx-auto py-4 flex-col gap-4 space-y-6 items-center animate-in fade-in duration-500 lg:overflow-visible"
-				)}
-			>
+
+			<div className="lg:px-6 max-w-7xl mx-auto py-4 flex flex-col gap-4 space-y-6 items-center animate-in fade-in duration-500 lg:overflow-visible">
 				<div className="flex px-4 w-full items-baseline h-full gap-2">
 					<h1
 						ref={titleRef}
-						className="text-3xl font-black italic uppercase tracking-tighter leading-tight scroll-mt-16"
+						className="text-3xl font-black italic uppercase tracking-tighter leading-tight scroll-mt-14"
 					>
 						{equipment.title}
 					</h1>
 				</div>
-				{/* ── 12-Column Grid (Left: 7, Right: 5) ── */}
-				<div className="grid px-4 grid-cols-1 md:grid-cols-12 gap-8 items-start min-h-0 flex-1 relative">
-					{/* ━━ LEFT COLUMN: Gallery & Info Tabs ━━ */}
-					<div className="order-1 md:col-span-6 lg:col-span-7 space-y-8">
-						{/* Gallery */}
+				{/* ── Основная сетка страницы (7 + 5 колонок) ── */}
+				<div className="grid px-4 grid-cols-1 md:grid-cols-12 gap-8 items-start min-h-0 w-full relative">
+					{/* ━━ ЛЕВАЯ КОЛОНКА: Галерея и Табы ━━ */}
+					<div className="order-1 md:col-span-6 lg:col-span-7 space-y-4 md:row-start-1">
 						<div className="relative rounded-3xl overflow-hidden bg-foreground/5">
 							<Carousel className="w-full">
 								<CarouselContent>
 									{images.map((img, i) => (
-										<CarouselItem key={`${img}` + `${i}`}>
+										<CarouselItem key={`${img}-${i}`}>
 											<Card
 												className="relative aspect-4/3 overflow-hidden cursor-zoom-in group border-0 bg-transparent"
 												onClick={() => !imgErrors.has(i) && setLightboxSrc(img)}
@@ -518,7 +398,8 @@ export default function EquipmentDetails({
 								className="absolute top-2 right-4 left-4"
 							/>
 						</div>
-						{/* Mobile price + cart */}
+
+						{/* Мобильный блок покупки */}
 						<div className="md:hidden">
 							<PriceSelector
 								prices={{
@@ -540,9 +421,9 @@ export default function EquipmentDetails({
 								}
 							/>
 						</div>
-						{/* ── Tabs (описание, характеристики, обзоры) — полная ширина ── */}
+
+						{/* Вкладки информации */}
 						<div className="mt-8 px-0">
-							{/* Навигация вкладок */}
 							<div className="flex overflow-x-auto no-scrollbar justify-center">
 								{visibleTabs.map(({ id, label, icon: Icon }) => (
 									<button
@@ -562,7 +443,7 @@ export default function EquipmentDetails({
 										/>
 										{label}
 										<div
-											className={`absolute brightness-110 bottom-0 left-0 right-0 rounded-full h-0.5 ${activeInfoTab === id ? "bg-foreground shadow-[0_0_10px_gray] dark:bg-primary dark:shadow-[0_0_10px_yellow] " : "bg-transparent"}`}
+											className={`absolute brightness-110 bottom-0 left-0 right-0 rounded-full h-0.5 ${activeInfoTab === id ? "bg-foreground shadow-[0_0_10px_gray] dark:bg-primary dark:shadow-[0_0_10px_yellow]" : "bg-transparent"}`}
 											style={{
 												transform:
 													activeInfoTab === id ? "scale(1)" : "scale(0.1)",
@@ -574,30 +455,12 @@ export default function EquipmentDetails({
 								))}
 							</div>
 
-							{/* Контент вкладок */}
 							<div className="py-6">
 								{activeInfoTab === "description" && (
 									<div className="max-w-3xl">
 										<MD>{equipment.description}</MD>
 									</div>
 								)}
-								{/* {activeInfoTab === "specs" &&
-							(specEntries.length > 0 ? (
-								<dl className="divide-y divide-foreground/5 max-w-2xl">
-									{specEntries.map(([key, val]) => (
-										<div key={key} className="flex gap-4 py-3">
-											<dt className="text-xs text-muted-foreground w-1/3 shrink-0 font-medium">
-												{key}
-											</dt>
-											<dd className="text-sm font-bold">{val}</dd>
-										</div>
-									))}
-								</dl>
-							) : (
-								<div className="max-w-3xl">
-									<MD>{specDesc}</MD>
-								</div>
-							))} */}
 								{activeInfoTab === "kit" && (
 									<div className="max-w-3xl text-sm leading-relaxed">
 										<MD>{equipment.kit}</MD>
@@ -606,18 +469,17 @@ export default function EquipmentDetails({
 								{activeInfoTab === "reviews" &&
 									equipment.videoUrls.length > 0 && (
 										<VideoReviews
-											urls={(equipment.videoUrls as string[] | undefined) ?? []}
+											urls={(equipment.videoUrls as string[]) ?? []}
 										/>
 									)}
 							</div>
 						</div>
 					</div>
 
-					{/* ━━ RIGHT COLUMN: Sticky Booking Panel ━━ */}
-					<div className="hidden md:block order-2 md:col-span-6 lg:col-span-5 relative">
-						<div className="md:sticky md:top-24 flex flex-col gap-6">
-							{/* Основной блок выбора дат */}
-							<div className="card-surface p-3 xl:p-6 rounded-[2rem] border border-foreground/5 shadow-xl shadow-foreground/5 space-y-6">
+					{/* ━━ ПРАВАЯ КОЛОНКА: Панель заказа (Desktop) ━━ */}
+					<Card className="hidden md:block order-2 md:col-span-6 lg:col-span-5 md:sticky md:top-24 self-start md:row-start-1">
+						<div className="flex flex-col gap-6">
+							<div className="p-3 xl:p-6 shadow-xl shadow-foreground/5 space-y-6">
 								<div className="flex items-center justify-between px-1">
 									<p className="text-[10px] font-black uppercase italic tracking-widest opacity-40">
 										Параметры аренды
@@ -628,67 +490,61 @@ export default function EquipmentDetails({
 								</div>
 
 								<RentalPeriod value={period} onChange={setPeriod} />
-
 								<div className="h-px bg-foreground/5 -mx-6" />
 
 								{equipment.price4h > 0 && equipment.price8h > 0 && (
 									<div className="hidden md:grid grid-cols-2 gap-3 pt-2">
-										{equipment.price4h > 0 && (
-											<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
-												<div className="flex items-center justify-between mb-2">
-													<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-														4 часа
-													</span>
-													<span className="text-[9px] font-black bg-lime-500/15 text-lime-600 dark:text-lime-400 px-2 py-0.5 rounded-full">
-														−
-														{Math.round(
-															(1 - equipment.price4h / equipment.pricePerDay) *
-																100
-														)}
-														%
-													</span>
-												</div>
-												<div>
-													<p className="text-xl font-black italic tracking-tighter leading-none">
-														{fmtRub(equipment.price4h)}
-													</p>
-													<p className="text-[10px] text-muted-foreground mt-1 font-medium">
-														Экономия{" "}
-														{fmtRub(equipment.pricePerDay - equipment.price4h)}
-													</p>
-												</div>
+										<div className="rounded-2xl border border-foreground/5 bg-foreground/3 p-4 flex flex-col justify-between shadow-neumorph-inset/10">
+											<div className="flex items-center justify-between mb-2">
+												<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+													4 часа
+												</span>
+												<span className="text-[9px] font-black bg-lime-500/15 text-lime-600 dark:text-lime-400 px-2 py-0.5 rounded-full">
+													−
+													{Math.round(
+														(1 - equipment.price4h / equipment.pricePerDay) *
+															100
+													)}
+													%
+												</span>
 											</div>
-										)}
-										{equipment.price8h > 0 && (
-											<div className="rounded-2xl border border-foreground/5 bg-foreground/2 p-4 flex flex-col justify-between">
-												<div className="flex items-center justify-between mb-2">
-													<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-														8 часов
-													</span>
-													<span className="text-[9px] font-black bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 px-2 py-0.5 rounded-full">
-														−
-														{Math.round(
-															(1 - equipment.price8h / equipment.pricePerDay) *
-																100
-														)}
-														%
-													</span>
-												</div>
-												<div>
-													<p className="text-xl font-black italic tracking-tighter leading-none">
-														{fmtRub(equipment.price8h)}
-													</p>
-													<p className="text-[10px] text-muted-foreground mt-1 font-medium">
-														Экономия{" "}
-														{fmtRub(equipment.pricePerDay - equipment.price8h)}
-													</p>
-												</div>
+											<div>
+												<p className="text-xl font-black italic tracking-tighter leading-none">
+													{fmtRub(equipment.price4h)}
+												</p>
+												<p className="text-[10px] text-muted-foreground mt-1 font-medium">
+													Экономия{" "}
+													{fmtRub(equipment.pricePerDay - equipment.price4h)}
+												</p>
 											</div>
-										)}
+										</div>
+										<div className="rounded-2xl border border-foreground/5 bg-foreground/3 p-4 flex flex-col justify-between shadow-neumorph-inset/10">
+											<div className="flex items-center justify-between mb-2">
+												<span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+													8 часов
+												</span>
+												<span className="text-[9px] font-black bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 px-2 py-0.5 rounded-full">
+													−
+													{Math.round(
+														(1 - equipment.price8h / equipment.pricePerDay) *
+															100
+													)}
+													%
+												</span>
+											</div>
+											<div>
+												<p className="text-xl font-black italic tracking-tighter leading-none">
+													{fmtRub(equipment.price8h)}
+												</p>
+												<p className="text-[10px] text-muted-foreground mt-1 font-medium">
+													Экономия{" "}
+													{fmtRub(equipment.pricePerDay - equipment.price8h)}
+												</p>
+											</div>
+										</div>
 									</div>
 								)}
 
-								{/* Итоговая цена и кнопка (Десктоп) */}
 								<div className="hidden md:flex flex-col gap-4">
 									<div className="flex items-end justify-between px-1">
 										<span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -703,7 +559,6 @@ export default function EquipmentDetails({
 											</span>
 										</div>
 									</div>
-
 									<AddToCartButton
 										item={equipment}
 										variant="details"
@@ -714,19 +569,25 @@ export default function EquipmentDetails({
 								</div>
 							</div>
 						</div>
-					</div>
+					</Card>
 				</div>
-
-				{/* ── Related — полная ширина с врапером ── */}
+				{/* ── Блок сопутствующих товаров ── */}
 				{hasRelated && equipment.relatedIds && (
-					<div className={cn("mt-10 px-0 py-6 space-y-4")}>
-						<h3 className="px-6 text-lg font-black italic uppercase tracking-tight">
+					<div className={cn("relative mt-14 w-full space-y-4")}>
+						<h3 className="text-xl font-black italic uppercase tracking-tight px-4">
 							Вместе с этим арендуют
 						</h3>
-						<RelatedSlider ids={equipment.relatedIds} />
+						<div
+							className={cn(
+								// "mask-[linear-gradient(to_right,transparent,white_2%,white_98%,transparent)]"
+							)}
+						>
+							<RelatedSlider ids={equipment.relatedIds} />
+						</div>
 					</div>
 				)}
 			</div>
+
 			<Dialog open={isQuickBookOpen} onOpenChange={setIsQuickBookOpen}>
 				<DialogContent className="max-w-md p-6 sm:rounded-3xl">
 					<DialogHeader>

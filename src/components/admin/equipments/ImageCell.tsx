@@ -9,7 +9,7 @@ import {
 	linkImageToEquipmentAction,
 	reorderImagesAction,
 } from "@/actions/upload-actions";
-import { ImageUploader } from "@/components/shared";
+import { MediaUploader } from "@/components/shared";
 import {
 	Card,
 	Dialog,
@@ -228,7 +228,12 @@ export function ImageCell({
 						</DialogHeader>
 						<DialogDescription asChild>
 							<div className="space-y-4">
-								<ImageUploader onFileSelect={handleUpload} aspectRatio={1.5} />
+								<MediaUploader
+									onFileSelect={handleUpload}
+									aspectRatio={1.5}
+									acceptType="image"
+									className="h-full"
+								/>
 								{isUploading && (
 									<div className="space-y-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
 										<div className="flex justify-between text-[10px] font-black uppercase tracking-widest">

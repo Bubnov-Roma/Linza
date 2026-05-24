@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCarousel } from "@/components/layouts/home/events-banner/BannerCarousel";
@@ -10,11 +9,6 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
-	const cookieStore = await cookies();
-	const savedPlayingState = cookieStore.get("banner_playing_hero")?.value;
-
-	const initialIsPlaying =
-		savedPlayingState !== undefined ? savedPlayingState === "true" : true;
 	return (
 		<section className="container mx-auto pt-6 md:pt-10">
 			<div className="grid grid-cols-1 px-2 md:px-4 lg:grid-cols-[1fr_440px] items-start">
@@ -43,13 +37,9 @@ export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 				{/* Правая колонка — баннеры */}
 				<div className="w-full">
 					{banners.length > 0 ? (
-						<BannerCarousel
-							banners={banners}
-							variant="hero"
-							initialIsPlaying={initialIsPlaying}
-						/>
+						<BannerCarousel banners={banners} variant="hero" />
 					) : isAdmin ? (
-						<div className="rounded-2xl border border-dashed border-foreground/15 p-6 text-center text-sm text-muted-foreground">
+						<div className="rounded-xl border border-dashed border-foreground/15 p-6 text-center text-sm text-muted-foreground">
 							<p className="font-bold mb-1">Баннеры не добавлены</p>
 							<p className="text-xs mb-3">
 								Создайте баннер с размещением «Главный экран» или «Везде»

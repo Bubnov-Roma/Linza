@@ -58,8 +58,8 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 
 	return (
 		<section>
-			<div className="flex items-baseline justify-between px-4 container mx-auto">
-				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
+			<div className="flex items-baseline justify-between container mx-auto">
+				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none px-4">
 					Популярное
 				</h2>
 				<Button
@@ -75,9 +75,9 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 				ref={scrollRef}
 				onScroll={handleScroll}
 				className={cn(
-					"flex gap-4 overflow-x-auto pb-6 px-4 scroll-px-4 scroll-smooth no-scrollbar",
+					"flex gap-4 overflow-x-auto pb-8 px-4 scroll-px-4 md:px-8 md:scroll-px-8 scroll-smooth no-scrollbar",
 					"snap-x snap-mandatory",
-					"mask-[linear-gradient(to_right,transparent,white_4%,white_96%,transparent)]"
+					"mask-[linear-gradient(to_right,transparent,white_3%,white_97%,transparent)]"
 				)}
 			>
 				{popular.map((item) => (
@@ -85,40 +85,13 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 						key={item.id}
 						className={cn(
 							"shrink-0 snap-start transition-transform duration-300",
-							"w-[70vw] xs:w-[280px] sm:w-72.5 md:w-75 lg:w-77.5 xl:w-78.75"
+							"w-[70vw] xs:w-[280px] sm:w-72.5 md:w-75 lg:w-77.5 xl:w-78.5"
 						)}
 					>
 						<EquipmentCard item={item} />
 					</div>
 				))}
 			</div>
-
-			{/* Точки навигации ( px-4 на случай если точек будет очень много на мобилках) */}
-			{/* {totalPages > 1 && (
-				<div className="flex items-center justify-center gap-2 pt-2 flex-wrap px-4">
-					{Array.from({ length: totalPages }).map((_, i) => (
-						<button
-							key={i}
-							type="button"
-							onClick={() => {
-								const container = scrollRef.current;
-								if (!container) return;
-								const { clientWidth, scrollWidth } = container;
-								const maxScrollLeft = scrollWidth - clientWidth;
-								const targetScroll = (i / (totalPages - 1)) * maxScrollLeft;
-								container.scrollTo({ left: targetScroll, behavior: "smooth" });
-							}}
-							className={cn(
-								"h-3 rounded-full transition-all duration-300",
-								i === currentPage
-									? "w-6 bg-foreground"
-									: "w-3 bg-foreground/20 hover:bg-foreground/40"
-							)}
-							aria-label={`Перейти к странице ${i + 1}`}
-						/>
-					))}
-				</div>
-			)} */}
 			<SliderPagination
 				totalPages={totalPages}
 				currentPage={currentPage}

@@ -11,7 +11,7 @@ interface CategoriesGridProps {
 
 export function CategoriesGrid({ categories }: CategoriesGridProps) {
 	return (
-		<section className="container mx-auto px-4 space-y-6">
+		<section className="container mx-auto px-4 space-y-4">
 			<div className="flex items-baseline justify-between">
 				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
 					Категории
@@ -47,9 +47,9 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 										alt={cat.name}
 										fill
 										sizes="(max-width: 768px) 50vw, 25vw"
-										className="object-cover opacity-90"
+										className="object-cover opacity-95"
 									/>
-									<div className="absolute inset-0 bg-black/20 opacity-100" />
+									<div className="absolute inset-0 bg-background/10 opacity-100" />
 								</>
 							) : (
 								<div className="absolute inset-0 bg-linear-to-b from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out" />

@@ -54,7 +54,10 @@ export function EquipmentCard({
 					)}
 				>
 					{/* Image Container */}
-					<Link href={`/equipment/item/${slug}`} className="block group h-full">
+					<Link
+						href={`/equipment/item/${slug}`}
+						className="block group/card h-full"
+					>
 						<div
 							className={cn(
 								"relative shrink-0 overflow-hidden",
@@ -66,7 +69,7 @@ export function EquipmentCard({
 								alt={item.title}
 								fill
 								sizes="(max-width:640px) 50vw,(max-width:1024px) 33vw,20vw h-full"
-								className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+								className="object-cover transition-transform duration-500 group-hover/card:scale-[1.04]"
 								onError={() => {
 									if (imgSrc !== "/placeholder.png") {
 										setImgSrc("/placeholder.png");

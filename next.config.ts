@@ -2,15 +2,15 @@ import type { NextConfig } from "next";
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://challenges.cloudflare.com https://mc.yandex.ru;
-    connect-src 'self' https://va.vercel-scripts.com https://suggestions.dadata.ru https://mc.yandex.ru;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net;
+    connect-src 'self' https://va.vercel-scripts.com https://suggestions.dadata.ru https://mc.yandex.ru https://yastatic.net;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://i.ibb.co https://ibb.co https://*.beget.cloud https://avatars.yandex.net https://lh3.googleusercontent.com https://mc.yandex.ru;
+    img-src 'self' blob: data: https://i.ibb.co https://ibb.co https://*.beget.cloud https://avatars.yandex.net https://lh3.googleusercontent.com https://mc.yandex.ru https://yastatic.net;
     font-src 'self';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    frame-src 'self' https://www.youtube.com https://youtube.com https://vk.com https://vkvideo.ru https://rutube.ru https://player.vimeo.com https://challenges.cloudflare.com https://mc.yandex.ru;
+    frame-src 'self' https://www.youtube.com https://youtube.com https://vk.com https://vkvideo.ru https://rutube.ru https://player.vimeo.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net;
     upgrade-insecure-requests;
 `.replace(/\s{2,}/g, ' ').trim();
 
@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com', port: '', pathname: '/**' },
       { protocol: "https", hostname: "aeb737f5febe-linza-storage.s3.ru1.storage.beget.cloud", pathname: '/**' },
       { protocol: "https", hostname: "ibb.co", pathname: '/**' },
+      { protocol: "https", hostname: "i.ibb.co", pathname: '/**' }, // Добавляем строго этот поддомен
       { protocol: "https", hostname: "*.ibb.co", pathname: '/**' },
     ],
     formats: ['image/avif', 'image/webp'],

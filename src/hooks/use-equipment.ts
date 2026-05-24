@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { getEquipment } from "@/actions/admin-equipment-actions";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 
-export type UseEquipmentFilters = {
+type UseEquipmentFilters = {
 	search?: string | undefined;
 	categorySlug?: string | undefined;
 	subcategorySlug?: string | undefined;
@@ -25,6 +25,17 @@ export function useEquipment(
 		}),
 		[filters.search, filters.categorySlug, filters.subcategorySlug]
 	);
+	// 1. Фиксируем фильтры, которые были на странице в самый первый момент её монтирования
+	const initialFiltersRef = useRef(memoFilters);
+
+	// 2. Проверяем, совпадают ли текущие фильтры с начальными
+	const isMatchingInitialFilters = useMemo(() => {
+		return (
+			memoFilters.search === initialFiltersRef.current.search &&
+			memoFilters.categorySlug === initialFiltersRef.current.categorySlug &&
+			memoFilters.subcategorySlug === initialFiltersRef.current.subcategorySlug
+		);
+	}, [memoFilters]);
 
 	return useQuery({
 		queryKey: ["equipment", memoFilters],
@@ -37,8 +48,10 @@ export function useEquipment(
 
 			return data;
 		},
-		initialData,
-		staleTime: 1000 * 60 * 3, // 3 минуты
+		// 3. Передаем initialData только если фильтры совпадают с исходными.
+		// Если клиент переключил категорию, initialData станет undefined, и включится чистый скелетон без мигания старыми данными.
+		initialData: isMatchingInitialFilters ? initialData : undefined,
+		staleTime: 1000 * 60 * 3,
 		gcTime: 1000 * 60 * 10,
 		refetchOnWindowFocus: false,
 		retry: 1,

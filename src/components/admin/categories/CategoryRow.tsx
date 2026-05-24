@@ -8,14 +8,13 @@ import {
 	TrashIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { getCategoryHistoryAction } from "@/actions/admin-category-actions";
 import { uploadCategoryImageAction } from "@/actions/upload-actions";
 import { IconPicker } from "@/components/admin/categories/IconPicker";
 import { SubcategoryRow } from "@/components/admin/categories/SubcategoryRow";
-import { ImageUploader, InlineEditField } from "@/components/shared";
+import { InlineEditField, MediaUploader } from "@/components/shared";
 import { Button, Card, Input, Label, Textarea } from "@/components/ui";
 import { PHOSPHOR_ICON_MAP } from "@/constants/phosphor-icon-client.config";
 import type {
@@ -93,7 +92,7 @@ export function CategoryRow({
 			await onUpdate(cat.id, {
 				name: editName,
 				iconName: editIcon,
-				adminNotes: editNotes || undefined,
+				adminNotes: editNotes || "",
 				isModular: editModular,
 			});
 			setEditing(false);
@@ -108,7 +107,13 @@ export function CategoryRow({
 	};
 
 	const handleFileChange = async (file: File | null) => {
-		if (!file) return;
+		if (!file) {
+			startTransition(async () => {
+				await onUpdate(cat.id, { imageUrl: "" });
+				toast.success("Изображение удалено");
+			});
+			return;
+		}
 
 		try {
 			const formData = new FormData();
@@ -149,22 +154,21 @@ export function CategoryRow({
 			<div className="flex items-center gap-2">
 				<DotsSixVerticalIcon
 					size={15}
-					className="text-muted-foreground hover:text-muted-foreground cursor-grab shrink-0 transition-colors"
+					className="text-muted-foreground cursor-grab shrink-0 transition-colors"
 				/>
 
 				<button
 					type="button"
 					onClick={() => setExpanded((e) => !e)}
-					className="flex items-center justify-start gap-2 flex-1 min-w-0 h-14 text-left cursor-pointer"
+					className="flex items-center justify-start gap-2 flex-1 min-w-0 h-12 text-left cursor-pointer"
 				>
-					{/* Иконка категории — показываем саму иконку, не текст */}
 					<IconComp size={18} weight="fill" className="shrink-0" />
 
 					{editing ? (
 						<Input
 							value={editName}
 							onChange={(e) => setEditName(e.target.value)}
-							className="h-7 text-sm font-semibold"
+							className="h-8 text-sm font-semibold max-w-xs focus-visible:ring-1"
 							autoFocus
 							onClick={(e) => e.stopPropagation()}
 						/>
@@ -177,7 +181,7 @@ export function CategoryRow({
 						</span>
 					)}
 					<span className="text-xs text-muted-foreground/60 shrink-0 ml-auto">
-						{cat.subcategories.length} подкат.
+						{cat.subcategories.length} подкатегорий
 					</span>
 				</button>
 
@@ -186,8 +190,7 @@ export function CategoryRow({
 						<>
 							<Button
 								size="sm"
-								variant="ghost"
-								className="h-7 px-2"
+								variant="outline"
 								onClick={handleSave}
 								disabled={isPending}
 							>
@@ -207,7 +210,7 @@ export function CategoryRow({
 							<Button
 								size="sm"
 								variant="ghost"
-								className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
+								className="h-7 w-7 p-0"
 								onClick={loadHistory}
 							>
 								<ClockIcon size={13} className="text-muted-foreground" />
@@ -232,7 +235,7 @@ export function CategoryRow({
 										startTransition(() => onDelete(cat.id));
 								}}
 							>
-								<TrashIcon size={13} />
+								<TrashIcon size={13} className="text-muted-foreground" />
 							</Button>
 						</>
 					)}
@@ -241,57 +244,74 @@ export function CategoryRow({
 
 			{/* Editing panel */}
 			{editing && (
-				<div className="px-4 pb-4 pt-0 border-t border-foreground/5 space-y-3 bg-foreground/2">
-					<div className="grid grid-cols-2 gap-3 pt-3">
-						<div className="space-y-1.5">
-							<Label className="text-xs">Иконка</Label>
-							<IconPicker value={editIcon} onChange={setEditIcon} />
-						</div>
-						<div className="flex items-center gap-2 pt-5">
-							<input
-								type="checkbox"
-								id={`mod-${cat.id}`}
-								checked={editModular}
-								onChange={(e) => setEditModular(e.target.checked)}
-								className="accent-violet-500"
-							/>
-							<label
-								htmlFor={`mod-${cat.id}`}
-								className="text-sm text-muted-foreground cursor-pointer"
-							>
-								Модульная категория
-							</label>
-						</div>
-					</div>
-					<div className="space-y-1.5">
-						<Label className="text-xs">Изображение на главной странице</Label>
-						<div className="flex items-center gap-4">
-							{cat.imageUrl && (
-								<div className="relative w-12 h-12 rounded-lg overflow-hidden border">
-									<Image
-										src={cat.imageUrl}
-										alt="Image for category"
-										fill
-										sizes="16px"
-										className="object-cover"
-									/>
+				<div className="px-4 pb-4 pt-2 border-t border-foreground/5 bg-foreground/2 rounded-b-2xl">
+					<div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+						{/* Контент слева (Иконка, Модульность, Заметки) */}
+						<div className="md:col-span-7 space-y-3">
+							<div className="grid grid-cols-2 gap-3">
+								<div className="space-y-1">
+									<Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+										Иконка
+									</Label>
+									<IconPicker value={editIcon} onChange={setEditIcon} />
 								</div>
-							)}
-							<ImageUploader
-								onFileSelect={handleFileChange}
-								aspectRatio={1.7}
-							/>
+								<div className="flex items-center gap-2 pt-6">
+									<input
+										type="checkbox"
+										id={`mod-${cat.id}`}
+										checked={editModular}
+										onChange={(e) => setEditModular(e.target.checked)}
+										className="accent-violet-500 h-4 w-4 rounded"
+									/>
+									<label
+										htmlFor={`mod-${cat.id}`}
+										className="text-xs text-muted-foreground cursor-pointer select-none font-medium"
+									>
+										Модульная категория
+									</label>
+								</div>
+							</div>
+
+							<div className="space-y-1">
+								<div className="flex items-center justify-between">
+									<Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+										Заметки для сотрудников
+									</Label>
+									{editNotes && (
+										<button
+											type="button"
+											onClick={() => setEditNotes("")}
+											className="text-[10px] text-red-400 hover:underline font-medium"
+										>
+											Удалить описание
+										</button>
+									)}
+								</div>
+								<Textarea
+									value={editNotes}
+									onChange={(e) => setEditNotes(e.target.value)}
+									rows={9}
+									placeholder="Внутреннее описание категории ( опционально )"
+									className="text-xs resize-none bg-background rounded-xl"
+								/>
+							</div>
 						</div>
-					</div>
-					<div className="space-y-1.5">
-						<Label className="text-xs">Заметки для сотрудников</Label>
-						<Textarea
-							value={editNotes}
-							onChange={(e) => setEditNotes(e.target.value)}
-							rows={2}
-							placeholder="Внутренняя заметка..."
-							className="text-xs resize-none"
-						/>
+
+						{/* Медиа справа */}
+						<div className="md:col-span-5 flex flex-col space-y-1">
+							<Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+								Обложка категории
+							</Label>
+							<div className="flex-1 min-h-27.5">
+								<MediaUploader
+									currentUrl={cat.imageUrl || ""}
+									onFileSelect={handleFileChange}
+									aspectRatio={1.7}
+									acceptType="image"
+									className="h-full"
+								/>
+							</div>
+						</div>
 					</div>
 				</div>
 			)}
@@ -347,7 +367,7 @@ export function CategoryRow({
 				</div>
 			)}
 
-			{/* Admin notes */}
+			{/* Admin notes display */}
 			{!editing && cat.adminNotes && (
 				<div className="px-4 pb-3 flex items-start gap-2">
 					<p className="text-xs text-muted-foreground italic">

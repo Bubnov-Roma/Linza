@@ -31,7 +31,7 @@ export default async function HomePage() {
 	);
 
 	return (
-		<div className="flex flex-col gap-8 pb-10">
+		<div className="flex flex-col gap-10 pb-20">
 			<LocalBusinessSchema />
 			<HeroSection isAdmin={isAdmin} banners={heroBanners} />
 			<CategoriesGrid categories={categories} />

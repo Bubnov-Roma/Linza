@@ -31,9 +31,8 @@
 
 :root {
   font-family: 'Montserrat', sans-serif;
-  --background: oklch(97.984% 0.00973 24.475);
+  --background: lab(97% -1.4 2.5);
   --foreground: oklch(0.1967 0.0723 259.2);
-  --foreground: oklch(0.2453 0.0939 259.41);
   --muted-foreground: oklch(0.2 0.05 264 / 0.5);
   --bg-card: oklch(100% 0.00011 271.152 / 0.976);
   --border-soft: oklch(0 0 0 / 0.1);
@@ -67,7 +66,7 @@
 }
 
 .dark {
-  --background: oklch(17.711% 0.01236 292.708); 
+  --background: lab(6% 1.67 -5.42); 
   --foreground: oklch(0.98 0.01 264);
   --muted-foreground: oklch(0.98 0.01 264 / 0.5);
   --bg-card: oklch(28.04% 0.01189 264.39 / 0.892);

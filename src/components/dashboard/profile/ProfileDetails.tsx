@@ -35,8 +35,8 @@ import { VerificationBadge } from "@/components/forms";
 import { ThemeCard } from "@/components/layouts/ThemeToggle";
 import {
 	BasePhoneInput,
-	ImageUploader,
 	InlineEditField,
+	MediaUploader,
 	SignOutButton,
 } from "@/components/shared";
 import {
@@ -198,7 +198,7 @@ export function ProfileDetails({
 								<div className="w-full h-full flex flex-row sm:flex-col gap-1 justify-between items-center my-auto">
 									<Button
 										variant="brand"
-										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-12 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
+										className="flex border text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-12 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
 									>
 										<ImageIcon size={14} />
 										<span className="text-[10px] font-bold uppercase tracking-wider">
@@ -212,7 +212,7 @@ export function ProfileDetails({
 											handleAvatarDelete();
 										}}
 										disabled={uploading}
-										className="flex text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
+										className="flex border text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
 									>
 										<TrashIcon size={14} />
 										<span className="text-[10px] font-bold uppercase tracking-wider">
@@ -261,10 +261,11 @@ export function ProfileDetails({
 								Отмена
 							</button>
 						</div>
-						<ImageUploader
-							currentImageUrl={avatarUrl ?? ""}
+						<MediaUploader
+							currentUrl={avatarUrl || ""}
 							onFileSelect={handleAvatarFile}
 							aspectRatio={1}
+							acceptType="image"
 						/>
 					</div>
 				)}

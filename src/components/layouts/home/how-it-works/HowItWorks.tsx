@@ -46,14 +46,12 @@ export function HowItWorks() {
 
 				<div className="relative">
 					{/* Линия соединения */}
-					<div className="opacity-20 absolute left-1/2 top-0 h-full w-full rounded-2xl -translate-x-1/2 bg-linear-to-t from-blue-50 via:muted-foreground/50 to-foreground/60 md:left-1/2"></div>
-
-					{/* <div className="grid gap-8 md:grid-cols-5"> */}
-					<div className="flex flex-col md:flex-row items-stretch gap-0 rounded-2xl overflow-hidden bg-foreground/2">
+					<div className="opacity-20 absolute left-1/2 top-0 h-full w-full rounded-2xl -translate-x-1/2 bg-linear-to-t from-transparent via:muted-foreground/50 to-foreground/60 md:left-1/2 shadow-2xl shadow-muted-foreground/50" />
+					<div className="flex flex-col md:flex-row items-stretch gap-0 rounded-t-2xl overflow-hidden">
 						{steps.map((step) => (
 							<div
 								key={step.title}
-								className="flex-1 flex flex-col sm:flex-row items-start sm:items-start ap-3 px-4 py-4 relative"
+								className="flex-1 flex flex-col sm:flex-row items-start sm:items-start gap-3 px-4 py-4 relative border-muted-foreground/10 border-b last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
 							>
 								<div className="flex flex-row md:flex-col items-center gap-3 md:text-center">
 									<div className="relative shrink-0 hidden md:flex">
@@ -65,10 +63,10 @@ export function HowItWorks() {
 										</div>
 									</div>
 									<div className="min-w-0 items-start">
-										<h3 className="mb-2 text-foreground/80 text-xs sm:text-sm font-bold leading-tight select-none">
+										<h3 className="mb-2 text-foreground/90 text-xs sm:text-sm font-bold leading-tight select-none hidden md:block">
 											{step.title}
 										</h3>
-										<p className="text-sm text-foreground/50 text-[11px] sm:text-xs leading-tight mt-0.5 select-none">
+										<p className="text-sm text-foreground/50 sm:text-xs leading-tight mt-0.5 select-none">
 											{step.desc}
 										</p>
 									</div>

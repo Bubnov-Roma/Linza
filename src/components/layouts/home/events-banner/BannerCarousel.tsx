@@ -107,7 +107,7 @@ export function BannerCarousel({
 	};
 
 	return (
-		<div className="relative w-full h-full aspect-7/5 sm:aspect-auto min-h-70 overflow-hidden rounded-2xl group/carousel select-none">
+		<div className="relative w-full h-full aspect-4/3 xs:aspect-7/5 sm:aspect-auto min-h-70 sm:min-h-70 overflow-hidden rounded-lg group/carousel select-none">
 			{/* Контейнер для анимации слайдов */}
 			<div className="w-full h-full relative touch-pan-y">
 				<AnimatePresence mode="popLayout" initial={false}>
@@ -141,78 +141,78 @@ export function BannerCarousel({
 						/>
 					</motion.div>
 				</AnimatePresence>
-			</div>
 
-			{/* ── Overlay навигация ── */}
-			{hasNav && (
-				<CardContent
-					className={cn(
-						"absolute bottom-0 right-0 px-5 py-1 flex items-center justify-between gap-8 z-5 pointer-events-auto bg-black/20 rounded-full"
-					)}
-				>
-					{/* Точки */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{banners.map((_, i) => (
+				{/* ── Overlay навигация ── */}
+				{hasNav && (
+					<CardContent
+						className={cn(
+							"absolute bottom-0 right-0 pl-4 pr-2 py-1 flex items-center justify-between gap-8 z-5 pointer-events-auto bg-black/10 rounded-lg m-0.5"
+						)}
+					>
+						{/* Точки */}
+						<div className="flex items-center gap-1.5 flex-wrap">
+							{banners.map((_, i) => (
+								<Button
+									key={i}
+									type="button"
+									onClick={() => setCurrent(i)}
+									aria-label={`Слайд ${i + 1}`}
+									className={cn(
+										"rounded-full transition-all duration-300 cursor-pointer p-0",
+										i === current
+											? "w-6 h-3 bg-white/20 hover:bg-white/80"
+											: "w-3 h-3 bg-white/20 hover:bg-white/80"
+									)}
+								/>
+							))}
+						</div>
+
+						{/* Плей/пауза + стрелки */}
+						<div className="flex items-center gap-0.5 shrink-0 rounded-full">
 							<Button
-								key={i}
+								variant="ghost"
+								size="icon"
 								type="button"
-								onClick={() => setCurrent(i)}
-								aria-label={`Слайд ${i + 1}`}
-								className={cn(
-									"rounded-full transition-all duration-300 cursor-pointer p-0",
-									i === current
-										? "w-6 h-3 bg-white/20 hover:bg-white/80"
-										: "w-3 h-3 bg-white/20 hover:bg-white/80"
+								onClick={togglePlay}
+								aria-label={isPlaying ? "Пауза" : "Автопрокрутка"}
+								title={
+									isPlaying
+										? "Остановить автопрокрутку"
+										: "Включить автопрокрутку"
+								}
+								className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10"
+							>
+								{isPlaying ? (
+									<PauseIcon size={12} weight="fill" />
+								) : (
+									<PlayIcon size={12} weight="fill" />
 								)}
-							/>
-						))}
-					</div>
+							</Button>
 
-					{/* Плей/пауза + стрелки */}
-					<div className="flex items-center gap-0.5 shrink-0 rounded-full">
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							onClick={togglePlay}
-							aria-label={isPlaying ? "Пауза" : "Автопрокрутка"}
-							title={
-								isPlaying
-									? "Остановить автопрокрутку"
-									: "Включить автопрокрутку"
-							}
-							className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10"
-						>
-							{isPlaying ? (
-								<PauseIcon size={12} weight="fill" />
-							) : (
-								<PlayIcon size={12} weight="fill" />
-							)}
-						</Button>
-
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							onClick={prev}
-							aria-label="Предыдущий"
-							className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10 text-lg font-light leading-none"
-						>
-							<CaretLeftIcon size={12} weight="fill" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							onClick={next}
-							aria-label="Следующий"
-							className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10 text-lg font-light leading-none"
-						>
-							<CaretRightIcon size={12} weight="fill" />
-						</Button>
-					</div>
-				</CardContent>
-			)}
+							<Button
+								variant="ghost"
+								size="icon"
+								type="button"
+								onClick={prev}
+								aria-label="Предыдущий"
+								className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10 text-lg font-light leading-none"
+							>
+								<CaretLeftIcon size={12} weight="fill" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								type="button"
+								onClick={next}
+								aria-label="Следующий"
+								className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10 text-lg font-light leading-none"
+							>
+								<CaretRightIcon size={12} weight="fill" />
+							</Button>
+						</div>
+					</CardContent>
+				)}
+			</div>
 
 			{/* Модальное окно */}
 			<AnimatePresence>
@@ -226,196 +226,3 @@ export function BannerCarousel({
 		</div>
 	);
 }
-// "use client";
-
-// import {
-// 	CaretLeftIcon,
-// 	CaretRightIcon,
-// 	PauseIcon,
-// 	PlayIcon,
-// } from "@phosphor-icons/react";
-// import Autoplay from "embla-carousel-autoplay";
-// import { AnimatePresence } from "framer-motion";
-// import Cookies from "js-cookie";
-// import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-// import type { Banner } from "@/actions/admin-banner-actions";
-// import { BannerCard } from "@/components/layouts/home/events-banner/BannerCard";
-// import { BannerModal } from "@/components/layouts/home/events-banner/BannerModal";
-// import { SliderPagination } from "@/components/shared";
-// import { Button, CardContent } from "@/components/ui";
-// import {
-// 	Carousel,
-// 	type CarouselApi,
-// 	CarouselContent,
-// 	CarouselItem,
-// } from "@/components/ui/carousel";
-
-// interface BannerCarouselProps {
-// 	banners: Banner[];
-// 	variant?: "hero" | "studio";
-// 	autoplayMs?: number;
-// }
-
-// export function BannerCarousel({
-// 	banners,
-// 	variant = "hero",
-// 	autoplayMs = 7000,
-// }: BannerCarouselProps) {
-// 	const [api, setApi] = useState<CarouselApi>();
-// 	const [activeBanner, setActiveBanner] = useState<Banner | null>(null);
-// 	const [current, setCurrent] = useState(0);
-// 	const [isPlaying, setIsPlaying] = useState(true);
-
-// 	const isPlayingRef = useRef(isPlaying);
-
-// 	useEffect(() => {
-// 		isPlayingRef.current = isPlaying;
-// 	}, [isPlaying]);
-
-// 	// 1. Инициализируем плагин автопрокрутки
-// 	const autoplayPlugin = useRef(
-// 		Autoplay({ delay: autoplayMs, stopOnInteraction: false })
-// 	);
-
-// 	// Стабилизируем массив плагинов, чтобы избежать лишних реинициализаций Embla
-// 	const plugins = useMemo(() => [autoplayPlugin.current], []);
-
-// 	// 2. Подписка на API, чтение кук и синхронизацию слайдов
-// 	useEffect(() => {
-// 		if (!api) return;
-
-// 		// Безопасно получаем инстанс автоплея из самого API карусели
-// 		const autoplay = api.plugins().autoplay;
-// 		if (!autoplay) return;
-
-// 		// Читаем куку после того, как Embla полностью готова
-// 		const savedPlayState = Cookies.get(`banner_playing_${variant}`);
-// 		if (savedPlayState === "false") {
-// 			autoplay.stop();
-// 			setIsPlaying(false);
-// 		} else {
-// 			setIsPlaying(true);
-// 		}
-
-// 		// Устанавливаем стартовый индекс слайда
-// 		setCurrent(api.selectedScrollSnap());
-
-// 		const handleSelect = () => {
-// 			setCurrent(api.selectedScrollSnap());
-// 		};
-
-// 		const handleInteractionEnd = () => {
-// 			setTimeout(() => {
-// 				if (!isPlayingRef.current) {
-// 					api.plugins().autoplay?.stop();
-// 				}
-// 			}, 0); // Таймаут нужен, чтобы выполниться СРАЗУ ПОСЛЕ внутреннего pointerUp самого плагина
-// 		};
-
-// 		// Подписываемся на событие смены слайда
-// 		api.on("select", handleSelect);
-// 		api.on("pointerUp", handleInteractionEnd);
-
-// 		// Чистим слушатели при размонтировании карусели
-// 		return () => {
-// 			api.off("select", handleSelect);
-// 			api.off("pointerUp", handleInteractionEnd);
-// 		};
-// 	}, [api, variant]);
-
-// 	// 3. Управляем воспроизведением через API плагина Embla
-// 	const togglePlay = useCallback(() => {
-// 		const autoplay = api?.plugins().autoplay;
-// 		if (!autoplay) return;
-
-// 		if (autoplay.isPlaying()) {
-// 			autoplay.stop();
-// 			setIsPlaying(false);
-// 			Cookies.set(`banner_playing_${variant}`, "false", { expires: 7 });
-// 		} else {
-// 			autoplay.play();
-// 			setIsPlaying(true);
-// 			Cookies.set(`banner_playing_${variant}`, "true", { expires: 7 });
-// 		}
-// 	}, [api, variant]);
-
-// 	if (!banners.length) return null;
-// 	const hasNav = banners.length > 1;
-
-// 	return (
-// 		<>
-// 			<Carousel
-// 				setApi={setApi}
-// 				plugins={plugins}
-// 				className="w-full h-full group/carousel **:data-[slot=carousel-content]:h-full flex flex-col justify-stretch rounded-xl"
-// 				opts={{ loop: true }}
-// 			>
-// 				<CarouselContent className="h-full">
-// 					{banners.map((banner, index) => (
-// 						<CarouselItem
-// 							onClick={(e) => e.stopPropagation()}
-// 							key={banner.id}
-// 							className="h-full rounded-xl"
-// 						>
-// 							<BannerCard
-// 								banner={banner}
-// 								isActive={index === current}
-// 								onClick={() => setActiveBanner(banner)}
-// 							/>
-// 						</CarouselItem>
-// 					))}
-// 				</CarouselContent>
-
-// 				{/* ── Overlay навигация ── */}
-// 				{hasNav && (
-// 					<CardContent className="absolute bottom-0 inset-x-0 px-5 py-3 flex items-center justify-between z-20">
-// 						<SliderPagination
-// 							totalPages={banners.length}
-// 							currentPage={current}
-// 							onPageClick={(index) => api?.scrollTo(index)}
-// 						/>
-
-// 						<div className="flex items-center gap-0.5 shrink-0">
-// 							<Button
-// 								variant="ghost"
-// 								size="icon"
-// 								type="button"
-// 								onClick={togglePlay}
-// 								className="text-white/50 hover:text-white rounded-full bg-black/3 hover:bg-black/10 shadow-xs"
-// 							>
-// 								{isPlaying ? <PauseIcon size={12} /> : <PlayIcon size={12} />}
-// 							</Button>
-// 							<Button
-// 								variant="ghost"
-// 								size="icon"
-// 								type="button"
-// 								onClick={() => api?.scrollPrev()}
-// 								className="text-white/50 hover:text-white rounded-full bg-black/3 hover:bg-black/10 shadow-xs"
-// 							>
-// 								<CaretLeftIcon size={12} />
-// 							</Button>
-// 							<Button
-// 								variant="ghost"
-// 								size="icon"
-// 								type="button"
-// 								onClick={() => api?.scrollNext()}
-// 								className="text-white/50 hover:text-white rounded-full bg-black/3 hover:bg-black/10 shadow-xs"
-// 							>
-// 								<CaretRightIcon size={12} />
-// 							</Button>
-// 						</div>
-// 					</CardContent>
-// 				)}
-// 			</Carousel>
-
-// 			<AnimatePresence>
-// 				{activeBanner && (
-// 					<BannerModal
-// 						banner={activeBanner}
-// 						onClose={() => setActiveBanner(null)}
-// 					/>
-// 				)}
-// 			</AnimatePresence>
-// 		</>
-// 	);
-// }

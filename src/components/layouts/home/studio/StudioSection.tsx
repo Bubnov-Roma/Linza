@@ -18,7 +18,7 @@ export const StudioSection = async ({ banners }: StudioSectionProps) => {
 	const hasBanners = banners.length > 0;
 
 	return (
-		<section className="container mx-auto space-y-4 px-2 md:px-4">
+		<section className="container mx-auto px-2 md:px-4">
 			<div className="flex items-baseline justify-between px-2 md:px-0">
 				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
 					Студия

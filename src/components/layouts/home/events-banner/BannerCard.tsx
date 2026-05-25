@@ -30,7 +30,9 @@ export function BannerCard({
 	const mediaType = banner.videoUrl ? getMediaType(banner.videoUrl) : "image";
 	const hasVideo = mediaType === "video" || mediaType === "youtube";
 	const bgVideo = mediaType === "video" ? banner.videoUrl : null;
-	const navHeight = hasNav ? "pb-14" : "pb-5";
+
+	// Включаем безопасный отступ снизу на мобильных, чтобы текст не заезжал под кнопки навигации
+	const navHeight = hasNav ? "pb-14 md:pb-6" : "pb-5";
 
 	return (
 		<div
@@ -95,7 +97,7 @@ export function BannerCard({
 				type="button"
 				onClick={onClick}
 				className={cn(
-					"relative w-full text-left block cursor-pointer h-full flex-1"
+					"relative w-full text-left flex flex-col items-stretch cursor-pointer h-full flex-1"
 				)}
 			>
 				<div
@@ -105,7 +107,7 @@ export function BannerCard({
 					)}
 				>
 					{/* Верхняя строка: бейдж типа + видео-метка */}
-					<div className="flex items-start justify-between gap-2">
+					<div className="flex items-start justify-between gap-2 shrink-0">
 						<span
 							className={cn(
 								"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border",
@@ -123,11 +125,10 @@ export function BannerCard({
 						)}
 					</div>
 
-					{/* Заголовок — прижат к нижней части карточки */}
-					<div className="flex-1 flex flex-col justify-center gap-1.5">
+					<div className="flex-1 flex flex-col justify-center pb-1 gap-1.5 min-w-0">
 						<h3
 							className={cn(
-								"text-2xl md:text-3xl font-black tracking-tight leading-snug italic text-white"
+								"text-2xl md:text-3xl font-black tracking-tight leading-snug italic text-white wrap-break-word"
 							)}
 						>
 							{banner.title}
@@ -136,7 +137,7 @@ export function BannerCard({
 						{banner.subtitle && (
 							<p
 								className={cn(
-									"text-xs md:text-sm uppercase tracking-wide line-clamp-2 font-medium text-white"
+									"text-xs md:text-sm uppercase tracking-wide line-clamp-2 font-medium text-white/90"
 								)}
 							>
 								{banner.subtitle}
@@ -144,7 +145,9 @@ export function BannerCard({
 						)}
 
 						{banner.eventDate && (
-							<span className={cn("text-xs font-bold opacity-60 text-white")}>
+							<span
+								className={cn("text-xs font-bold opacity-60 text-white mt-0.5")}
+							>
 								<ClientTime iso={banner.eventDate} fmt="full" />
 							</span>
 						)}

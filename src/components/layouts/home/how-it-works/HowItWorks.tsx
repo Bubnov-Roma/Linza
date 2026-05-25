@@ -39,7 +39,7 @@ export function HowItWorks() {
 		<section className="py-4">
 			<div className="container mx-auto px-4">
 				<div className="mx-auto max-w-4xl text-center">
-					<h3 className="mb-8 text-3xl font-bold text-foreground/90 sm:text-4xl select-none">
+					<h3 className="mb-4 text-3xl font-bold text-foreground/90 sm:text-4xl select-none">
 						Как арендовать технику
 					</h3>
 				</div>

@@ -347,8 +347,8 @@ export default function EquipmentDetails({
 				/>
 			)}
 
-			<div className="lg:px-6 max-w-7xl mx-auto py-4 flex flex-col gap-4 space-y-6 items-center animate-in fade-in duration-500 lg:overflow-visible">
-				<div className="flex px-4 w-full items-baseline h-full gap-2">
+			<div className="lg:px-6 max-w-7xl mx-auto py-4 flex flex-col space-y-2 md:space-y-4 items-center animate-in fade-in duration-500 lg:overflow-visible">
+				<div className="flex px-4 w-full items-baseline h-full">
 					<h1
 						ref={titleRef}
 						className="text-3xl font-black italic uppercase tracking-tighter leading-tight scroll-mt-14"

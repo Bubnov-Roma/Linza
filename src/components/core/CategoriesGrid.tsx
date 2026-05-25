@@ -11,7 +11,7 @@ interface CategoriesGridProps {
 
 export function CategoriesGrid({ categories }: CategoriesGridProps) {
 	return (
-		<section className="container mx-auto px-4 space-y-4">
+		<section className="container mx-auto px-4">
 			<div className="flex items-baseline justify-between">
 				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
 					Категории

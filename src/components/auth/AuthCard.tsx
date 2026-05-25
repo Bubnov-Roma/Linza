@@ -74,11 +74,15 @@ export function AuthCard({
 			{!isModal && (
 				<p className="text-center text-[10px] text-muted-foreground/50 px-8">
 					Продолжая, вы принимаете{" "}
-					<Link href="/terms" className="hover:text-foreground">
+					<Link target="_blank" href="/terms" className="hover:text-foreground">
 						Условия использования
 					</Link>{" "}
 					и{" "}
-					<Link href="/privacy" className="hover:text-foreground">
+					<Link
+						target="_blank"
+						href="/privacy"
+						className="hover:text-foreground"
+					>
 						Политику конфиденциальности
 					</Link>
 				</p>

@@ -158,18 +158,21 @@ export async function Footer({ support }: { support: SupportInfo }) {
 						<div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
 							<Link
 								href="/privacy"
+								target="_blank"
 								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
 							>
 								Конфиденциальность
 							</Link>
 							<Link
 								href="/terms"
+								target="_blank"
 								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
 							>
 								Оферта
 							</Link>
 							<Link
 								href="/sitemap"
+								target="_blank"
 								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
 							>
 								Карта сайта

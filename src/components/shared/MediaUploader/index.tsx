@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -45,6 +45,8 @@ export function MediaUploader({
 	>(null);
 	const [targetMimeType, setTargetMimeType] = useState("image/webp");
 
+	const isRevertingToCrop = useRef(false);
+
 	// Следим за изменением медиа извне
 	useEffect(() => {
 		if (currentUrl) {
@@ -64,7 +66,6 @@ export function MediaUploader({
 			};
 			reader.readAsDataURL(file);
 		} else if (file.type.startsWith("video/")) {
-			// Для видео кроп не нужен — генерируем Blob URL для превью и открываем финальное подтверждение
 			const objectUrl = URL.createObjectURL(file);
 			setConfirmingFile(file);
 			setConfirmingPreviewUrl(objectUrl);
@@ -72,7 +73,6 @@ export function MediaUploader({
 		}
 	};
 
-	// Метод вызывается из CropEditor для изображений
 	const handleCropDone = (blob: Blob, type: string): void => {
 		setConfirmingBlob(blob);
 		setConfirmingPreviewUrl(URL.createObjectURL(blob));
@@ -107,7 +107,8 @@ export function MediaUploader({
 
 	const handleBackOrCancel = (): void => {
 		if (confirmingBlob) {
-			// Возврат к обрезке фото
+			isRevertingToCrop.current = true;
+
 			setConfirmingBlob(null);
 			if (confirmingPreviewUrl) URL.revokeObjectURL(confirmingPreviewUrl);
 			setConfirmingPreviewUrl(null);
@@ -118,6 +119,7 @@ export function MediaUploader({
 	};
 
 	const handleCancelAll = (): void => {
+		isRevertingToCrop.current = false;
 		setImageToCrop(null);
 		setConfirmingBlob(null);
 		setConfirmingFile(null);
@@ -160,7 +162,15 @@ export function MediaUploader({
 			{/* Универсальное окно финализации превью */}
 			<AlertDialog
 				open={!!confirmingPreviewUrl}
-				onOpenChange={(open) => !open && handleCancelAll()}
+				onOpenChange={(open) => {
+					if (!open) {
+						if (isRevertingToCrop.current) {
+							isRevertingToCrop.current = false;
+						} else {
+							handleCancelAll();
+						}
+					}
+				}}
 			>
 				<AlertDialogContent className="max-w-md rounded-2xl p-6 bg-background">
 					<AlertDialogHeader>

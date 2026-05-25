@@ -14,6 +14,7 @@ import {
 	Upload,
 	X,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -629,7 +630,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 								</p>
 							</div>
 							{doc.generatedUrl !== "#" && (
-								<a
+								<Link
 									href={doc.generatedUrl}
 									target="_blank"
 									rel="noopener noreferrer"
@@ -637,7 +638,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 									title="Открыть"
 								>
 									<ExternalLink size={12} />
-								</a>
+								</Link>
 							)}
 						</div>
 					))}

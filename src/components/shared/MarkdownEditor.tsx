@@ -1,6 +1,7 @@
 "use client";
 
 import { EyeIcon, PencilSimpleLineIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 import type React from "react";
 import { useMemo, useState } from "react";
 import {
@@ -27,15 +28,15 @@ function parseLine(line: string, lineIdx: number) {
 		const linkMatch = rest.match(RE_LINK);
 		if (linkMatch) {
 			parts.push(
-				<a
+				<Link
 					key={`${lineIdx}-${i++}`}
-					href={linkMatch[2]}
+					href={linkMatch[2] ?? ""}
 					target="_blank"
 					rel="noopener noreferrer"
 					className="text-purple-500 underline underline-offset-2 hover:opacity-80"
 				>
 					{linkMatch[1]}
-				</a>
+				</Link>
 			);
 			rest = rest.slice(linkMatch[0].length);
 			continue;
@@ -83,8 +84,7 @@ function parseLine(line: string, lineIdx: number) {
 			parts.push(<span key={`${lineIdx}-${i++}`}>{rest}</span>);
 			rest = "";
 		} else if (nextSpecial === 0) {
-			// Спецсимвол стоит прямо сейчас, но регулярки выше его не распознали
-			// (например, одиночная звездочка). Отрезаем ровно один этот символ как обычный текст!
+			// Отрезаем ровно один этот символ как обычный текст!
 			parts.push(<span key={`${lineIdx}-${i++}`}>{rest[0]}</span>);
 			rest = rest.slice(1);
 		} else {
@@ -244,9 +244,9 @@ export function MarkdownEditor({
 										setTab(t);
 									}}
 									className={cn(
-										"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors hover:bg-muted-foreground/20",
+										"flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition-colors",
 										tab === t
-											? "bg-muted-foreground/20 text-foreground shadow-md hover:bg-muted-foreground/40"
+											? "bg-muted-foreground/20 text-foreground shadow-md"
 											: "text-muted-foreground hover:text-foreground"
 									)}
 								>

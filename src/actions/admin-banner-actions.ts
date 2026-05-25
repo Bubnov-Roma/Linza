@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cache } from "react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { BANNER_INCLUDE } from "@/utils/admin-banner-helpers";
+import { BANNER_INCLUDE } from "@/utils";
 
 export type BannerType = "info" | "event" | "promo";
 export type BannerPlacement = "hero" | "studio" | "both";
@@ -24,7 +24,7 @@ export interface Banner {
 	subtitle: string | null;
 	body: string | null;
 	imageUrl: string | null;
-	videoUrl: string | null; // основное видео баннера (S3 или внешний URL)
+	videoUrl: string | null;
 	images: BannerImage[];
 	linkUrl: string | null;
 	linkLabel: string | null;

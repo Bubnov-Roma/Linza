@@ -107,7 +107,7 @@ export function BannerCarousel({
 	};
 
 	return (
-		<div className="relative w-full h-full aspect-4/3 xs:aspect-7/5 sm:aspect-auto min-h-70 sm:min-h-70 overflow-hidden rounded-lg group/carousel select-none">
+		<div className="relative w-full h-full aspect-7/5 sm:aspect-auto min-h-50 sm:min-h-70 overflow-hidden rounded-lg group/carousel select-none">
 			{/* Контейнер для анимации слайдов */}
 			<div className="w-full h-full relative touch-pan-y">
 				<AnimatePresence mode="popLayout" initial={false}>

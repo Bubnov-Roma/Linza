@@ -4,14 +4,16 @@ import {
 	CalendarIcon,
 	CaretLeftIcon,
 	CaretRightIcon,
+	ClockIcon,
+	CornersOutIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Banner } from "@/actions/admin-banner-actions";
+import { MediaBlock } from "@/components/layouts/home/events-banner/MediaBlock";
 import {
 	ClientTime,
 	SimpleMarkdown,
@@ -20,6 +22,9 @@ import {
 import {
 	Badge,
 	Button,
+	Card,
+	Dialog,
+	DialogContent,
 	DialogTitle,
 	Drawer,
 	DrawerContent,
@@ -27,62 +32,6 @@ import {
 import { EVENT_CONFIG } from "@/constants";
 import { useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { getMediaType, toYouTubeEmbed } from "@/utils/admin-banner-helpers";
-
-// ── Медиа-блок ───────────────────────────────────────
-function MediaBlock({
-	url,
-	alt,
-	className,
-}: {
-	url: string;
-	alt: string;
-	className?: string;
-}) {
-	const type = getMediaType(url);
-
-	if (type === "youtube") {
-		return (
-			<div className={cn("relative w-full aspect-video", className)}>
-				<iframe
-					src={toYouTubeEmbed(url)}
-					title={alt}
-					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-					allowFullScreen
-					className="absolute inset-0 w-full h-full rounded-t-3xl md:rounded-t-3xl rounded-none"
-				/>
-			</div>
-		);
-	}
-
-	if (type === "video") {
-		return (
-			<div className={cn("relative w-full aspect-video bg-black", className)}>
-				<video
-					src={url}
-					controls
-					autoPlay
-					muted
-					playsInline
-					className="absolute inset-0 w-full h-full object-contain rounded-t-3xl md:rounded-t-3xl rounded-none"
-				/>
-			</div>
-		);
-	}
-
-	return (
-		<div className={cn("relative w-full aspect-video", className)}>
-			<Image
-				src={url}
-				alt={alt}
-				fill
-				loading="eager"
-				sizes="(max-width: 768px) 100vw, 670px"
-				className="object-cover sm:rounded-t-3xl rounded-none"
-			/>
-		</div>
-	);
-}
 
 // ── Основной компонент BannerModal ───────────────────────────────────────────
 export function BannerModal({
@@ -95,23 +44,24 @@ export function BannerModal({
 	const isMobile = useIsMobile();
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [mounted, setMounted] = useState(false);
+	const [isFullView, setIsFullView] = useState(false);
 
 	const config =
 		EVENT_CONFIG[banner.type as keyof typeof EVENT_CONFIG] ?? EVENT_CONFIG.info;
 	const Icon = config.icon;
 
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+	useEffect(() => setMounted(true), []);
+
+	// Проверка на истечение срока
+	const isExpired = useMemo(() => {
+		if (!banner.eventDate) return false;
+		return new Date(banner.eventDate) < new Date();
+	}, [banner.eventDate]);
 
 	const mediaItems = useMemo(() => {
 		const items: Array<{ url: string; isVideo: boolean }> = [];
 		for (const img of banner.images) {
-			if (img.videoUrl) {
-				items.push({ url: img.videoUrl, isVideo: true });
-			} else {
-				items.push({ url: img.url, isVideo: false });
-			}
+			items.push({ url: img.videoUrl || img.url, isVideo: !!img.videoUrl });
 		}
 		if (items.length === 0) {
 			if (banner.videoUrl) items.push({ url: banner.videoUrl, isVideo: true });
@@ -124,214 +74,257 @@ export function BannerModal({
 	const hasGallery = mediaItems.length > 1;
 	const activeMedia = mediaItems[activeIndex];
 
-	// Клавиатурная навигация (нужна только для десктопа)
+	// Клавиатурная навигация
 	useEffect(() => {
-		if (isMobile) return;
-
 		const handler = (e: KeyboardEvent) => {
-			// Escape — закрываем
 			if (e.key === "Escape") {
-				e.preventDefault();
-				onClose();
+				if (isFullView) setIsFullView(false);
+				else onClose();
 			}
-
-			// Enter — открываем целевую ссылку баннера
-			if (e.key === "Enter" && banner.linkUrl) {
-				e.preventDefault();
-				window.open(banner.linkUrl, "_blank", "noopener,noreferrer");
-			}
-
-			// Смена слайда
-			if (hasGallery) {
-				if (e.key === "ArrowLeft") {
-					e.preventDefault();
-					setActiveIndex(
-						(i) => (i - 1 + mediaItems.length) % mediaItems.length
-					);
-				}
-				if (e.key === "ArrowRight") {
-					e.preventDefault();
-					setActiveIndex((i) => (i + 1) % mediaItems.length);
-				}
+			if (hasGallery && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+				setActiveIndex((i) =>
+					e.key === "ArrowLeft"
+						? (i - 1 + mediaItems.length) % mediaItems.length
+						: (i + 1) % mediaItems.length
+				);
 			}
 		};
-
 		window.addEventListener("keydown", handler);
 		return () => window.removeEventListener("keydown", handler);
-	}, [onClose, hasGallery, mediaItems.length, isMobile, banner.linkUrl]);
+	}, [onClose, isFullView, hasGallery, mediaItems.length]);
 
 	if (!mounted) return null;
 
-	// ── Общий контент для Модалки и Шторки ─────────────────────────────────────
+	const nextSlide = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		setActiveIndex((i) => (i + 1) % mediaItems.length);
+	};
+
+	const prevSlide = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		setActiveIndex((i) => (i - 1 + mediaItems.length) % mediaItems.length);
+	};
+
+	// ── Общий контент модального окна ─────────────────────────────────────
 	const renderContent = () => (
 		<>
-			{/* Медиа-шапка */}
 			{activeMedia && (
-				<div className="relative">
-					<MediaBlock url={activeMedia.url} alt={banner.title} />
+				<div className="relative group/media">
+					<Card
+						className="cursor-zoom-in border-none bg-transparent shadow-none"
+						onClick={() =>
+							!activeMedia.url.includes("youtube") && setIsFullView(true)
+						}
+					>
+						<MediaBlock url={activeMedia.url} alt={banner.title} />
+					</Card>
 
-					{hasGallery && mediaItems[activeIndex] && (
+					{/* Индикатор возможности расширения */}
+					{!activeMedia.url.includes("youtube") && (
+						<div className="absolute top-4 right-4 opacity-0 group-hover/media:opacity-100 transition-opacity pointer-events-none">
+							<div className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white">
+								<CornersOutIcon size={20} />
+							</div>
+						</div>
+					)}
+
+					{hasGallery && (
 						<>
 							<Button
 								variant="ghost"
-								onClick={() =>
-									setActiveIndex(
-										(i) => (i - 1 + mediaItems.length) % mediaItems.length
-									)
-								}
-								className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/20 text-muted-foreground hover:text-foreground flex items-center justify-center hover:bg-background/60 transition-colors backdrop-blur-sm shadow-xs cursor-pointer z-10"
+								onClick={prevSlide}
+								className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center backdrop-blur-sm shadow-lg cursor-pointer z-10"
 							>
-								<CaretLeftIcon size={14} />
+								<CaretLeftIcon size={20} weight="bold" />
 							</Button>
 							<Button
 								variant="ghost"
-								onClick={() =>
-									setActiveIndex((i) => (i + 1) % mediaItems.length)
-								}
-								className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/20 text-muted-foreground hover:text-foreground flex items-center justify-center hover:bg-background/60 transition-colors backdrop-blur-sm shadow-xs cursor-pointer z-10"
+								onClick={nextSlide}
+								className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center backdrop-blur-sm shadow-lg cursor-pointer z-10"
 							>
-								<CaretRightIcon size={14} />
+								<CaretRightIcon size={20} weight="bold" />
 							</Button>
 							<SliderPagination
 								totalPages={mediaItems.length}
 								currentPage={activeIndex}
-								onPageClick={(index) => setActiveIndex(index)}
+								onPageClick={setActiveIndex}
 							/>
 						</>
-					)}
-
-					{hasGallery && (
-						<div className="flex gap-1.5 px-4 pt-4 pb-0 overflow-x-auto no-scrollbar">
-							{mediaItems.map((item, i) => (
-								<button
-									key={i}
-									type="button"
-									onClick={() => setActiveIndex(i)}
-									className={cn(
-										"relative shrink-0 w-12 h-9 rounded-lg overflow-hidden border-2 transition-all",
-										i === activeIndex
-											? "border-primary"
-											: "border-transparent opacity-60 hover:opacity-90"
-									)}
-								>
-									{item.isVideo ? (
-										<div className="w-full h-full bg-black/60 flex items-center justify-center">
-											<span className="text-white text-[8px] font-bold">▶</span>
-										</div>
-									) : (
-										<Image
-											src={item.url}
-											alt={`фото ${i + 1}`}
-											fill
-											sizes="48px"
-											className="object-cover"
-										/>
-									)}
-								</button>
-							))}
-						</div>
 					)}
 				</div>
 			)}
 
-			{/* Текстовый контент */}
-			<div className="p-5 md:p-8 space-y-4">
-				<div className="flex flex-col sm:flex-row w-full justify-between gap-4 items-start">
-					<div className="flex flex-col space-y-2 flex-1">
+			<div className="p-6 md:p-8 space-y-6">
+				<div className="flex flex-col md:flex-row justify-between gap-6 items-start">
+					<div className="space-y-3 flex-1">
 						<div className="flex items-center gap-2 flex-wrap">
-							<Badge className={cn(config.badge)}>
-								<Icon size={11} weight="fill" />
+							<Badge className={cn("px-3 py-1 text-[10px]", config.badge)}>
+								<Icon size={12} weight="fill" />
 								{config.label}
 							</Badge>
 							{banner.eventDate && (
-								<p className="text-xs text-muted-foreground flex items-center gap-1.5">
-									<CalendarIcon size={12} />
+								<div
+									className={cn(
+										"text-xs flex items-center gap-1.5 font-bold",
+										isExpired ? "text-red-400" : "text-muted-foreground"
+									)}
+								>
+									<CalendarIcon size={14} />
 									<ClientTime iso={banner.eventDate} fmt="full-datetime" />
-								</p>
+								</div>
 							)}
 						</div>
 
-						<h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight text-foreground italic">
+						<h2 className="text-2xl md:text-3xl font-black italic tracking-tighter leading-none">
 							{banner.title}
 						</h2>
-
 						{banner.subtitle && (
-							<p className="text-sm text-muted-foreground font-medium">
+							<p className="text-muted-foreground font-medium">
 								{banner.subtitle}
 							</p>
 						)}
 					</div>
 
 					{banner.linkUrl && (
-						<Button
-							asChild
-							className="rounded-full shadow-xl shadow-primary/30 w-full sm:w-auto shrink-0"
-							size="xl"
-						>
-							<Link
-								href={banner.linkUrl}
-								target="_blank"
-								rel="noopener noreferrer"
+						<div className="w-full md:w-auto shrink-0">
+							<Button
+								asChild
+								variant="outline"
+								className={cn(
+									"flex  shadow-primary/30 w-full items-center gap-2 px-6 py-3 rounded-full text-red-400 text-sm font-bold shadow-2xl",
+									config.shadow,
+									config.badge
+								)}
+								size="xl"
 							>
-								{banner.linkLabel ?? "Подробнее"}
-							</Link>
-						</Button>
+								{isExpired ? (
+									<div>
+										<ClockIcon size={16} weight="bold" />
+										{banner.type === "event"
+											? "Событие уже прошло"
+											: banner.type === "promo"
+												? "Акция закончилась"
+												: "Новость устарела"}
+									</div>
+								) : (
+									<Link
+										href={banner.linkUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										{banner.linkLabel ?? "Подробнее"}
+									</Link>
+								)}
+							</Button>
+						</div>
 					)}
 				</div>
 
 				{banner.body && (
-					<div className="prose-sm text-foreground/80 border-t border-foreground/5 pt-4">
+					<div className="prose-sm text-foreground/90 border-t border-foreground/5 pt-6 leading-relaxed">
 						<SimpleMarkdown text={banner.body} />
 					</div>
 				)}
 			</div>
+
 			<Button
 				type="button"
 				variant="ghost"
 				onClick={onClose}
-				className="ml-auto cursor-pointer sticky bottom-3 inset-x-3.5 right-3 h-8 w-8 rounded-full flex items-center text-foreground/30 hover:text-foreground/60 border border-muted-foreground/10 bg-muted-foreground/10 justify-center transition-colors backdrop-blur-xs z-10"
+				className="ml-auto sticky bottom-3 right-3 rounded-full flex items-center text-foreground/30 hover:text-foreground/60 border border-muted-foreground/10 bg-muted-foreground/10 justify-center transition-colors backdrop-blur-xs z-10"
 			>
-				<XIcon size={14} weight="bold" />
+				<XIcon size={18} weight="bold" />
 			</Button>
 		</>
 	);
 
-	// ── DRAWER для мобильных ──────────────────────────────────────────
+	const fullscreenDialog = (
+		<Dialog open={isFullView} onOpenChange={setIsFullView}>
+			<DialogContent
+				className="max-w-none w-100vw h-screen p-0 m-0 bg-black/95 border-none rounded-none flex items-center justify-center z-150 shadow-none [&>button]:hidden outline-none pointer-events-auto"
+				overlayClassName="z-[100] backdrop-blur-md bg-black/40"
+				onClick={() => setIsFullView(false)}
+			>
+				<DialogTitle className="hidden">Просмотр медиа</DialogTitle>
+				{activeMedia && (
+					<div className="relative w-full h-full flex items-center justify-center p-4 md:p-10 cursor-zoom-out">
+						<MediaBlock
+							url={activeMedia.url}
+							alt={banner.title}
+							isFull={true}
+						/>
+
+						{hasGallery && (
+							<div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 pointer-events-none">
+								<Button
+									onClick={prevSlide}
+									className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white pointer-events-auto backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl"
+								>
+									<CaretLeftIcon size={24} weight="bold" />
+								</Button>
+								<Button
+									onClick={nextSlide}
+									className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white pointer-events-auto backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl"
+								>
+									<CaretRightIcon size={24} weight="bold" />
+								</Button>
+							</div>
+						)}
+
+						<Button
+							className="absolute bottom-4 right-4 h-12 w-12 rounded-full bg-white/5 hover:bg-white/20 text-white backdrop-blur-md z-50 flex items-center justify-center border border-white/5 shadow-xl"
+							onClick={() => setIsFullView(false)}
+						>
+							<XIcon size={24} />
+						</Button>
+
+						<div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-xs font-mono bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">
+							{activeIndex + 1} / {mediaItems.length}
+						</div>
+					</div>
+				)}
+			</DialogContent>
+		</Dialog>
+	);
+
 	if (isMobile) {
 		return (
-			<Drawer open={true} onOpenChange={(open) => !open && onClose()}>
-				<DrawerContent className="max-h-[94vh] rounded-t-2xl flex flex-col">
-					<DialogTitle />
-					<div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain">
-						{renderContent()}
-					</div>
-				</DrawerContent>
-			</Drawer>
+			<>
+				<Drawer open onOpenChange={(open) => !open && onClose()}>
+					<DrawerContent className="max-h-[96vh] rounded-t-[32px] overflow-hidden flex flex-col">
+						<DialogTitle className="hidden" />
+						<div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain">
+							{renderContent()}
+						</div>
+					</DrawerContent>
+				</Drawer>
+				{fullscreenDialog}
+			</>
 		);
 	}
 
-	// ── MODAL для десктопа ─────────────────────────────────────────────
 	return createPortal(
-		<motion.div
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1 }}
-			exit={{ opacity: 0 }}
-			className="fixed inset-0 z-80 flex items-center justify-center p-4 overscroll-none overflow-hidden"
-			onClick={onClose}
-		>
-			<div className="absolute inset-0 bg-black/50 " />
-
+		<>
 			<motion.div
-				initial={{ opacity: 0, scale: 0.95, y: 16 }}
-				animate={{ opacity: 1, scale: 1, y: 0 }}
-				exit={{ opacity: 0, scale: 0.95, y: 8 }}
-				transition={{ type: "spring", stiffness: 400, damping: 30 }}
-				onClick={(e) => e.stopPropagation()}
-				className="relative z-10 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl card-surface bg-background shadow-2xl shadow-muted-foreground/40 no-scrollbar overscroll-none"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				exit={{ opacity: 0 }}
+				className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+				onClick={onClose}
 			>
-				{renderContent()}
+				<motion.div
+					initial={{ opacity: 0, y: 20, scale: 0.98 }}
+					animate={{ opacity: 1, y: 0, scale: 1 }}
+					exit={{ opacity: 0, scale: 0.98 }}
+					transition={{ type: "spring", stiffness: 400, damping: 30 }}
+					onClick={(e) => e.stopPropagation()}
+					className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[32px] bg-background shadow-2xl no-scrollbar border border-foreground/5"
+				>
+					{renderContent()}
+				</motion.div>
 			</motion.div>
-		</motion.div>,
+			{fullscreenDialog}
+		</>,
 		document.body
 	);
 }

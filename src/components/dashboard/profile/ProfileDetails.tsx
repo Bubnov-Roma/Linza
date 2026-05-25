@@ -18,6 +18,7 @@ import {
 	WarningIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 import type React from "react";
 import { useState } from "react";
@@ -333,7 +334,7 @@ export function ProfileDetails({
 					/>
 
 					<SectionCard title="Поддержка">
-						<a
+						<Link
 							href={support.telegram}
 							target="_blank"
 							rel="noopener noreferrer"
@@ -350,8 +351,8 @@ export function ProfileDetails({
 								size={12}
 								className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors"
 							/>
-						</a>
-						<a
+						</Link>
+						<Link
 							href={`tel:${support.phone.replace(/\s/g, "")}`}
 							className="detail-row hover:bg-foreground/5 transition-colors"
 						>
@@ -361,7 +362,7 @@ export function ProfileDetails({
 									{support.phone}
 								</span>
 							</div>
-						</a>
+						</Link>
 					</SectionCard>
 				</div>
 			)}

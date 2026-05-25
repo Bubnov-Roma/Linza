@@ -29,6 +29,7 @@ export default function CookieBanner() {
 				Продолжая использовать сайт, вы принимаете{" "}
 				<Link
 					href="/privacy"
+					target="_blank"
 					className="underline hover:text-blue-400 font-black"
 				>
 					политику конфиденциальности
@@ -36,6 +37,7 @@ export default function CookieBanner() {
 				и{" "}
 				<Link
 					href="/terms"
+					target="_blank"
 					className="underline hover:text-blue-400 font-black"
 				>
 					пользовательское соглашение

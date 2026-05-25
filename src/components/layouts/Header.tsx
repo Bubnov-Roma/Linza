@@ -144,7 +144,7 @@ export function Header({ categories, support }: HeaderProps) {
 									Связь с нами
 								</h4>
 								<div className="flex flex-col space-y-4 text-sm font-medium">
-									<a
+									<Link
 										href={support.telegram}
 										target="_blank"
 										rel="noreferrer"
@@ -156,8 +156,8 @@ export function Header({ categories, support }: HeaderProps) {
 											className="text-[#2AABEE]"
 										/>
 										Telegram
-									</a>{" "}
-									<a
+									</Link>{" "}
+									<Link
 										href={`tel:${support.phone}`}
 										className="flex items-center gap-3 text-foreground/70 hover:text-foreground hover:bg-muted-foreground/10 p-2 rounded-2xl transition-colors"
 									>
@@ -167,8 +167,8 @@ export function Header({ categories, support }: HeaderProps) {
 											className="text-primary"
 										/>
 										{support.phone}
-									</a>
-									<a
+									</Link>
+									<Link
 										href={`mailto:${support.email}`}
 										className="flex items-center gap-3 text-foreground/70 hover:text-foreground hover:bg-muted-foreground/10 p-2 rounded-2xl transition-colors"
 									>
@@ -178,7 +178,7 @@ export function Header({ categories, support }: HeaderProps) {
 											className="text-muted-foreground"
 										/>
 										{support.email}
-									</a>
+									</Link>
 									{/* Интерактивный адрес */}
 									<Collapsible
 										open={isMapMenuOpen}
@@ -193,30 +193,30 @@ export function Header({ categories, support }: HeaderProps) {
 											<span>{support.address}</span>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="pt-3 pl-7 space-y-2">
-											<a
+											<Link
 												href={`https://yandex.ru/maps/?text=${encodedAddress}`}
 												target="_blank"
 												rel="noreferrer"
 												className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
 											>
 												📍 Открыть в Яндекс Картах
-											</a>
-											<a
+											</Link>
+											<Link
 												href={`https://2gis.ru/search/${encodedAddress}`}
 												target="_blank"
 												rel="noreferrer"
 												className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
 											>
 												🏢 Открыть в 2GIS
-											</a>
-											<a
+											</Link>
+											<Link
 												href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`}
 												target="_blank"
 												rel="noreferrer"
 												className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
 											>
 												🗺 Открыть в Google Maps
-											</a>
+											</Link>
 										</CollapsibleContent>
 									</Collapsible>
 								</div>

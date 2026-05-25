@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSiteSettings } from "@/actions/admin-settings-actions";
 import { ClientTime } from "@/components/shared";
 import { SimpleMarkdown } from "@/components/shared/MarkdownEditor";
@@ -25,12 +26,12 @@ export default async function PrivacyPage() {
 			<div className="mt-10 pt-6 border-t border-border">
 				<p className="text-muted-foreground text-sm">
 					Если у вас остались вопросы, свяжитесь с нами:{" "}
-					<a
+					<Link
 						href={`mailto:${settings.supportEmail}`}
 						className="text-blue-500 hover:underline font-medium"
 					>
 						{settings.supportEmail}
-					</a>
+					</Link>
 				</p>
 			</div>
 		</div>

@@ -28,16 +28,7 @@ export function QuickActionLink({
 				className
 			)}
 		>
-			{/* <div className="flex items-center gap-4"> */}
-			{/* Иконка с мягким свечением */}
-			{/* <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors"> */}
 			{icon}
-			{/* </div> */}
-
-			{/* <div className="flex flex-col"> */}
-			{/* <span className="text-sm font-semibold text-foreground/60 group-hover:text-foreground/80">
-						{label}
-					</span> */}
 			<div className="flex-1 min-w-0">
 				<p className="text-sm font-semibold truncate">{label}</p>
 				{description && (
@@ -51,9 +42,6 @@ export function QuickActionLink({
 					{badge}
 				</span>
 			)}
-			{/* </div> */}
-			{/* </div> */}
-
 			<ChevronRight
 				size={18}
 				className="text-white/20 group-hover:text-white/80 group-hover:translate-x-1 transition-all duration-300"

@@ -11,6 +11,7 @@ import {
 	UserIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -326,7 +327,7 @@ export function UserDetailPanel({
 								{/* Кликабельные контакты */}
 								<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
 									{user.email && (
-										<a
+										<Link
 											href={`mailto:${user.email}`}
 											className="hover:text-primary transition-colors flex items-center gap-1.5 group"
 										>
@@ -335,10 +336,10 @@ export function UserDetailPanel({
 												className="group-hover:text-primary transition-colors"
 											/>{" "}
 											{user.email}
-										</a>
+										</Link>
 									)}
 									{currentPhone && (
-										<a
+										<Link
 											href={`tel:${currentPhone}`}
 											className="hover:text-primary transition-colors flex items-center gap-1.5 group"
 										>
@@ -347,7 +348,7 @@ export function UserDetailPanel({
 												className="group-hover:text-primary transition-colors"
 											/>{" "}
 											{currentPhone}
-										</a>
+										</Link>
 									)}
 									{labels.length > 0 && (
 										<div className="flex flex-wrap gap-1.5">

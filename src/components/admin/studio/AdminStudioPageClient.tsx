@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarBlankIcon, GearIcon, VideoIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useCallback, useState, useTransition } from "react";
 import {
 	getStudioTariffsAction,
@@ -69,9 +70,9 @@ export function AdminStudioPageClient({
 					className="h-8 text-xs shrink-0"
 					asChild
 				>
-					<a href="/studio" target="_blank" rel="noopener noreferrer">
+					<Link href="/studio" target="_blank" rel="noopener noreferrer">
 						Страница студии
-					</a>
+					</Link>
 				</Button>
 			</div>
 

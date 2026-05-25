@@ -5,6 +5,7 @@ import {
 	DotsNineIcon,
 	FilmSlateIcon,
 	ImageIcon,
+	InfoIcon,
 	LinkIcon,
 	PlusIcon,
 	UploadSimpleIcon,
@@ -12,6 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import Image from "next/image";
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { BannerImage } from "@/actions/admin-banner-actions";
@@ -24,17 +26,21 @@ import {
 import { MediaUploader, VideoEmbed } from "@/components/shared"; // Предполагаем, что MarkdownEditor здесь не нужен
 import {
 	Button,
+	CardContent,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 	Input,
 	Label,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@/components/ui";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { getMediaType, parseVkUrl } from "@/utils";
+import { getEmbedUrl, getMediaType } from "@/utils";
 
 type MediaTab = "photo" | "photo-url" | "video-s3" | "video-url";
 
@@ -197,7 +203,7 @@ export function BannerMediaManager({
 		}
 
 		if (mediaType === "vk-post") {
-			const parsed = parseVkUrl(rawUrl);
+			const parsed = getEmbedUrl(rawUrl);
 			if (!parsed) {
 				toast.error("Не удалось извлечь рабочую ссылку из кода виджета ВК");
 				return;
@@ -221,7 +227,6 @@ export function BannerMediaManager({
 		});
 	};
 
-	// ФИКС ОШИБКИ ТУТ: Разделили вызов toast и прерывание функции через return
 	const handleDelete = (imgId: string) => {
 		if (!confirm("Удалить медиа-элемент?")) return;
 		start(async () => {
@@ -271,8 +276,7 @@ export function BannerMediaManager({
 					{images.map((img, i) => {
 						const isVideo = !!img.videoUrl;
 						return (
-							<button
-								type="button"
+							<CardContent
 								key={img.id}
 								draggable
 								onDragStart={() => {
@@ -337,7 +341,7 @@ export function BannerMediaManager({
 										</span>
 									</div>
 								)}
-							</button>
+							</CardContent>
 						);
 					})}
 				</div>
@@ -349,7 +353,7 @@ export function BannerMediaManager({
 						type="button"
 						variant="outline"
 						size="sm"
-						className="gap-2 border-dashed"
+						className="w-full"
 						onClick={() => {
 							if (requireBannerId()) setUploadOpen(true);
 						}}
@@ -358,8 +362,7 @@ export function BannerMediaManager({
 						Добавить медиа
 					</Button>
 
-					{/* ФИКС ТУТ: Убрали <Card>, так как он ломал рендеринг контекста DialogContent */}
-					<DialogContent className="sm:max-w-lg p-6 card-surface">
+					<DialogContent className="max-w-md sm:max-w-lg p-6 card-surface max-h-[85vh] overflow-y-auto custom-scrollbar flex flex-col justify-between">
 						<DialogHeader>
 							<DialogTitle className="text-base font-black italic uppercase">
 								Добавить медиа к баннеру
@@ -419,7 +422,7 @@ export function BannerMediaManager({
 							{/* Таб 2: Вставка внешней ссылки фото */}
 							<TabsContent value="photo-url" className="space-y-4 pt-3">
 								<div className="space-y-1.5">
-									<Label>Прямая ссылка на изображение</Label>
+									<Label>Прямая ссылка на изображение из </Label>
 									<Input
 										value={externalPhotoUrl}
 										onChange={(e) => setExternalPhotoUrl(e.target.value)}
@@ -431,7 +434,6 @@ export function BannerMediaManager({
 									</p>
 								</div>
 								{externalPhotoUrl.trim() && (
-									/* ФИКС ТУТ: Добавили свойство fill к Image для Next.js, убрали некорректные классы размеров */
 									<div className="relative w-full aspect-video rounded-xl overflow-hidden border border-foreground/10 bg-black/5">
 										<Image
 											src={externalPhotoUrl}
@@ -486,15 +488,35 @@ export function BannerMediaManager({
 										<Label className="text-[10px] uppercase tracking-wider opacity-60">
 											Предпросмотр:
 										</Label>
-										<VideoEmbed
-											url={videoUrl}
-											className="rounded-xl overflow-hidden border border-foreground/10"
-										/>
+										<div className="max-h-70 overflow-y-auto rounded-xl border border-foreground/10 bg-black/40 flex items-center justify-center custom-scrollbar">
+											<VideoEmbed url={videoUrl} className="w-full h-full" />
+										</div>
 									</div>
 								)}
 
-								<div className="space-y-1.5">
-									<Label>Заставка (необязательно) — URL картинки</Label>
+								<div className="space-y-1.5 gap-2">
+									<Label>
+										Заставка (необязательно) — URL картинки
+										<Tooltip>
+											<TooltipTrigger>
+												<InfoIcon size={12} weight="bold" />
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>
+													Поддерживаются прямые ссылки на изображения с
+													фотохостинга{" "}
+													<Link
+														href="https://imgbb.com/"
+														target="_blank"
+														className="uppercase hover:underline"
+													>
+														{" "}
+														imgbb.com{" "}
+													</Link>{" "}
+												</p>
+											</TooltipContent>
+										</Tooltip>
+									</Label>
 									<Input
 										value={videoThumbnail}
 										onChange={(e) => setVideoThumbnail(e.target.value)}

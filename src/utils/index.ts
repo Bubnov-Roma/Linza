@@ -6,6 +6,6 @@ export * from "./group-equipment";
 export * from "./input-group.utils";
 export * from "./is-value-filled";
 export * from "./keyboard-layout";
+export * from "./media.utils";
 export * from "./pluralize";
 export * from "./slugify";
-export * from "./video-helpers.utils";

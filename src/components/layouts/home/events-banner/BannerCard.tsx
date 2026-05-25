@@ -7,7 +7,7 @@ import type { Banner } from "@/actions/admin-banner-actions";
 import { ClientTime } from "@/components/shared";
 import { EVENT_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
-import { getMediaType } from "@/utils/admin-banner-helpers";
+import { getMediaType } from "@/utils";
 
 export function BannerCard({
 	banner,

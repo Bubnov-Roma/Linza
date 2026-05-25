@@ -230,33 +230,6 @@ export default async function DashboardPage() {
 							</div>
 						)}
 					</Card>
-					{/* <Card>
-						<CardHeader className="pb-2">
-							<CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-								Быстрый доступ
-							</CardTitle>
-						</CardHeader>
-						<div className="flex flex-col gap-2 w-full">
-							<QuickActionLink
-								href="/booking/new"
-								icon={<CalendarIcon size={18} />}
-								label="Новая бронь"
-								description="Выбрать технику"
-							/>
-							<QuickActionLink
-								href="/dashboard/profile"
-								icon={<UserIcon size={18} />}
-								label="Профиль"
-								description="Данные и настройки"
-							/>
-							<QuickActionLink
-								href="/favorites"
-								icon={<HeartIcon size={18} />}
-								label="Избранное"
-								description="Понравившаяся техника"
-							/>
-						</div>
-					</Card> */}
 				</div>
 			</div>
 		</div>

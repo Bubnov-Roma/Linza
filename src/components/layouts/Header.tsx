@@ -50,7 +50,7 @@ interface HeaderProps {
 }
 
 const STATIC_LINKS = [
-	{ href: "/about", label: "О сервисе", icon: InfoIcon },
+	{ href: "/about", label: "О нас", icon: InfoIcon },
 	{ href: "/rules", label: "Правила", icon: ScrollIcon },
 	{ href: "/faq", label: "FAQ", icon: QuestionIcon },
 	{ href: "/contacts", label: "Контакты", icon: AddressBookIcon },
@@ -316,7 +316,7 @@ export function Header({ categories, support }: HeaderProps) {
 			</div>
 
 			{/* ── Desktop: Ссылки и Корзина ── */}
-			<div className="hidden md:flex lg:flex-1 items-center justify-end-safe gap-1">
+			<div className="relative hidden md:flex lg:flex-1 items-center justify-end-safe gap-1 z-50">
 				<ThemeIconButton weight="fill" />
 				<div className="w-px h-6 bg-foreground/10 mx-2" />
 				<TooltipProvider delayDuration={150}>
@@ -328,7 +328,7 @@ export function Header({ categories, support }: HeaderProps) {
 									href={link.href}
 									className="p-2.5 text-muted-foreground hover:bg-foreground/10 hover:text-foreground rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 flex gap-2"
 								>
-									<link.icon size={15} weight="duotone" />
+									{/* <link.icon size={15} weight="duotone" /> */}
 									<span className="hidden lg:flex text-xs font-bold whitespace-nowrap shrink-0">
 										{link.label}
 									</span>

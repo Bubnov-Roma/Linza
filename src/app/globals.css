@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import 'gradient-border-plugin';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -146,8 +147,19 @@
   }
 
   .glass-card {
-    @apply backdrop-blur-2xl border border-white/10 shadow-xs hover:shadow-md relative overflow-hidden transition-all duration-300;
-    background: var(--bg-foreground);
+    @apply backdrop-blur-2xl relative ;
+    border-radius: var(--radius-2xl);
+
+    @apply gradient-border gradient-border-to-tl gradient-border-from-white gradient-border-via-neutral-50 gradient-border-to-white;
+    @apply dark:gradient-border dark:gradient-border-to-tl dark:gradient-border-from-neutral-700 dark:gradient-border-via-neutral-800 dark:gradient-border-to-neutral-600;
+
+    background: linear-gradient(
+      135deg,
+      oklch(from var(--bg-card) l c h / 0.95) 0%,
+      oklch(from var(--bg-card) l c h / 0.45) 100%
+    );
+    box-shadow: 
+      0 10px 30px -10px rgba(0, 0, 0, 0.09),
   }
 
   .section-squeeze {

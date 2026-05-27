@@ -83,7 +83,7 @@ export async function Footer({ support }: { support: SupportInfo }) {
 							<ul className="space-y-4">
 								<li>
 									<Link href="/about" className={footerLinkClass}>
-										О сервисе
+										О нас
 									</Link>
 								</li>
 								<li>

@@ -749,3 +749,14 @@ model StudioBookingAuditLog {
   studioBooking StudioBooking @relation(fields: [studioBookingId], references: [id], onDelete: Cascade)
   author        User?         @relation("StudioAuditAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
+
+model AboutPageSettings {
+  id          String   @id @default("default")
+  heroTitle   String   @default("LINZA")
+  heroSub     String   @default("Это не просто прокат и студия.")
+  description String   @default("Мы предоставляем передовое фото- и видеооборудование для профессионалов и любителей в Самаре. Наш приоритет — качество техники и безупречный сервис.")
+  imageUrl    String?  @map("imageUrl")
+  updatedAt   DateTime @updatedAt @map("updatedAt")
+
+  @@map("about_page_settings")
+}

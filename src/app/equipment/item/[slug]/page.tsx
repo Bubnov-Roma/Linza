@@ -32,9 +32,13 @@ export async function generateMetadata({
 
 	const ogImage = equipment.imageUrl || "https://linzarental.ru/og-image.png";
 
+	const isRepresentative = equipment.isPrimary === true;
 	return {
 		title: `${equipment.title} – аренда в Самаре | Linza`,
 		description: equipment.description || `Аренда ${equipment.title} в Самаре.`,
+		robots: isRepresentative
+			? { index: true, follow: true }
+			: { index: false, follow: true },
 		openGraph: {
 			title: equipment.title,
 			description:

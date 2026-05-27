@@ -40,9 +40,12 @@ export async function generateMetadata({
 		description = `Каталог профессиональной техники в категории «${currentCategory.name}» в Самаре. Выгодные условия проката, онлайн-бронирование оборудования на Linza.`;
 	}
 
-	const queryPath = `${params.category ? `?category=${params.category}` : ""}${
-		params.subcategory ? `&subcategory=${params.subcategory}` : ""
-	}`;
+	const urlParams = new URLSearchParams();
+	if (params.category) urlParams.set("category", params.category);
+	if (params.subcategory) urlParams.set("subcategory", params.subcategory);
+
+	const queryString = urlParams.toString();
+	const queryPath = queryString ? `?${queryString}` : "";
 
 	return {
 		title,

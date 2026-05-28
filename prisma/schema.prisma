@@ -533,6 +533,7 @@ model FaqItem {
   answer     String   @db.Text
   sortOrder  Int      @default(0)
   category   String?
+  tags      String[] @default([])
   isActive   Boolean  @default(true)
   createdBy  String?
   updatedBy  String?
@@ -541,6 +542,14 @@ model FaqItem {
 
   author  User? @relation("FaqCreator", fields: [createdBy], references: [id])
   updater User? @relation("FaqUpdater", fields: [updatedBy], references: [id])
+}
+
+model FaqQuestion {
+  id        String   @id @default(cuid())
+  text      String
+  email     String?
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
 }
 
 model SiteSetting {

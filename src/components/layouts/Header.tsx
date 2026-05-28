@@ -8,7 +8,6 @@ import {
 	MapPinIcon,
 	PhoneIcon,
 	QuestionIcon,
-	ScrollIcon,
 	ShoppingCartSimpleIcon,
 	SidebarSimpleIcon,
 	TelegramLogoIcon,
@@ -51,7 +50,6 @@ interface HeaderProps {
 
 const STATIC_LINKS = [
 	{ href: "/about", label: "О нас", icon: InfoIcon },
-	{ href: "/rules", label: "Правила", icon: ScrollIcon },
 	{ href: "/faq", label: "FAQ", icon: QuestionIcon },
 	{ href: "/contacts", label: "Контакты", icon: AddressBookIcon },
 ];

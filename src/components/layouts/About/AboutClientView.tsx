@@ -113,8 +113,6 @@ export default function AboutClientView({
 					xmlns="http://www.w3.org/2000/svg"
 				>
 					<circle cx="1600" cy="1600" r="1500" fill="#FFFFFF" />
-
-					{/* Ваш оригинальный красный контур с вырезом */}
 					<path
 						d="M1596.5 0C2416 0 3199.5 655 3199.5 1603C3221 2053.5 2850.5 3178.5 1602.5 3200C689.5 3180.5 0 2478 0 1596.5C34.5 554 845.5 0 1596.5 0ZM1622.5 650C1622.5 650 1195 637 1012.5 923C830 1209 931 1480.5 1012.5 1623C1094 1765.5 1303.5 1908.5 1303.5 1908.5L872.5 2550H1230.5L1711 1832.5C1228.35 1535.81 1166 1328 1306 1045C1442.5 894 1632.5 906 1632.5 906H1805.5V2548H2135.5V650H1622.5Z"
 						fill="#F9412B"
@@ -288,7 +286,20 @@ export default function AboutClientView({
 
 		if (selectedFile) {
 			try {
-				finalImageUrl = URL.createObjectURL(selectedFile);
+				// ✅ Загружаем файл в S3 через route handler
+				const fd = new FormData();
+				fd.append("file", selectedFile);
+				fd.append("folder", "about");
+
+				const res = await fetch("/api/upload", {
+					method: "POST",
+					body: fd,
+				});
+
+				if (!res.ok) throw new Error("Upload failed");
+
+				const data = await res.json();
+				finalImageUrl = data.url; // ← настоящий S3 URL
 			} catch {
 				toast.error("Ошибка загрузки изображения");
 				setIsSaving(false);

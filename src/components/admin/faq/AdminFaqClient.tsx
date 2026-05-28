@@ -1,16 +1,6 @@
 "use client";
 
-import {
-	ChevronDown,
-	ChevronUp,
-	Edit2,
-	GripVertical,
-	HelpCircle,
-	Plus,
-	Save,
-	Trash2,
-	X,
-} from "lucide-react";
+import { PlusIcon, QuestionIcon } from "@phosphor-icons/react";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -19,190 +9,13 @@ import {
 	deleteFaqItemAction,
 	reorderFaqItemsAction,
 	updateFaqItemAction,
-} from "@/actions/faq-actions";
-import { Button, Card, Input, Label, Textarea } from "@/components/ui";
+} from "@/actions/admin-faq-actions";
+import { FaqRow } from "@/components/admin/faq/FaqRow";
+import { TagInput } from "@/components/admin/faq/TagInput";
+import { Button, Input, Label, Textarea } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-function FaqRow({
-	item,
-	onUpdate,
-	onDelete,
-	dragHandleProps,
-}: {
-	item: DbFaqItem;
-	onUpdate: (id: string, data: Partial<DbFaqItem>) => Promise<void>;
-	onDelete: (id: string) => Promise<void>;
-	dragHandleProps: {
-		onDragStart: () => void;
-		onDragOver: (e: React.DragEvent) => void;
-		onDrop: () => void;
-	};
-}) {
-	const [editing, setEditing] = useState(false);
-	const [editQ, setEditQ] = useState(item.question);
-	const [editA, setEditA] = useState(item.answer);
-	const [editCat, setEditCat] = useState(item.category ?? "");
-	const [expanded, setExpanded] = useState(false);
-	const [isPending, startTransition] = useTransition();
-
-	const handleSave = () => {
-		startTransition(async () => {
-			await onUpdate(item.id, {
-				question: editQ,
-				answer: editA,
-				category: editCat,
-			});
-			setEditing(false);
-			toast.success("Вопрос обновлён");
-		});
-	};
-
-	return (
-		<Card
-			className={cn(
-				"rounded-2xl border overflow-hidden transition-all duration-200",
-				item.isActive
-					? "border-white/8 bg-foreground/3"
-					: "border-white/4 bg-foreground/1 opacity-60"
-			)}
-			draggable
-			onDragStart={dragHandleProps.onDragStart}
-			onDragOver={dragHandleProps.onDragOver}
-			onDrop={dragHandleProps.onDrop}
-		>
-			<div className="flex items-start gap-2 px-4 py-3">
-				<GripVertical
-					size={15}
-					className="text-muted-foreground/30 mt-0.5 cursor-grab shrink-0"
-				/>
-
-				<div className="flex-1 min-w-0">
-					{editing ? (
-						<div className="space-y-2">
-							<div className="space-y-1">
-								<Label className="text-xs">Вопрос</Label>
-								<Input
-									value={editQ}
-									onChange={(e) => setEditQ(e.target.value)}
-									autoFocus
-								/>
-							</div>
-							<div className="space-y-1">
-								<Label className="text-xs">Ответ (поддерживает Markdown)</Label>
-								<Textarea
-									value={editA}
-									onChange={(e) => setEditA(e.target.value)}
-									rows={4}
-									className="resize-none text-sm"
-								/>
-							</div>
-							<div className="space-y-1">
-								<Label className="text-xs">Категория (тег)</Label>
-								<Input
-									value={editCat}
-									onChange={(e) => setEditCat(e.target.value)}
-									placeholder="Например: Оплата"
-									className="h-8 text-xs"
-								/>
-							</div>
-						</div>
-					) : (
-						<button
-							type="button"
-							className="w-full text-left"
-							onClick={() => setExpanded((e) => !e)}
-						>
-							<div className="flex items-start gap-2">
-								<p className="text-sm font-semibold leading-snug flex-1">
-									{item.question}
-								</p>
-								{item.category && (
-									<span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-foreground/8 text-muted-foreground">
-										{item.category}
-									</span>
-								)}
-								{expanded ? (
-									<ChevronUp
-										size={14}
-										className="text-muted-foreground shrink-0 mt-0.5"
-									/>
-								) : (
-									<ChevronDown
-										size={14}
-										className="text-muted-foreground shrink-0 mt-0.5"
-									/>
-								)}
-							</div>
-							{expanded && (
-								<p className="text-sm text-muted-foreground mt-2 leading-relaxed text-left whitespace-pre-line">
-									{item.answer}
-								</p>
-							)}
-						</button>
-					)}
-				</div>
-
-				<div className="flex items-center gap-1 shrink-0 ml-2">
-					{editing ? (
-						<>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 px-2"
-								onClick={handleSave}
-								disabled={isPending}
-							>
-								<Save size={12} className="mr-1" /> Сохранить
-							</Button>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 w-7 p-0"
-								onClick={() => setEditing(false)}
-							>
-								<X size={12} />
-							</Button>
-						</>
-					) : (
-						<>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 px-2 text-xs text-muted-foreground"
-								onClick={() =>
-									startTransition(async () => {
-										await onUpdate(item.id, { isActive: !item.isActive });
-									})
-								}
-							>
-								{item.isActive ? "Скрыть" : "Показать"}
-							</Button>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 w-7 p-0"
-								onClick={() => setEditing(true)}
-							>
-								<Edit2 size={12} className="text-muted-foreground" />
-							</Button>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 w-7 p-0 hover:text-red-500 hover:bg-red-500/10"
-								onClick={() => {
-									if (confirm("Удалить вопрос?"))
-										startTransition(() => onDelete(item.id));
-								}}
-							>
-								<Trash2 size={12} />
-							</Button>
-						</>
-					)}
-				</div>
-			</div>
-		</Card>
-	);
-}
+// ─── MAIN CLIENT ──────────────────────────────────────────────────────────────
 
 export default function AdminFaqClient({
 	initialItems,
@@ -213,7 +26,7 @@ export default function AdminFaqClient({
 	const [isPending, startTransition] = useTransition();
 	const [newQ, setNewQ] = useState("");
 	const [newA, setNewA] = useState("");
-	const [newCat, setNewCat] = useState("");
+	const [newTags, setNewTags] = useState<string[]>([]);
 	const [showAdd, setShowAdd] = useState(false);
 
 	const dragIndex = useRef<number | null>(null);
@@ -239,7 +52,7 @@ export default function AdminFaqClient({
 			const result = await createFaqItemAction({
 				question: newQ.trim(),
 				answer: newA.trim(),
-				category: newCat.trim(),
+				tags: newTags,
 			});
 			if (!result.success) {
 				toast.error(result.error);
@@ -250,7 +63,7 @@ export default function AdminFaqClient({
 				setItems((prev) => [...prev, newItem]);
 				setNewQ("");
 				setNewA("");
-				setNewCat("");
+				setNewTags([]);
 				setShowAdd(false);
 				toast.success("Вопрос добавлен");
 			}
@@ -279,11 +92,15 @@ export default function AdminFaqClient({
 	const active = items.filter((i) => i.isActive).length;
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 container mx-auto max-w-6xl px-4 py-10">
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-black uppercase italic tracking-tight flex items-center gap-2">
-						<HelpCircle size={22} className="text-primary" />
+						<QuestionIcon
+							size={22}
+							className="text-muted-foreground"
+							weight="duotone"
+						/>
 						FAQ
 					</h1>
 					<p className="text-sm text-muted-foreground mt-1">
@@ -291,30 +108,47 @@ export default function AdminFaqClient({
 						изменения порядка
 					</p>
 				</div>
-				<Button size="sm" onClick={() => setShowAdd((s) => !s)}>
-					{showAdd ? (
-						<X size={14} className="mr-1" />
-					) : (
-						<Plus size={14} className="mr-1" />
-					)}
-					{showAdd ? "Отмена" : "Добавить вопрос"}
+				<Button
+					size="xl"
+					onClick={() => setShowAdd((s) => !s)}
+					className="rounded-full md:min-w-35 transition-all duration-300 justify-between items-center"
+				>
+					{" "}
+					<PlusIcon
+						size={14}
+						className={cn(
+							"transition-transform duration-300",
+							showAdd && "rotate-135"
+						)}
+					/>
+					<span className="hidden md:block">
+						{showAdd ? "Отменить" : "Добавить"}
+					</span>
 				</Button>
 			</div>
 
 			{showAdd && (
-				<div className="p-4 rounded-2xl border border-primary/20 bg-primary/5 space-y-3 animate-in slide-in-from-top-2 duration-200">
-					<p className="text-sm font-bold">Новый вопрос</p>
+				<div className="p-4 rounded-2xl bg-secondary space-y-3 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
+					<div className="flex w-full justify-between items-center">
+						<p className="text-md md:text-xl font-bold uppercase">
+							Новый вопрос
+						</p>
+						<Button
+							disabled={!newQ.trim() || !newA.trim() || isPending}
+							onClick={handleCreate}
+						>
+							Сохранить
+						</Button>
+					</div>
 					<div className="space-y-1.5">
-						<Label className="text-xs">Вопрос</Label>
 						<Input
 							value={newQ}
 							onChange={(e) => setNewQ(e.target.value)}
-							placeholder="Как оформить аренду?"
+							placeholder="Вопрос ( Как оформить заказ )"
 							autoFocus
 						/>
 					</div>
 					<div className="space-y-1.5">
-						<Label className="text-xs">Ответ</Label>
 						<Textarea
 							value={newA}
 							onChange={(e) => setNewA(e.target.value)}
@@ -325,21 +159,9 @@ export default function AdminFaqClient({
 					</div>
 					<div className="flex items-end gap-3">
 						<div className="flex-1 space-y-1.5">
-							<Label className="text-xs">Категория (опционально)</Label>
-							<Input
-								value={newCat}
-								onChange={(e) => setNewCat(e.target.value)}
-								placeholder="Оплата, Доставка..."
-								className="h-8 text-xs"
-							/>
+							<Label className="text-xs">Теги для быстрого поиска</Label>
+							<TagInput tags={newTags} onChange={setNewTags} />
 						</div>
-						<Button
-							size="sm"
-							disabled={!newQ.trim() || !newA.trim() || isPending}
-							onClick={handleCreate}
-						>
-							<Save size={13} className="mr-1" /> Создать
-						</Button>
 					</div>
 				</div>
 			)}
@@ -365,7 +187,7 @@ export default function AdminFaqClient({
 				))}
 				{items.length === 0 && (
 					<div className="text-center py-16 text-muted-foreground">
-						<HelpCircle size={32} className="mx-auto mb-3 opacity-20" />
+						<QuestionIcon size={32} className="mx-auto mb-3 opacity-20" />
 						<p>FAQ пока пуст. Добавьте первый вопрос.</p>
 					</div>
 				)}

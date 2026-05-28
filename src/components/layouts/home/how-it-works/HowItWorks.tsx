@@ -63,10 +63,10 @@ export function HowItWorks() {
 										</div>
 									</div>
 									<div className="min-w-0 items-start">
-										<h3 className="mb-2 text-foreground/90 text-xs sm:text-sm font-bold leading-tight select-none hidden md:block">
+										<h3 className="mb-2 text-foreground/90 text-xs sm:text-sm font-bold leading-tight hidden md:block">
 											{step.title}
 										</h3>
-										<p className="text-sm text-foreground/50 sm:text-xs leading-tight mt-0.5 select-none">
+										<p className="text-sm text-foreground/50 sm:text-xs leading-tight mt-0.5">
 											{step.desc}
 										</p>
 									</div>

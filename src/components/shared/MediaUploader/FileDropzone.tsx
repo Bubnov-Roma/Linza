@@ -90,6 +90,13 @@ export function FileDropzone({
 							muted
 							playsInline
 						/>
+					) : preview.startsWith("blob:") ? (
+						// biome-ignore lint/performance/noImgElement: <for preview>
+						<img
+							src={preview}
+							alt="Превью"
+							className="w-full h-full object-cover"
+						/>
 					) : (
 						<Image src={preview} alt="Превью" fill className="object-cover" />
 					)

@@ -87,11 +87,6 @@ export async function Footer({ support }: { support: SupportInfo }) {
 									</Link>
 								</li>
 								<li>
-									<Link href="/rules" className={footerLinkClass}>
-										Правила проката
-									</Link>
-								</li>
-								<li>
 									<Link href="/contacts" className={footerLinkClass}>
 										Контакты
 									</Link>

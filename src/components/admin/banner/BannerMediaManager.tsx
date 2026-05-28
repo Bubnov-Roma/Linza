@@ -59,6 +59,7 @@ export function BannerMediaManager({
 	const [progress, setProgress] = useState(0);
 	const [uploadOpen, setUploadOpen] = useState(false);
 	const [activeTab, setActiveTab] = useState<MediaTab>("photo");
+	const [uploaderKey, setUploaderKey] = useState(0);
 
 	const [externalPhotoUrl, setExternalPhotoUrl] = useState("");
 	const [videoUrl, setVideoUrl] = useState("");
@@ -104,6 +105,8 @@ export function BannerMediaManager({
 			if (!result.success) throw new Error(result.error);
 
 			if (result.image) onChange([...images, result.image]);
+			setUploaderKey((k) => k + 1);
+			setUploadOpen(false);
 			setUploadOpen(false);
 			toast.success("Фото добавлено");
 		} catch (err) {
@@ -404,6 +407,7 @@ export function BannerMediaManager({
 							{/* Таб 1: Загрузка фото в S3 */}
 							<TabsContent value="photo" className="space-y-3 pt-3">
 								<MediaUploader
+									key={uploaderKey}
 									acceptType="image"
 									onFileSelect={handlePhotoUpload}
 									aspectRatio={16 / 9}

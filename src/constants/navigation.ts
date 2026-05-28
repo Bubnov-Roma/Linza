@@ -2,15 +2,16 @@
 
 import type { Icon } from "@phosphor-icons/react";
 import {
+	AirplayIcon,
 	CameraIcon,
 	ChatsIcon,
 	FolderIcon,
 	HeartIcon,
 	HouseLineIcon,
 	PackageIcon,
+	QuestionIcon,
 	SquaresFourIcon,
 	UserIcon,
-	VideoIcon,
 } from "@phosphor-icons/react/dist/ssr";
 
 export type NavItem = {
@@ -32,11 +33,6 @@ export const ADMIN_NAV: NavItem[] = [
 		icon: PackageIcon,
 	},
 	{
-		title: "Студия",
-		href: "/admin/studio",
-		icon: VideoIcon,
-	},
-	{
 		title: "Техника",
 		href: "/admin/equipment",
 		icon: CameraIcon,
@@ -47,9 +43,19 @@ export const ADMIN_NAV: NavItem[] = [
 		icon: FolderIcon,
 	},
 	{
+		title: "Студия",
+		href: "/admin/studio",
+		icon: AirplayIcon,
+	},
+	{
 		title: "Чаты",
 		href: "/admin/reviews",
 		icon: ChatsIcon,
+	},
+	{
+		title: "FAQ",
+		href: "/admin/faq",
+		icon: QuestionIcon,
 	},
 ];
 
@@ -60,13 +66,18 @@ export const MOBILE_NAV: NavItem[] = [
 		icon: HouseLineIcon,
 	},
 	{
-		title: "Избранное",
-		href: "/favorites",
-		icon: HeartIcon,
-	},
-	{
 		title: "Каталог",
 		href: "/equipment",
 		icon: SquaresFourIcon,
+	},
+	{
+		title: "Студия",
+		href: "/studio",
+		icon: AirplayIcon,
+	},
+	{
+		title: "Избранное",
+		href: "/favorites",
+		icon: HeartIcon,
 	},
 ];

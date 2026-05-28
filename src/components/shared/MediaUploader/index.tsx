@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -36,6 +35,8 @@ export function MediaUploader({
 	const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 	const [preview, setPreview] = useState<string | null>(currentUrl || null);
 	const [isVideo, setIsVideo] = useState<boolean>(false);
+
+	const isConfirming = useRef(false);
 
 	// Стейты для окна подтверждения медиа
 	const [confirmingBlob, setConfirmingBlob] = useState<Blob | null>(null);
@@ -80,6 +81,7 @@ export function MediaUploader({
 	};
 
 	const handleFinalConfirm = (): void => {
+		isConfirming.current = true;
 		if (confirmingBlob) {
 			const ext = targetMimeType.split("/")[1] || "webp";
 			const finalFile = new File(
@@ -166,6 +168,8 @@ export function MediaUploader({
 					if (!open) {
 						if (isRevertingToCrop.current) {
 							isRevertingToCrop.current = false;
+						} else if (isConfirming.current) {
+							isConfirming.current = false;
 						} else {
 							handleCancelAll();
 						}
@@ -194,6 +198,13 @@ export function MediaUploader({
 									>
 										<track kind="captions" />
 									</video>
+								) : confirmingPreviewUrl?.startsWith("blob:") ? (
+									// biome-ignore lint/performance/noImgElement: <for preview>
+									<img
+										src={confirmingPreviewUrl}
+										alt="Итоговое превью"
+										className="w-full h-full object-contain"
+									/>
 								) : (
 									<Image
 										alt="Итоговое превью"
@@ -216,14 +227,14 @@ export function MediaUploader({
 							</Button>
 						</AlertDialogCancel>
 
-						<AlertDialogAction asChild>
-							<Button
-								onClick={handleFinalConfirm}
-								className="rounded-xl flex-1 bg-primary/60 uppercase text-[10px]"
-							>
-								Подтвердить
-							</Button>
-						</AlertDialogAction>
+						{/* <AlertDialogAction asChild>  */}
+						<Button
+							onClick={handleFinalConfirm}
+							// className="rounded-xl flex-1 bg-primary/60 uppercase text-[10px]"
+						>
+							Подтвердить
+						</Button>
+						{/* </AlertDialogAction> */}
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

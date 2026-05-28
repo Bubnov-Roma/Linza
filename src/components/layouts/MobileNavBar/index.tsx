@@ -6,7 +6,6 @@ import {
 	CaretDownIcon,
 	MagnifyingGlassIcon,
 	PackageIcon,
-	ShoppingCartSimpleIcon,
 	SquaresFourIcon,
 	UserIcon,
 	VideoIcon,
@@ -34,7 +33,6 @@ import { MOBILE_NAV } from "@/constants/navigation";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
 import { useAdminNotificationsStore } from "@/store";
-import { useCartStore } from "@/store/use-cart.store";
 import { MobileSearch, type MobileSearchHandle } from "./MobileSearch";
 
 // ─── TabBtn — базовая кнопка таба ────────────────────────────────────────────
@@ -105,10 +103,6 @@ interface MobileNavBarProps {
 }
 
 export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
-	const cartCount = useCartStore((s) =>
-		s.items.reduce((sum, i) => sum + i.quantity, 0)
-	);
-
 	const pathname = usePathname();
 	const router = useRouter();
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -147,15 +141,7 @@ export function MobileNavBar({ categories, isAdmin }: MobileNavBarProps) {
 					icon: CameraIcon,
 				},
 			]
-		: [
-				...MOBILE_NAV,
-				{
-					title: "Корзина",
-					href: "/checkout",
-					icon: ShoppingCartSimpleIcon,
-					badge: cartCount > 0 ? cartCount : undefined,
-				},
-			];
+		: [...MOBILE_NAV];
 
 	return (
 		<>

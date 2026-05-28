@@ -31,8 +31,8 @@ export function FaqChip({
 		>
 			<div
 				className={cn(
-					"flex px-4 py-3 items-start justify-start flex-1",
-					isOpen ? "flex-col" : "flex-row"
+					"flex px-4 py-3 items-start justify-start flex-1  gap-3",
+					isOpen ? "flex-col" : "flex-col md:flex-row"
 				)}
 			>
 				<span
@@ -54,7 +54,7 @@ export function FaqChip({
 
 				{/* Tags — только когда закрыт */}
 				{!isOpen && (item.tags ?? []).length > 0 && (
-					<div className="flex flex-wrap gap-1 ml-5">
+					<div className="flex flex-wrap gap-1">
 						{(item.tags ?? []).map((tag) => (
 							<span
 								key={tag}

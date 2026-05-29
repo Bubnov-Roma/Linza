@@ -21,6 +21,7 @@ export * from "./Section";
 export * from "./SectionCard";
 export * from "./SignOutButton";
 export * from "./SliderPagination";
+export * from "./SupportModal";
 export * from "./ThemeToggle";
 export * from "./ValidatedInputGroup";
 export * from "./VideoEmbed";

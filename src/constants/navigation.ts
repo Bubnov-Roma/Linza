@@ -49,7 +49,7 @@ export const ADMIN_NAV: NavItem[] = [
 	},
 	{
 		title: "Чаты",
-		href: "/admin/reviews",
+		href: "/admin/support",
 		icon: ChatsIcon,
 	},
 	{

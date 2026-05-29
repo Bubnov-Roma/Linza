@@ -108,58 +108,72 @@ enum PaymentType {
   OTHER      // прочее
 }
 
+enum SupportPlatform {
+  WEBSITE
+  TELEGRAM
+  EMAIL
+}
+
+enum SupportThreadStatus {
+  OPEN
+  CLOSED
+  WAITING_FOR_ADMIN
+  WAITING_FOR_CLIENT
+}
+
+
 // ─── NEXTAUTH & PROFILES ───
 
 model User {
-  id                      String                  @id @default(uuid())
-  name                    String?
-  email                   String?                 @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?    
-  role                    Role                    @default(USER)
-  entityType              EntityType?             @default(INDIVIDUAL)
-  companyName             String?
-  tin                     String?
-  isVerified              Boolean?                @default(false)
-  phone                   String?
-  extraPhone              String?
-  registrationStep        Int                     @default(1)
-  nickname                String?
-  isBlocked               Boolean                 @default(false)
-  blockedReason           String?                 @db.Text
-  permissions             Json                    @default("{}")
-  deletionScheduledAt     DateTime?
-  createdAt               DateTime                @default(now())
-  balance                 Float                   @default(0)
-  isAdminCreated          Boolean                 @default(false)
-  adminCreatedNote        String?                 @db.Text
-  mergedIntoId            String?
-  mergedInto              User?                   @relation("UserMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
-  mergedFrom              User[]                  @relation("UserMerge")
-  inviteTokens            InviteToken[]
-  accounts                Account[]
-  sessions                Session[]
-  bookings                Booking[]
-  cartItems               CartItem[]
-  favorites               Favorite[]
-  equipmentSets           EquipmentSet[]
-  clientApplication       ClientApplication?
-  adminNotifications      AdminNotification[]
-  categoryHistory         CategoryHistory[]
-  userDiscounts           UserDiscount[]          @relation("DiscountUser")
-  createdDiscounts        UserDiscount[]          @relation("DiscountCreator")
-  faqCreated              FaqItem[]               @relation("FaqCreator")
-  faqUpdated              FaqItem[]               @relation("FaqUpdater")
-  notesReceived           UserAdminNote[]         @relation("NoteTarget")
-  notesWritten            UserAdminNote[]         @relation("NoteAuthor")
-  bannersCreated          Banner[]                @relation("BannerCreator")
-  balanceTransactions     BalanceTransaction[]    @relation("UserBalance")
-  balanceTxAuthored       BalanceTransaction[]    @relation("TxAuthor")
-  bookingAuditLogs        BookingAuditLog[]       @relation("AuditAuthor")
-  bookingLabels           BookingLabel[]          @relation("LabelAuthor")
-  documentGenerationLogs  DocumentGenerationLog[] @relation("DocGenAuthor")
-  documentTemplates       DocumentTemplate[]      @relation("TemplateCreator")
+  id                         String                  @id @default(uuid())
+  name                       String?
+  email                      String?                 @unique
+  emailVerified              DateTime?
+  image                      String?
+  password                   String?    
+  role                       Role                    @default(USER)
+  entityType                 EntityType?             @default(INDIVIDUAL)
+  companyName                String?
+  tin                        String?
+  isVerified                 Boolean?                @default(false)
+  phone                      String?
+  extraPhone                 String?
+  registrationStep           Int                     @default(1)
+  nickname                   String?
+  isBlocked                  Boolean                 @default(false)
+  blockedReason              String?                 @db.Text
+  permissions                Json                    @default("{}")
+  deletionScheduledAt        DateTime?
+  createdAt                  DateTime                @default(now())
+  balance                    Float                   @default(0)
+  isAdminCreated             Boolean                 @default(false)
+  adminCreatedNote           String?                 @db.Text
+  mergedIntoId               String?
+  mergedInto                 User?                   @relation("UserMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom                 User[]                  @relation("UserMerge")
+  inviteTokens               InviteToken[]
+  accounts                   Account[]
+  sessions                   Session[]
+  bookings                   Booking[]
+  cartItems                  CartItem[]
+  favorites                  Favorite[]
+  equipmentSets              EquipmentSet[]
+  clientApplication          ClientApplication?
+  adminNotifications         AdminNotification[]
+  categoryHistory            CategoryHistory[]
+  userDiscounts              UserDiscount[]          @relation("DiscountUser")
+  createdDiscounts           UserDiscount[]          @relation("DiscountCreator")
+  faqCreated                 FaqItem[]               @relation("FaqCreator")
+  faqUpdated                 FaqItem[]               @relation("FaqUpdater")
+  notesReceived              UserAdminNote[]         @relation("NoteTarget")
+  notesWritten               UserAdminNote[]         @relation("NoteAuthor")
+  bannersCreated             Banner[]                @relation("BannerCreator")
+  balanceTransactions        BalanceTransaction[]    @relation("UserBalance")
+  balanceTxAuthored          BalanceTransaction[]    @relation("TxAuthor")
+  bookingAuditLogs           BookingAuditLog[]       @relation("AuditAuthor")
+  bookingLabels              BookingLabel[]          @relation("LabelAuthor")
+  documentGenerationLogs     DocumentGenerationLog[] @relation("DocGenAuthor")
+  documentTemplates          DocumentTemplate[]      @relation("TemplateCreator")
   bookingPaymentsAuthored    BookingPayment[]          @relation("PaymentAuthor")
   auditLogsReceived          UserAuditLog[]            @relation("UserAuditTarget")
   auditLogsAuthored          UserAuditLog[]            @relation("UserAuditAuthor")
@@ -168,6 +182,10 @@ model User {
   studioPaymentsAuthored     StudioBookingPayment[]    @relation("StudioPaymentAuthor")
   studioAuditLogsAuthored    StudioBookingAuditLog[]   @relation("StudioAuditAuthor")
   createdPromoCodes          PromoCode[]               @relation("PromoCreator")
+
+  supportThreads             SupportThread[]
+  sentSupportMessages        SupportMessage[]        @relation("SupportMessageAuthor")
+  readSupportMessages        SupportMessageRead[]    @relation("SupportMessageReader")
 }
 
 model UserAuditLog {
@@ -768,4 +786,45 @@ model AboutPageSettings {
   updatedAt   DateTime @updatedAt @map("updatedAt")
 
   @@map("about_page_settings")
+}
+
+// ─── SUPPORT CHAT ──────────────────────────────────────────────────
+
+model SupportThread {
+  id                String              @id @default(uuid())
+  userId            String
+  subject           String
+  platform          SupportPlatform     @default(WEBSITE)
+  status            SupportThreadStatus @default(OPEN)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  lastMessageAt     DateTime            @default(now())
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          SupportMessage[]
+}
+
+model SupportMessage {
+  id                String                @id @default(uuid())
+  threadId          String
+  authorId          String
+  isAdmin           Boolean               @default(false)
+  content           String                @db.Text
+  createdAt         DateTime              @default(now())
+
+  thread            SupportThread         @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author            User                  @relation("SupportMessageAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  readBy            SupportMessageRead[]
+}
+
+model SupportMessageRead {
+  id                String                @id @default(uuid())
+  messageId         String
+  adminId           String
+  readAt            DateTime              @default(now())
+
+  message           SupportMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  admin             User                  @relation("SupportMessageReader", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, adminId])
 }

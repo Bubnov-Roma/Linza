@@ -19,7 +19,7 @@ function InputGroup({
 			className={cn(
 				// "glass-input",
 				"group/input-group relative flex w-full items-center transition-all duration-300",
-				"h-12 min-w-0 rounded-xl overflow-hidden",
+				"h-12 min-w-0 rounded-2xl overflow-hidden",
 				"hover:bg-(--input-bg-hover) hover:border-black/15 dark:hover:border-white/15 focus:border-primary/30",
 				"focus-within:bg-(--input-bg-focus)! focus-within:shadow-(--input-shadow-focus)!",
 				"focus-within:border-[oklch(from_var(--brand-color)_l_c_h/0.5)] focus-within:translate-y-0 focus-within:ring-1 focus-within:ring-primary/10",

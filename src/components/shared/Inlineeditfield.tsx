@@ -38,6 +38,8 @@ interface InlineEditFieldProps {
 		onChange: (val: string) => void,
 		onKeyDown: (e: React.KeyboardEvent<Element>) => void
 	) => React.ReactNode;
+	/** Icon for the action button */
+	actionIcon?: React.ReactNode;
 }
 
 /**
@@ -62,6 +64,7 @@ export function InlineEditField({
 	disabled = false,
 	mode = "edit",
 	renderInput,
+	actionIcon,
 }: InlineEditFieldProps) {
 	const [draft, setDraft] = useState(savedValue);
 	const [saving, setSaving] = useState(false);
@@ -154,26 +157,25 @@ export function InlineEditField({
 				/>
 			)}
 			{showButton && (
-				<InputGroupAddon align="inline-end" className="px-3">
+				<InputGroupAddon align="inline-end" className="h-full">
 					<InputGroupButton
 						size="icon-sm"
-						variant={isCreateMode || isDirty ? "default" : "ghost"}
+						variant="default"
 						disabled={saving || (isCreateMode && !draft.trim())}
 						onClick={handleSave}
-						className={cn(
-							"transition-all rounded-2xl opacity-70 group-hover:opacity-100",
-							isCreateMode || isDirty
-								? "bg-primary text-primary-foreground hover:bg-primary/90 "
-								: "text-muted-foreground hover:text-foreground"
-						)}
-						title={isCreateMode ? "Добавить" : isDirty ? "Сохранить" : "Отмена"}
+						className={cn("transition-all rounded-2xl")}
+						title={
+							isCreateMode ? "Отправить" : isDirty ? "Сохранить" : "Отмена"
+						}
 					>
 						{saving ? (
 							<span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+						) : actionIcon ? (
+							actionIcon
 						) : isCreateMode ? (
-							<PlusIcon size={14} />
+							<PlusIcon size={14} weight="bold" />
 						) : (
-							isDirty && <CheckIcon size={14} />
+							isDirty && <CheckIcon size={14} weight="bold" />
 						)}
 					</InputGroupButton>
 				</InputGroupAddon>

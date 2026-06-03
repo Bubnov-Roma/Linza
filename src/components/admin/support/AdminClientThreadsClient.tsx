@@ -5,21 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 import type { DbSupportThread } from "@/actions/support-actions";
 import { Badge, Card } from "@/components/ui";
+import { CHATS_STATUS_COLORS, CHATS_STATUS_LABELS } from "@/constants";
 import { cn } from "@/lib/utils";
-
-const STATUS_LABELS: Record<string, string> = {
-	OPEN: "Открыто",
-	CLOSED: "Закрыто",
-	WAITING_FOR_ADMIN: "Ждёт ответа",
-	WAITING_FOR_CLIENT: "Ждёт клиента",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-	OPEN: "bg-blue-500/20 text-blue-600 border-blue-300/30",
-	CLOSED: "bg-gray-500/20 text-gray-600 border-gray-300/30",
-	WAITING_FOR_ADMIN: "bg-red-500/20 text-red-600 border-red-300/30",
-	WAITING_FOR_CLIENT: "bg-green-500/20 text-green-600 border-green-300/30",
-};
 
 export default function AdminClientThreadsClient({
 	initialThreads,
@@ -141,11 +128,11 @@ export default function AdminClientThreadsClient({
 											variant="outline"
 											className={cn(
 												"text-[10px] font-medium",
-												STATUS_COLORS[thread.status] ||
+												CHATS_STATUS_COLORS[thread.status] ||
 													"bg-foreground/10 text-foreground/60"
 											)}
 										>
-											{STATUS_LABELS[thread.status] || thread.status}
+											{CHATS_STATUS_LABELS[thread.status] || thread.status}
 										</Badge>
 									</div>
 								</div>

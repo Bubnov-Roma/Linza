@@ -1,25 +1,25 @@
 "use client";
 
-import { FunnelIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
+import {
+	FunnelIcon,
+	MagnifyingGlassIcon,
+	PencilLineIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { DbSupportThread } from "@/actions/support-actions";
-import { Badge, Button, Input } from "@/components/ui";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import {
+	type DbSupportThread,
+	pollSupportThreadsAction,
+} from "@/actions/support-actions";
+import { AdminNewThreadModal } from "@/components/admin/support/AdminNewThreadModal";
+import { Badge, Button, Card, Input } from "@/components/ui";
+import {
+	CHATS_STATUS_COLORS,
+	CHATS_STATUS_LABELS,
+} from "@/constants/support-chats.constants";
 import { cn } from "@/lib/utils";
-
-const STATUS_LABELS: Record<string, string> = {
-	OPEN: "Открыто",
-	CLOSED: "Закрыто",
-	WAITING_FOR_ADMIN: "Ждёт ответа",
-	WAITING_FOR_CLIENT: "Ждёт клиента",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-	OPEN: "bg-blue-500/20 text-blue-600 border-blue-300/30",
-	CLOSED: "bg-gray-500/20 text-gray-600 border-gray-300/30",
-	WAITING_FOR_ADMIN: "bg-red-500/20 text-red-600 border-red-300/30",
-	WAITING_FOR_CLIENT: "bg-green-500/20 text-green-600 border-green-300/30",
-};
 
 type FilterStatus =
 	| "all"
@@ -33,13 +33,32 @@ export default function AdminSupportListClient({
 }: {
 	initialThreads: DbSupportThread[];
 }) {
+	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
 	const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
+	const [threads, setThreads] = useState(initialThreads);
+	const [newThreadOpen, setNewThreadOpen] = useState(false);
+
+	const latestAt = threads[0]?.lastMessageAt ?? new Date(0);
+
+	useEffect(() => {
+		const interval = setInterval(async () => {
+			const result = await pollSupportThreadsAction({
+				role: "admin",
+				latestThreadAt: latestAt,
+			});
+			if (result.hasUpdates && result.threads) {
+				setThreads(result.threads);
+			}
+		}, 20_000);
+
+		return () => clearInterval(interval);
+	}, [latestAt]);
 
 	// Фильтрация и сортировка
 	const filtered = useMemo(() => {
-		let result = [...initialThreads];
+		let result = [...threads];
 
 		// Фильтр по статусу
 		if (filterStatus !== "all") {
@@ -80,7 +99,7 @@ export default function AdminSupportListClient({
 		}
 
 		return result;
-	}, [initialThreads, searchQuery, filterStatus, sortBy]);
+	}, [threads, searchQuery, filterStatus, sortBy]);
 
 	const hasActiveFilters =
 		searchQuery.trim() !== "" || filterStatus !== "all" || sortBy !== "newest";
@@ -107,34 +126,50 @@ export default function AdminSupportListClient({
 	return (
 		<div className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
 			{/* Заголовок */}
-			<div>
-				<h1 className="text-3xl font-black italic uppercase tracking-tight">
-					Поддержка клиентов
-				</h1>
-				<p className="text-sm text-muted-foreground mt-1">
-					Всего потоков: {initialThreads.length} • Результаты: {filtered.length}
-				</p>
+			<div className="flex items-center justify-between">
+				<div>
+					<h1 className="text-3xl font-black italic uppercase tracking-tight">
+						Чаты
+					</h1>
+					<p className="text-sm text-muted-foreground mt-1">
+						Всего: {threads.length} • Найдено: {filtered.length}
+					</p>
+				</div>
+				<Button
+					onClick={() => setNewThreadOpen(true)}
+					size="xl"
+					className="gap-2 rounded-full"
+				>
+					<PencilLineIcon size={16} weight="bold" className="md:hidden" />
+					<span className="hidden md:block">Написать клиенту</span>
+				</Button>
 			</div>
 
+			<AdminNewThreadModal
+				open={newThreadOpen}
+				onOpenChange={setNewThreadOpen}
+			/>
 			{/* Фильтры и поиск */}
 			<div className="space-y-3">
 				{/* Строка поиска */}
 				<div className="relative">
 					<MagnifyingGlassIcon
 						size={18}
-						className="absolute left-3 top-3 text-muted-foreground"
+						className="z-1 absolute left-3 top-3 text-muted-foreground"
 						weight="bold"
 					/>
 					<Input
 						placeholder="Поиск по клиенту, email или теме..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-10 h-10"
+						className="pl-10 h-10 rounded-2xl"
 					/>
 					{searchQuery && (
 						<Button
+							size="icon-sm"
+							variant="ghost"
 							onClick={() => setSearchQuery("")}
-							className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+							className="absolute right-1 top-1 text-muted-foreground hover:text-foreground transition-colors"
 						>
 							<XIcon size={18} weight="bold" />
 						</Button>
@@ -142,58 +177,55 @@ export default function AdminSupportListClient({
 				</div>
 
 				{/* Фильтры по статусу и сортировка */}
-				<div className="flex items-center gap-2 flex-wrap">
+				<div className="flex items-center gap-2 flex-wrap flex-1">
 					<FunnelIcon
 						size={16}
-						className="text-muted-foreground"
+						className="hidden md:inline text-muted-foreground"
 						weight="bold"
 					/>
 
 					{/* Статусы */}
-					<div className="flex gap-2 flex-wrap">
-						{[
-							{ key: "all", label: "Все" },
-							{ key: "waiting_admin", label: "⚠️ Ждут ответа" },
-							{ key: "open", label: "Открыто" },
-							{ key: "waiting_client", label: "Ждут клиента" },
-							{ key: "closed", label: "Закрыто" },
-						].map((filter) => (
-							<Button
-								key={filter.key}
-								onClick={() => setFilterStatus(filter.key as FilterStatus)}
-								className={cn(
-									"px-3 py-1 rounded-full text-xs font-medium transition-all border",
-									filterStatus === filter.key
-										? "bg-foreground text-background border-foreground"
-										: "bg-foreground/5 text-foreground border-foreground/10 hover:border-foreground/30"
-								)}
-							>
-								{filter.label}
-							</Button>
-						))}
-					</div>
-
-					{/* Сортировка */}
-					<div className="flex gap-2 ml-auto">
-						<select
-							value={sortBy}
-							onChange={(e) => setSortBy(e.target.value as "newest" | "oldest")}
-							className="px-3 py-1 rounded-lg text-xs font-medium bg-foreground/5 border border-foreground/10 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+					{[
+						{ key: "all", label: "Все" },
+						{ key: "waiting_admin", label: "⚠️ Ждут ответа" },
+						{ key: "open", label: "Открыто" },
+						{ key: "waiting_client", label: "Ждут клиента" },
+						{ key: "closed", label: "Закрыто" },
+					].map((filter) => (
+						<Button
+							key={filter.key}
+							onClick={() => setFilterStatus(filter.key as FilterStatus)}
+							className={cn(
+								"px-3 py-1 rounded-full text-xs font-medium transition-all border",
+								filterStatus === filter.key
+									? "bg-foreground text-background border-foreground"
+									: "bg-foreground/5 text-foreground border-foreground/10 hover:border-foreground/30"
+							)}
 						>
-							<option value="newest">Новые первыми</option>
-							<option value="oldest">Старые первыми</option>
-						</select>
-					</div>
+							{filter.label}
+						</Button>
+					))}
+					{/* Сортировка */}
+					<select
+						value={sortBy}
+						onChange={(e) => setSortBy(e.target.value as "newest" | "oldest")}
+						className="px-3 py-1 rounded-2xl text-xs font-medium bg-foreground/5 border border-foreground/10 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+					>
+						<option value="newest">Новые</option>
+						<option value="oldest">Старые</option>
+					</select>
 
 					{/* Кнопка очистки фильтров */}
 					{hasActiveFilters && (
 						<Button
+							variant="ghost"
+							size="sm"
 							onClick={() => {
 								setSearchQuery("");
 								setFilterStatus("all");
 								setSortBy("newest");
 							}}
-							className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+							className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors underline"
 						>
 							Очистить
 						</Button>
@@ -209,17 +241,15 @@ export default function AdminSupportListClient({
 					const isWaitingForAdmin = thread.status === "WAITING_FOR_ADMIN";
 
 					return (
-						<Link
+						<Card
 							key={thread.id}
-							href={`/admin/support/thread/${thread.id}`}
-							className="block group"
+							onClick={() => router.push(`/admin/support/thread/${thread.id}`)}
+							className="block group cursor-pointer"
 						>
 							<div
 								className={cn(
-									"p-4 rounded-xl border transition-all hover:bg-foreground/3 cursor-pointer",
-									isWaitingForAdmin
-										? "border-red-300/50 bg-red-500/5"
-										: "border-foreground/10",
+									"p-4 transition-all hover:bg-muted-foreground/10",
+									isWaitingForAdmin && " bg-red-500/5",
 									unreadCount > 0 && "ring-2 ring-green-500/30"
 								)}
 							>
@@ -268,12 +298,6 @@ export default function AdminSupportListClient({
 											<span>{thread.messages.length} сообщений</span>
 											<span>•</span>
 											<span>{formatDate(thread.lastMessageAt)}</span>
-											<span>•</span>
-											<span>
-												{thread.platform === "WEBSITE" && "📱 Сайт"}
-												{thread.platform === "TELEGRAM" && "✈️ Telegram"}
-												{thread.platform === "EMAIL" && "📧 Email"}
-											</span>
 										</div>
 									</div>
 
@@ -283,11 +307,11 @@ export default function AdminSupportListClient({
 											variant="outline"
 											className={cn(
 												"text-[10px] font-medium",
-												STATUS_COLORS[thread.status] ||
+												CHATS_STATUS_COLORS[thread.status] ||
 													"bg-foreground/10 text-foreground/60"
 											)}
 										>
-											{STATUS_LABELS[thread.status] || thread.status}
+											{CHATS_STATUS_LABELS[thread.status] || thread.status}
 										</Badge>
 										<span className="text-xs text-muted-foreground">
 											{thread.messages.length}
@@ -295,14 +319,14 @@ export default function AdminSupportListClient({
 									</div>
 								</div>
 							</div>
-						</Link>
+						</Card>
 					);
 				})}
 
 				{/* Пустое состояние */}
 				{filtered.length === 0 && (
 					<div className="text-center py-12 text-muted-foreground">
-						{initialThreads.length === 0 ? (
+						{threads.length === 0 ? (
 							<>
 								<p className="text-lg font-semibold mb-2">
 									Потоков поддержки нет

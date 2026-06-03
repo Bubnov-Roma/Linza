@@ -11,7 +11,7 @@ export const metadata = {
 export default async function AdminSupportThreadPage({
 	params,
 }: {
-	params: { threadId: string };
+	params: Promise<{ threadId: string }>;
 }) {
 	const session = await auth();
 	const role = session?.user?.role;
@@ -20,7 +20,9 @@ export default async function AdminSupportThreadPage({
 		redirect("/");
 	}
 
-	const result = await getSupportThreadAction(params.threadId);
+	const { threadId } = await params;
+
+	const result = await getSupportThreadAction(threadId);
 
 	if (!result.success || !result.thread) {
 		notFound();

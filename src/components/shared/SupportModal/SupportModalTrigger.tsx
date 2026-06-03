@@ -1,6 +1,6 @@
 "use client";
 
-import { QuestionIcon } from "@phosphor-icons/react";
+import { HeadsetIcon, QuestionIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { DbSupportThread } from "@/actions/support-actions";
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
@@ -28,7 +28,12 @@ export function SupportModalTrigger({
 	if (variant === "button") {
 		return (
 			<>
-				<Button onClick={() => setOpen(true)} className={className} size="sm">
+				<Button
+					onClick={() => setOpen(true)}
+					className={className}
+					variant="outline"
+					size="xl"
+				>
 					<QuestionIcon size={16} weight="duotone" />
 					{label}
 				</Button>
@@ -44,24 +49,14 @@ export function SupportModalTrigger({
 	// FAB (Floating Action Button)
 	return (
 		<>
-			<button
-				type="button"
+			<Button
+				size="icon"
 				onClick={() => setOpen(true)}
 				aria-label="Открыть чат поддержки"
-				className={`
-					fixed bottom-6 right-6 
-					w-14 h-14 rounded-full 
-					bg-foreground text-background
-					flex items-center justify-center
-					shadow-lg hover:shadow-xl
-					transition-all duration-200
-					hover:scale-110 active:scale-95
-					z-40
-					${className || ""}
-				`}
+				className={`fixed bottom-20 right-6 w-14 h-14 rounded-full bg-foreground/20 backdrop-blur-md text-background/80 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 z-40 ${className || ""}`}
 			>
-				<QuestionIcon size={24} weight="duotone" />
-			</button>
+				<HeadsetIcon size={30} weight="duotone" />
+			</Button>
 			<SupportModal
 				open={open}
 				onOpenChange={setOpen}

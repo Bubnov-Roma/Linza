@@ -14,7 +14,28 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-// Регулярные выражения для расширенного парсинга
+function HighlightText({ text, query }: { text: string; query: string }) {
+	if (!query || !query.trim()) return <>{text}</>;
+	const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+	return (
+		<>
+			{parts.map((part, i) =>
+				part.toLowerCase() === query.toLowerCase() ? (
+					<mark
+						key={i}
+						className="bg-primary/20 text-foreground rounded-sm px-0.5 not-italic"
+					>
+						{part}
+					</mark>
+				) : (
+					<span key={i}>{part}</span>
+				)
+			)}
+		</>
+	);
+}
+
 const RE_LINK = /^\[([^\]]+)\]\(([^)]+)\)/;
 const RE_COLOR = /^\[([^\]]+)\]\{([^}]+)\}/;
 const RE_BOLD = /^\*\*([^*]+)\*\*/;
@@ -23,19 +44,17 @@ const RE_ITALIC = /^\*([^*]+)\*/;
 const RE_STRIKE = /^~~([^~]+)~~/;
 const RE_CODE = /^`([^`]+)`/;
 
-function parseLine(line: string, lineIdx: number) {
+function parseLine(line: string, lineIdx: number, query: string) {
 	const parts: React.ReactNode[] = [];
 	let rest = line;
 	let i = 0;
 
 	while (rest.length > 0) {
-		// 1. Цветной текст
 		const colorMatch = rest.match(RE_COLOR);
 		if (colorMatch) {
 			const text = colorMatch[1];
 			const colorVal = colorMatch[2] ?? "primary";
 			const isHex = colorVal.startsWith("#");
-
 			parts.push(
 				<span
 					key={`${lineIdx}-${i++}`}
@@ -45,14 +64,13 @@ function parseLine(line: string, lineIdx: number) {
 					)}
 					style={isHex ? { color: colorVal } : undefined}
 				>
-					{text}
+					<HighlightText text={text || ""} query={query} />
 				</span>
 			);
 			rest = rest.slice(colorMatch[0].length);
 			continue;
 		}
 
-		// 2. Ссылки
 		const linkMatch = rest.match(RE_LINK);
 		if (linkMatch) {
 			parts.push(
@@ -63,14 +81,13 @@ function parseLine(line: string, lineIdx: number) {
 					rel="noopener noreferrer"
 					className="underline underline-offset-4 hover:opacity-80 transition-opacity font-bold"
 				>
-					{linkMatch[1]}
+					<HighlightText text={linkMatch[1] || ""} query={query} />
 				</Link>
 			);
 			rest = rest.slice(linkMatch[0].length);
 			continue;
 		}
 
-		// 3. Жирный
 		const boldMatch = rest.match(RE_BOLD);
 		if (boldMatch) {
 			parts.push(
@@ -78,14 +95,13 @@ function parseLine(line: string, lineIdx: number) {
 					key={`${lineIdx}-${i++}`}
 					className="font-black text-foreground"
 				>
-					{boldMatch[1]}
+					<HighlightText text={boldMatch[1] || ""} query={query} />
 				</strong>
 			);
 			rest = rest.slice(boldMatch[0].length);
 			continue;
 		}
 
-		// 4. Подчеркнутый
 		const underlineMatch = rest.match(RE_UNDERLINE);
 		if (underlineMatch) {
 			parts.push(
@@ -93,38 +109,35 @@ function parseLine(line: string, lineIdx: number) {
 					key={`${lineIdx}-${i++}`}
 					className="underline underline-offset-4 decoration-foreground/40"
 				>
-					{underlineMatch[1]}
+					<HighlightText text={underlineMatch[1] || ""} query={query} />
 				</span>
 			);
 			rest = rest.slice(underlineMatch[0].length);
 			continue;
 		}
 
-		// 5. Курсив
 		const italicMatch = rest.match(RE_ITALIC);
 		if (italicMatch) {
 			parts.push(
 				<em key={`${lineIdx}-${i++}`} className="italic text-foreground/90">
-					{italicMatch[1]}
+					<HighlightText text={italicMatch[1] || ""} query={query} />
 				</em>
 			);
 			rest = rest.slice(italicMatch[0].length);
 			continue;
 		}
 
-		// 6. Зачеркнутый
 		const strikeMatch = rest.match(RE_STRIKE);
 		if (strikeMatch) {
 			parts.push(
 				<span key={`${lineIdx}-${i++}`} className="line-through opacity-50">
-					{strikeMatch[1]}
+					<HighlightText text={strikeMatch[1] || ""} query={query} />
 				</span>
 			);
 			rest = rest.slice(strikeMatch[0].length);
 			continue;
 		}
 
-		// 7. Код
 		const codeMatch = rest.match(RE_CODE);
 		if (codeMatch) {
 			parts.push(
@@ -132,7 +145,7 @@ function parseLine(line: string, lineIdx: number) {
 					key={`${lineIdx}-${i++}`}
 					className="text-xs bg-foreground/10 rounded px-1.5 py-0.5 font-mono text-primary-accent"
 				>
-					{codeMatch[1]}
+					<HighlightText text={codeMatch[1] || ""} query={query} />
 				</code>
 			);
 			rest = rest.slice(codeMatch[0].length);
@@ -141,14 +154,26 @@ function parseLine(line: string, lineIdx: number) {
 
 		const nextSpecial = rest.search(/\[|\*|_|~|`/);
 		if (nextSpecial === -1) {
-			parts.push(<span key={`${lineIdx}-${i++}`}>{rest}</span>);
+			parts.push(
+				<HighlightText key={`${lineIdx}-${i++}`} text={rest} query={query} />
+			);
 			rest = "";
 		} else if (nextSpecial === 0) {
-			parts.push(<span key={`${lineIdx}-${i++}`}>{rest[0]}</span>);
+			parts.push(
+				<HighlightText
+					key={`${lineIdx}-${i++}`}
+					text={rest[0] || ""}
+					query={query}
+				/>
+			);
 			rest = rest.slice(1);
 		} else {
 			parts.push(
-				<span key={`${lineIdx}-${i++}`}>{rest.slice(0, nextSpecial)}</span>
+				<HighlightText
+					key={`${lineIdx}-${i++}`}
+					text={rest.slice(0, nextSpecial)}
+					query={query}
+				/>
 			);
 			rest = rest.slice(nextSpecial);
 		}
@@ -158,14 +183,15 @@ function parseLine(line: string, lineIdx: number) {
 
 export function SimpleMarkdown({
 	text,
+	query = "",
 	className,
 }: {
 	text: string;
+	query?: string;
 	className?: string;
 }) {
 	const nodes = useMemo(() => {
 		if (!text) return null;
-
 		const lines = text.split("\n");
 		const result: React.ReactNode[] = [];
 		let currentList: React.ReactNode[] = [];
@@ -183,7 +209,6 @@ export function SimpleMarkdown({
 
 		lines.forEach((line, i) => {
 			const trimmed = line.trim();
-
 			if (trimmed.startsWith("# ")) {
 				flushList(i);
 				result.push(
@@ -191,7 +216,7 @@ export function SimpleMarkdown({
 						key={i}
 						className="text-3xl sm:text-4xl font-black uppercase italic mb-4 text-foreground tracking-tight mt-6 first:mt-0"
 					>
-						{parseLine(trimmed.slice(2), i)}
+						{parseLine(trimmed.slice(2), i, query)}
 					</h1>
 				);
 			} else if (trimmed.startsWith("## ")) {
@@ -201,7 +226,7 @@ export function SimpleMarkdown({
 						key={i}
 						className="text-xl sm:text-2xl font-black uppercase italic mb-3 text-foreground tracking-tight mt-4 first:mt-0"
 					>
-						{parseLine(trimmed.slice(3), i)}
+						{parseLine(trimmed.slice(3), i, query)}
 					</h2>
 				);
 			} else if (trimmed.startsWith("### ")) {
@@ -211,7 +236,7 @@ export function SimpleMarkdown({
 						key={i}
 						className="text-base sm:text-lg font-black uppercase italic mb-2 text-foreground mt-3 first:mt-0"
 					>
-						{parseLine(trimmed.slice(4), i)}
+						{parseLine(trimmed.slice(4), i, query)}
 					</h3>
 				);
 			} else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
@@ -221,7 +246,7 @@ export function SimpleMarkdown({
 						className="flex items-start gap-2.5 text-sm sm:text-base text-foreground/80 leading-relaxed"
 					>
 						<span className="mt-2 w-1.5 h-1.5 rounded-full bg-foreground/70 shrink-0" />
-						<span>{parseLine(trimmed.slice(2), i)}</span>
+						<span>{parseLine(trimmed.slice(2), i, query)}</span>
 					</li>
 				);
 			} else if (trimmed === "---" || trimmed === "***") {
@@ -236,7 +261,7 @@ export function SimpleMarkdown({
 						key={i}
 						className="text-sm sm:text-base leading-relaxed text-muted-foreground mb-4 last:mb-0 font-medium"
 					>
-						{parseLine(trimmed, i)}
+						{parseLine(trimmed, i, query)}
 					</p>
 				);
 			}
@@ -244,7 +269,7 @@ export function SimpleMarkdown({
 
 		flushList(lines.length);
 		return result;
-	}, [text]);
+	}, [text, query]);
 
 	return (
 		<div className={cn("animate-in fade-in duration-300", className)}>
@@ -271,7 +296,6 @@ export function MarkdownEditor({
 	className,
 }: MarkdownEditorProps) {
 	const [tab, setTab] = useState<"write" | "preview">("write");
-
 	return (
 		<div className={cn("space-y-2", className)}>
 			<div className="flex items-center justify-between">
@@ -312,16 +336,12 @@ export function MarkdownEditor({
 					))}
 				</div>
 			</div>
-
 			{tab === "write" ? (
 				<Textarea
 					rows={rows}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
-					placeholder={
-						placeholder ??
-						"Поддерживается форматирование:\n**жирный**\n*курсив*\n__подчеркнутый__\n~~зачеркнутый~~\n[текст]{primary} - цветной текст\n[текст](ссылка)\n- переход\n- элемент списка"
-					}
+					placeholder={placeholder ?? "Поддерживается форматирование..."}
 					className="font-mono text-xs p-4 rounded-2xl bg-foreground/1 border-foreground/10 focus-visible:ring-primary/20 resize-none leading-relaxed"
 				/>
 			) : (

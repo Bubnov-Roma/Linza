@@ -9,4 +9,5 @@ export * from "./plurals";
 export * from "./referral";
 export * from "./sidebar-icon.config";
 export * from "./support";
+export * from "./support-chats.constants";
 export * from "./verification-config";

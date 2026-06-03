@@ -3,6 +3,7 @@
 import {
 	FileTextIcon,
 	GearIcon,
+	HeadsetIcon,
 	HeartIcon,
 	LayoutIcon,
 	PackageIcon,
@@ -92,6 +93,13 @@ export function UserMenuDropdown({
 							>
 								<HeartIcon className="mr-3 h-5 w-5 text-muted-foreground" />
 								<span className="font-medium">Избранное</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => router.push("/dashboard/support")}
+								className="rounded-xl p-3 cursor-pointer"
+							>
+								<HeadsetIcon className="mr-3 h-5 w-5 text-muted-foreground" />
+								<span className="font-medium">Поддержка</span>
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => router.push("/dashboard/profile")}

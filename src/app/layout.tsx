@@ -13,7 +13,10 @@ import { cookies } from "next/headers";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
-import { AdminNotificationsPoller } from "@/components/shared";
+import {
+	AdminNotificationsPoller,
+	SupportModalTrigger,
+} from "@/components/shared";
 import CookieBanner from "@/components/shared/CookieBanner";
 import { YandexMetrika } from "@/components/shared/YandexMetrika";
 import { prisma } from "@/lib/prisma";
@@ -140,6 +143,7 @@ export default async function RootLayout({
 							/>
 							<main className="flex-1 pt-16">{children}</main>
 							<Footer support={support} />
+							<SupportModalTrigger />
 							<MobileNavBar categories={categories} isAdmin={isAdmin} />
 						</SidebarInset>
 					</ApplicationInitializer>

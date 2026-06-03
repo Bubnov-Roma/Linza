@@ -8,6 +8,7 @@ export * from "./ClientTime";
 export * from "./CustomInputGroup";
 export * from "./EquipmentActionButtons";
 export * from "./EquipmentCard";
+export * from "./FaqChip";
 export * from "./GlobalErrorPage";
 export * from "./Inlineeditfield";
 export * from "./LogoIcon";

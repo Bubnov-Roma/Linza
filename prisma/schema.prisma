@@ -110,6 +110,7 @@ enum PaymentType {
 
 enum SupportPlatform {
   WEBSITE
+  PHONE
   TELEGRAM
   EMAIL
 }
@@ -799,6 +800,7 @@ model SupportThread {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   lastMessageAt     DateTime            @default(now())
+  contactInfo       String?   // email / telegram / phone клиента
 
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages          SupportMessage[]
@@ -811,6 +813,8 @@ model SupportMessage {
   isAdmin           Boolean               @default(false)
   content           String                @db.Text
   createdAt         DateTime              @default(now())
+  isEdited          Boolean   @default(false)
+  editedAt          DateTime?
 
   thread            SupportThread         @relation(fields: [threadId], references: [id], onDelete: Cascade)
   author            User                  @relation("SupportMessageAuthor", fields: [authorId], references: [id], onDelete: Cascade)

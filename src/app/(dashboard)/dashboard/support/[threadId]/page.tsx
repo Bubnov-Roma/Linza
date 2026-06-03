@@ -11,7 +11,7 @@ export const metadata = {
 export default async function SupportThreadPage({
 	params,
 }: {
-	params: { threadId: string };
+	params: Promise<{ threadId: string }>;
 }) {
 	const session = await auth();
 
@@ -19,7 +19,9 @@ export default async function SupportThreadPage({
 		redirect("/auth/signin");
 	}
 
-	const result = await getSupportThreadAction(params.threadId);
+	const { threadId } = await params;
+
+	const result = await getSupportThreadAction(threadId);
 
 	if (!result.success || !result.thread) {
 		notFound();
@@ -27,7 +29,6 @@ export default async function SupportThreadPage({
 
 	const thread = result.thread;
 
-	// Проверка доступа: клиент может видеть только свои потоки
 	if (thread.userId !== session.user.id) {
 		const role = session.user.role;
 		if (role !== "ADMIN" && role !== "MANAGER") {

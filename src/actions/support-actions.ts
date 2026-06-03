@@ -19,6 +19,8 @@ export type DbSupportThread = SupportThread & {
 		createdAt: Date;
 		isAdmin: boolean;
 		authorId: string;
+		isEdited: boolean;
+		editedAt: Date | null;
 		author?: { name: string | null };
 		readBy: Array<{ adminId: string; readAt: Date }>;
 	}>;
@@ -59,6 +61,7 @@ export async function createSupportThreadAction(data: {
 	subject: string;
 	platform?: SupportPlatform;
 	initialMessage?: string;
+	contactInfo?: string;
 }): Promise<{ success: boolean; thread?: DbSupportThread; error?: string }> {
 	const authResult = await requireAuth();
 	if (!authResult.ok) return { success: false, error: authResult.error };
@@ -75,6 +78,7 @@ export async function createSupportThreadAction(data: {
 			subject: data.subject.trim(),
 			platform: data.platform || "WEBSITE",
 			status: "OPEN",
+			contactInfo: data.contactInfo?.trim() || null,
 		};
 
 		// Добавляем сообщение только если оно передано
@@ -102,7 +106,7 @@ export async function createSupportThreadAction(data: {
 			},
 		});
 
-		revalidatePath("/support");
+		revalidatePath("/dashboard/support");
 		return { success: true, thread };
 	} catch (error: unknown) {
 		const msg = error instanceof Error ? error.message : "Неизвестная ошибка";
@@ -228,7 +232,7 @@ export async function sendSupportMessageAction(data: {
 		});
 
 		revalidatePath("/support");
-		revalidatePath(`/support/${data.threadId}`);
+		revalidatePath(`/dashboard/support/${data.threadId}`);
 		revalidatePath("/admin/support");
 		return { success: true, message };
 	} catch (error: unknown) {
@@ -429,4 +433,277 @@ export async function getMessageReadsAction(messageId: string): Promise<{
 		const msg = error instanceof Error ? error.message : "Неизвестная ошибка";
 		return { success: false, error: msg };
 	}
+}
+
+/**
+ * Получить свежие данные потока для polling (клиент или админ)
+ */
+export async function pollSupportThreadAction(
+	threadId: string,
+	lastMessageAt: Date
+): Promise<{
+	hasUpdates: boolean;
+	thread?: DbSupportThread;
+	error?: string;
+}> {
+	const authResult = await requireAuth();
+	if (!authResult.ok) return { hasUpdates: false, error: authResult.error };
+
+	const thread = await prisma.supportThread.findUnique({
+		where: { id: threadId },
+		select: { lastMessageAt: true },
+	});
+
+	if (!thread) return { hasUpdates: false, error: "Поток не найден" };
+
+	// Если ничего не изменилось — не тянем полные данные
+	if (new Date(thread.lastMessageAt) <= new Date(lastMessageAt)) {
+		return { hasUpdates: false };
+	}
+
+	// Есть обновления — возвращаем полный тред
+	const full = await prisma.supportThread.findUnique({
+		where: { id: threadId },
+		include: {
+			user: { select: { id: true, name: true, email: true } },
+			messages: {
+				include: {
+					author: { select: { name: true } },
+					readBy: true,
+				},
+				orderBy: { createdAt: "asc" },
+			},
+		},
+	});
+
+	if (!full) {
+		return { hasUpdates: true };
+	}
+
+	return { hasUpdates: true, thread: full };
+}
+
+/**
+ * Получить список тредов для polling (список для клиента/админа)
+ * Возвращает только если lastMessageAt самого свежего треда изменился
+ */
+export async function pollSupportThreadsAction(params: {
+	role: "client" | "admin";
+	latestThreadAt: Date;
+}): Promise<{ hasUpdates: boolean; threads?: DbSupportThread[] }> {
+	const authResult = await requireAuth();
+	if (!authResult.ok) return { hasUpdates: false };
+
+	const isAdmin = params.role === "admin";
+
+	if (isAdmin) {
+		const adminCheck = await requireAdminOrManager();
+		if (!adminCheck.ok) return { hasUpdates: false };
+	}
+
+	// Смотрим только самый свежий тред
+	const latest = isAdmin
+		? await prisma.supportThread.findFirst({
+				orderBy: { lastMessageAt: "desc" },
+				select: { lastMessageAt: true },
+			})
+		: await prisma.supportThread.findFirst({
+				where: { userId: authResult.userId },
+				orderBy: { lastMessageAt: "desc" },
+				select: { lastMessageAt: true },
+			});
+
+	if (!latest) return { hasUpdates: false };
+	if (new Date(latest.lastMessageAt) <= new Date(params.latestThreadAt)) {
+		return { hasUpdates: false };
+	}
+
+	// Есть обновления
+	const threads = isAdmin
+		? await prisma.supportThread.findMany({
+				include: {
+					user: { select: { id: true, name: true, email: true } },
+					messages: {
+						include: { author: { select: { name: true } }, readBy: true },
+						orderBy: { createdAt: "asc" },
+					},
+				},
+				orderBy: { lastMessageAt: "desc" },
+			})
+		: await prisma.supportThread.findMany({
+				where: { userId: authResult.userId },
+				include: {
+					user: { select: { id: true, name: true, email: true } },
+					messages: {
+						include: { author: { select: { name: true } }, readBy: true },
+						orderBy: { createdAt: "asc" },
+					},
+				},
+				orderBy: { lastMessageAt: "desc" },
+			});
+
+	return { hasUpdates: true, threads };
+}
+
+/**
+ * Поиск пользователей для инициации треда (только админ)
+ */
+export async function searchUsersForSupportAction(query: string): Promise<{
+	success: boolean;
+	users?: Array<{
+		id: string;
+		name: string | null;
+		email: string | null;
+		phone: string | null;
+	}>;
+	error?: string;
+}> {
+	const authResult = await requireAdminOrManager();
+	if (!authResult.ok) return { success: false, error: authResult.error };
+
+	if (!query.trim() || query.trim().length < 2) {
+		return { success: true, users: [] };
+	}
+
+	const q = query.trim().toLowerCase();
+
+	const users = await prisma.user.findMany({
+		where: {
+			OR: [
+				{ name: { contains: q, mode: "insensitive" } },
+				{ email: { contains: q, mode: "insensitive" } },
+			],
+			role: "USER",
+		},
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			clientApplication: {
+				select: {
+					applicationData: true,
+				},
+			},
+		},
+		take: 20,
+		orderBy: { name: "asc" },
+	});
+
+	// Вытаскиваем телефон из applicationData если есть
+	const mapped = users.map((u) => {
+		const appData = u.clientApplication?.applicationData as {
+			personalData?: { phone?: string };
+		} | null;
+		return {
+			id: u.id,
+			name: u.name,
+			email: u.email,
+			phone: appData?.personalData?.phone ?? null,
+		};
+	});
+
+	return { success: true, users: mapped };
+}
+
+/**
+ * Создать тред от имени админа (инициация)
+ */
+export async function createSupportThreadByAdminAction(data: {
+	userId: string;
+	subject: string;
+	initialMessage: string;
+	platform?: SupportPlatform;
+	contactInfo?: string;
+}): Promise<{ success: boolean; thread?: DbSupportThread; error?: string }> {
+	const authResult = await requireAdminOrManager();
+	if (!authResult.ok) return { success: false, error: authResult.error };
+
+	if (!data.subject.trim()) {
+		return { success: false, error: "Тема обязательна" };
+	}
+	if (!data.initialMessage.trim()) {
+		return { success: false, error: "Сообщение обязательно" };
+	}
+
+	const targetUser = await prisma.user.findUnique({
+		where: { id: data.userId },
+		select: { id: true },
+	});
+	if (!targetUser) return { success: false, error: "Пользователь не найден" };
+
+	const thread = await prisma.supportThread.create({
+		data: {
+			userId: data.userId,
+			subject: data.subject.trim(),
+			platform: data.platform || "WEBSITE",
+			status: "WAITING_FOR_CLIENT",
+			contactInfo: data.contactInfo?.trim() || null,
+			messages: {
+				create: {
+					authorId: authResult.userId,
+					isAdmin: true,
+					content: data.initialMessage.trim(),
+				},
+			},
+		},
+		include: {
+			user: { select: { id: true, name: true, email: true } },
+			messages: {
+				include: {
+					author: { select: { name: true } },
+					readBy: true,
+				},
+				orderBy: { createdAt: "asc" },
+			},
+		},
+	});
+
+	revalidatePath("/admin/support");
+	revalidatePath(`/dashboard/support`);
+	return { success: true, thread };
+}
+
+/**
+ * Редактировать сообщение (только админ, только своё)
+ */
+export async function editSupportMessageAction(data: {
+	messageId: string;
+	content: string;
+}): Promise<{ success: boolean; error?: string }> {
+	const authResult = await requireAdminOrManager();
+	if (!authResult.ok) return { success: false, error: authResult.error };
+
+	if (!data.content.trim()) {
+		return { success: false, error: "Сообщение не может быть пустым" };
+	}
+
+	const message = await prisma.supportMessage.findUnique({
+		where: { id: data.messageId },
+		select: { authorId: true, isAdmin: true, threadId: true },
+	});
+
+	if (!message) return { success: false, error: "Сообщение не найдено" };
+	if (!message.isAdmin)
+		return {
+			success: false,
+			error: "Можно редактировать только сообщения администратора",
+		};
+	if (message.authorId !== authResult.userId) {
+		return {
+			success: false,
+			error: "Можно редактировать только свои сообщения",
+		};
+	}
+
+	await prisma.supportMessage.update({
+		where: { id: data.messageId },
+		data: {
+			content: data.content.trim(),
+			isEdited: true,
+			editedAt: new Date(),
+		},
+	});
+
+	revalidatePath(`/admin/support/thread/${message.threadId}`);
+	return { success: true };
 }

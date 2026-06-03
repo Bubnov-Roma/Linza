@@ -71,7 +71,9 @@ export function UniversalAuthForm({
 		<AuthCard
 			title={title}
 			description={
-				!isModal ? "Безопасный вход по одноразовому коду" : undefined
+				!isModal
+					? "Войдите через соц. сеть или по одноразовому коду"
+					: undefined
 			}
 			isModal={isModal}
 			footerLink={
@@ -129,6 +131,7 @@ export function UniversalAuthForm({
 								<div className="w-full flex gap-4 justify-center">
 									<Button
 										variant="social"
+										type="button"
 										className="flex-1 gap-2 h-11"
 										onClick={() => signIn("google")}
 									>
@@ -159,6 +162,7 @@ export function UniversalAuthForm({
 									</Button>
 									<Button
 										variant="social"
+										type="button"
 										className="flex-1 gap-2 h-11"
 										onClick={() => signIn("yandex")}
 									>

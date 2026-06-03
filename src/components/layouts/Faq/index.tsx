@@ -16,7 +16,7 @@ import {
 } from "react";
 import type { DbFaqItem } from "@/actions/admin-faq-actions";
 import { AskForm } from "@/components/layouts/Faq/AskForm";
-import { FaqChip } from "@/components/layouts/Faq/FaqChip";
+import { FaqChip } from "@/components/shared/FaqChip";
 import { Button, Input } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -164,10 +164,10 @@ export default function FaqClientPage({ items }: { items: DbFaqItem[] }) {
 
 	return (
 		<div className="min-h-screen bg-background">
-			<div className="container mx-auto max-w-4xl px-4 py-20">
+			<div className="container mx-auto max-w-4xl px-4 pt-8 md:pt-16 pb-20">
 				{/* Header */}
 				<div className="mb-12 text-center">
-					<h1 className="text-5xl font-black uppercase italic tracking-tight mb-4">
+					<h1 className="text-3xl md:text-3xl lg:text-4xl xl:text-5xl font-black uppercase italic tracking-tight mb-6">
 						Вопросы и ответы
 					</h1>
 					{/* Search bar */}
@@ -240,7 +240,7 @@ export default function FaqClientPage({ items }: { items: DbFaqItem[] }) {
 								className="mx-auto text-muted-foreground/30 mb-3"
 							/>
 							<p className="font-semibold">Ничего не нашли</p>
-							<p className="text-sm text-muted-foreground">
+							<p className="text-sm text-muted-foreground wrap-break-word">
 								По запросу{" "}
 								<span className="text-foreground font-medium">«{query}»</span>{" "}
 								ответа пока нет — но вы можете спросить напрямую
@@ -255,9 +255,6 @@ export default function FaqClientPage({ items }: { items: DbFaqItem[] }) {
 					<div className="mt-16 max-w-xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
 						<div className="rounded-2xl border border-foreground/8 bg-foreground/2 p-6">
 							<p className="text-sm font-semibold mb-1">Не нашли ответ?</p>
-							<p className="text-xs text-muted-foreground mb-4">
-								Задайте вопрос — мы добавим его в FAQ
-							</p>
 							<AskForm defaultQuestion="" />
 						</div>
 					</div>

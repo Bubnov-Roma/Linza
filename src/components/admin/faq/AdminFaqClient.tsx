@@ -10,12 +10,11 @@ import {
 	reorderFaqItemsAction,
 	updateFaqItemAction,
 } from "@/actions/admin-faq-actions";
-import { FaqRow } from "@/components/admin/faq/FaqRow";
 import { TagInput } from "@/components/admin/faq/TagInput";
-import { Button, Input, Label, Textarea } from "@/components/ui";
+import { MarkdownEditor } from "@/components/shared";
+import { FaqChip } from "@/components/shared/FaqChip";
+import { Button, Input, Label } from "@/components/ui";
 import { cn } from "@/lib/utils";
-
-// ─── MAIN CLIENT ──────────────────────────────────────────────────────────────
 
 export default function AdminFaqClient({
 	initialItems,
@@ -59,8 +58,8 @@ export default function AdminFaqClient({
 				return;
 			}
 			if (result.item) {
-				const newItem = result.item;
-				setItems((prev) => [...prev, newItem]);
+				const resultItem = result.item;
+				setItems((prev) => [...prev, resultItem]);
 				setNewQ("");
 				setNewA("");
 				setNewTags([]);
@@ -89,10 +88,9 @@ export default function AdminFaqClient({
 		toast.success("Вопрос удалён");
 	};
 
-	const active = items.filter((i) => i.isActive).length;
-
 	return (
-		<div className="space-y-6 container mx-auto max-w-6xl px-4 py-10">
+		<div className="space-y-6 container mx-auto max-w-4xl px-4 py-10">
+			{/* Шапка админки */}
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-black uppercase italic tracking-tight flex items-center gap-2">
@@ -101,19 +99,18 @@ export default function AdminFaqClient({
 							className="text-muted-foreground"
 							weight="duotone"
 						/>
-						FAQ
+						Управление FAQ
 					</h1>
 					<p className="text-sm text-muted-foreground mt-1">
-						{items.length} вопросов · {active} активных · Перетащите для
-						изменения порядка
+						{items.length} вопросов · Перетаскивайте карточки для изменения
+						порядка на сайте
 					</p>
 				</div>
 				<Button
 					size="xl"
 					onClick={() => setShowAdd((s) => !s)}
-					className="rounded-full md:min-w-35 transition-all duration-300 justify-between items-center"
+					className="rounded-full"
 				>
-					{" "}
 					<PlusIcon
 						size={14}
 						className={cn(
@@ -121,56 +118,63 @@ export default function AdminFaqClient({
 							showAdd && "rotate-135"
 						)}
 					/>
-					<span className="hidden md:block">
-						{showAdd ? "Отменить" : "Добавить"}
+					<span className="ml-2">
+						{showAdd ? "Отменить" : "Добавить вопрос"}
 					</span>
 				</Button>
 			</div>
 
+			{/* Форма добавления нового вопроса */}
 			{showAdd && (
-				<div className="p-4 rounded-2xl bg-secondary space-y-3 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
-					<div className="flex w-full justify-between items-center">
-						<p className="text-md md:text-xl font-bold uppercase">
-							Новый вопрос
-						</p>
-						<Button
-							disabled={!newQ.trim() || !newA.trim() || isPending}
-							onClick={handleCreate}
-						>
-							Сохранить
-						</Button>
-					</div>
-					<div className="space-y-1.5">
+				<div className="p-6 rounded-2xl bg-foreground/3 border border-foreground/5 space-y-4 animate-in slide-in-from-top-2 duration-200">
+					<div className="space-y-1">
+						<Label className="text-xs uppercase font-bold tracking-wider text-muted-foreground">
+							Вопрос
+						</Label>
 						<Input
 							value={newQ}
 							onChange={(e) => setNewQ(e.target.value)}
-							placeholder="Вопрос ( Как оформить заказ )"
+							placeholder="Например: Как оформить аренду оборудования?"
 							autoFocus
 						/>
 					</div>
-					<div className="space-y-1.5">
-						<Textarea
+
+					<div className="space-y-1">
+						<MarkdownEditor
+							label="Ответ"
 							value={newA}
-							onChange={(e) => setNewA(e.target.value)}
+							onChange={setNewA}
 							rows={4}
-							placeholder="Подробный ответ..."
-							className="resize-none"
+							placeholder="Подробный ответ с поддержкой стилей..."
 						/>
 					</div>
-					<div className="flex items-end gap-3">
-						<div className="flex-1 space-y-1.5">
-							<Label className="text-xs">Теги для быстрого поиска</Label>
+
+					<div className="space-y-3">
+						<div className="space-y-1">
+							<Label className="text-xs uppercase font-bold tracking-wider text-muted-foreground">
+								Теги быстрого поиска
+							</Label>
 							<TagInput tags={newTags} onChange={setNewTags} />
+						</div>
+						<div className="flex justify-end pt-2">
+							<Button
+								disabled={!newQ.trim() || !newA.trim() || isPending}
+								onClick={handleCreate}
+							>
+								Сохранить и опубликовать
+							</Button>
 						</div>
 					</div>
 				</div>
 			)}
 
-			<div className="space-y-2">
+			{/* Список вопросов */}
+			<div className="grid gap-3">
 				{items.map((item, index) => (
-					<FaqRow
+					<FaqChip
 						key={item.id}
 						item={item}
+						isAdmin={true} // Переключаем режим компонента в админский
 						onUpdate={handleUpdate}
 						onDelete={handleDelete}
 						dragHandleProps={{
@@ -185,10 +189,11 @@ export default function AdminFaqClient({
 						}}
 					/>
 				))}
+
 				{items.length === 0 && (
-					<div className="text-center py-16 text-muted-foreground">
+					<div className="text-center py-16 text-muted-foreground border border-dashed rounded-2xl">
 						<QuestionIcon size={32} className="mx-auto mb-3 opacity-20" />
-						<p>FAQ пока пуст. Добавьте первый вопрос.</p>
+						<p>FAQ пока пуст. Создайте первый вопрос сверху.</p>
 					</div>
 				)}
 			</div>

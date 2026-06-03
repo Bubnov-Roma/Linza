@@ -156,7 +156,7 @@
     background: linear-gradient(
       135deg,
       oklch(from var(--bg-card) l c h / 0.95) 0%,
-      oklch(from var(--bg-card) l c h / 0.75) 100%
+      oklch(from var(--bg-card) l c h / 0.85) 100%
     );
     box-shadow: 
       0 10px 30px -10px rgba(0, 0, 0, 0.09),

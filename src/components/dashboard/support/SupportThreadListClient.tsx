@@ -1,39 +1,51 @@
 "use client";
 
-import { EnvelopeOpenIcon, PlusIcon } from "@phosphor-icons/react";
+import {
+	EnvelopeIcon,
+	EnvelopeOpenIcon,
+	GlobeIcon,
+	HeadsetIcon,
+	TelegramLogoIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
-import type { DbSupportThread } from "@/actions/support-actions";
+import { useEffect, useState } from "react";
+import {
+	type DbSupportThread,
+	pollSupportThreadsAction,
+} from "@/actions/support-actions";
 import { SupportModalTrigger } from "@/components/shared";
 import { Badge, Card } from "@/components/ui";
+import { CHATS_STATUS_COLORS, CHATS_STATUS_LABELS } from "@/constants";
 import { cn } from "@/lib/utils";
-
-const STATUS_LABELS: Record<string, string> = {
-	OPEN: "Открыто",
-	CLOSED: "Закрыто",
-	WAITING_FOR_ADMIN: "Ожидание ответа",
-	WAITING_FOR_CLIENT: "Требует ответа",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-	OPEN: "bg-blue-500/20 text-blue-600 border-blue-300/30",
-	CLOSED: "bg-gray-500/20 text-gray-600 border-gray-300/30",
-	WAITING_FOR_ADMIN: "bg-yellow-500/20 text-yellow-600 border-yellow-300/30",
-	WAITING_FOR_CLIENT: "bg-green-500/20 text-green-600 border-green-300/30",
-};
 
 export default function SupportThreadListClient({
 	initialThreads,
 }: {
 	initialThreads: DbSupportThread[];
 }) {
-	const [threads] = useState(initialThreads);
+	const [threads, setThreads] = useState(initialThreads);
+
+	const latestAt = threads[0]?.lastMessageAt ?? new Date(0);
+
+	useEffect(() => {
+		const interval = setInterval(async () => {
+			const result = await pollSupportThreadsAction({
+				role: "client",
+				latestThreadAt: latestAt,
+			});
+			if (result.hasUpdates && result.threads) {
+				setThreads(result.threads);
+			}
+		}, 15_000);
+
+		return () => clearInterval(interval);
+	}, [latestAt]);
 
 	const getLastMessage = (thread: DbSupportThread) => {
 		const lastMsg = thread.messages[thread.messages.length - 1];
 		if (!lastMsg) return "Нет сообщений";
 		return lastMsg.content.length > 60
-			? lastMsg.content.substring(0, 60) + "..."
+			? `${lastMsg.content.substring(0, 60)}...`
 			: lastMsg.content;
 	};
 
@@ -81,15 +93,13 @@ export default function SupportThreadListClient({
 					return (
 						<Link
 							key={thread.id}
-							href={`/support/${thread.id}`}
+							href={`/dashboard/support/${thread.id}`}
 							className="block group"
 						>
 							<Card
 								className={cn(
-									"p-4 hover:bg-foreground/3 transition-all cursor-pointer border",
-									unread
-										? "border-green-300/30 bg-green-500/5"
-										: "border-foreground/10"
+									"p-4 hover:bg-foreground/3 transition-all cursor-pointer",
+									unread && " bg-green-500/5"
 								)}
 							>
 								<div className="flex items-start justify-between gap-4">
@@ -132,16 +142,43 @@ export default function SupportThreadListClient({
 											variant="outline"
 											className={cn(
 												"text-[10px] font-medium",
-												STATUS_COLORS[thread.status] ||
+												CHATS_STATUS_COLORS[thread.status] ||
 													"bg-foreground/10 text-foreground/60"
 											)}
 										>
-											{STATUS_LABELS[thread.status] || thread.status}
+											{CHATS_STATUS_LABELS[thread.status] || thread.status}
 										</Badge>
-										<span className="text-xs text-muted-foreground">
-											{thread.platform === "WEBSITE" && "📱 Сайт"}
-											{thread.platform === "TELEGRAM" && "✈️ Telegram"}
-											{thread.platform === "EMAIL" && "📧 Email"}
+										<span className="text-xs text-muted-foreground flex items-center gap-1">
+											{thread.platform === "WEBSITE" && (
+												<>
+													<GlobeIcon
+														weight="duotone"
+														size={12}
+														className="shrink-0 inline"
+													/>{" "}
+													Сайт
+												</>
+											)}
+											{thread.platform === "TELEGRAM" && (
+												<>
+													<TelegramLogoIcon
+														weight="duotone"
+														size={12}
+														className="shrink-0 inline"
+													/>{" "}
+													Telegram
+												</>
+											)}
+											{thread.platform === "EMAIL" && (
+												<>
+													<EnvelopeIcon
+														weight="duotone"
+														size={12}
+														className="shrink-0 inline"
+													/>{" "}
+													Email
+												</>
+											)}
 										</span>
 									</div>
 								</div>
@@ -154,7 +191,11 @@ export default function SupportThreadListClient({
 				{threads.length === 0 && (
 					<div className="text-center py-16 space-y-4">
 						<div className="flex justify-center">
-							<PlusIcon size={48} className="opacity-10" weight="duotone" />
+							<HeadsetIcon
+								size={48}
+								className="opacity-40 p-4 rounded-full bg-foreground/5 w-16 h-16"
+								weight="duotone"
+							/>
 						</div>
 						<div>
 							<p className="text-muted-foreground mb-4">

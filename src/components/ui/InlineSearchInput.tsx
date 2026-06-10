@@ -4,12 +4,14 @@ import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 interface InlineSearchInputProps {
 	value: string;
 	onChange: (val: string) => void;
 	fetchSuggestion: (query: string) => Promise<string | null>;
 	placeholder?: string;
+	className?: string;
 }
 
 export function InlineSearchInput({
@@ -17,6 +19,7 @@ export function InlineSearchInput({
 	onChange,
 	fetchSuggestion,
 	placeholder,
+	className,
 }: InlineSearchInputProps) {
 	const [suggestion, setSuggestion] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +54,9 @@ export function InlineSearchInput({
 	};
 
 	return (
-		<InputGroup className="relative glass-input min-h-9 flex-1">
+		<InputGroup
+			className={cn("relative glass-input min-h-9 flex-1", className)}
+		>
 			<InputGroupAddon>
 				<MagnifyingGlassIcon className="h-4 w-4 text-muted-foreground" />
 			</InputGroupAddon>

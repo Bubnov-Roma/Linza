@@ -187,18 +187,6 @@ function PromoForm({
 					/>
 				</div>
 			</div>
-			{/* Активен */}
-			{/* <div className="flex items-center gap-2">
-				<Switch
-					checked={form.isActive}
-					onCheckedChange={(v) => set("isActive", v)}
-					disabled={isPending}
-					id="promo-active"
-				/>
-				<Label htmlFor="promo-active" className="text-sm cursor-pointer">
-					Активен
-				</Label>
-			</div> */}
 			{/* Кнопки */}
 			<div className="flex items-center gap-2 pt-1">
 				<Button
@@ -464,7 +452,7 @@ export function PromoCodesSection() {
 	const total = promos.length;
 
 	return (
-		<Card className="py-4">
+		<Card className="py-6 lg:col-span-2">
 			<div className="flex items-baseline justify-between w-100% px-6">
 				{!showForm ? (
 					<div className="flex w-full justify-between ">

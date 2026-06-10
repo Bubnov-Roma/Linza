@@ -1,5 +1,6 @@
 export * from "./clean-undefined";
 export * from "./client-data.utils";
+export * from "./decrypt-application-data";
 export * from "./deep-set-application";
 export * from "./error-handler";
 export * from "./group-equipment";

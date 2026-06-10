@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { DbSupportThread } from "@/actions/support-actions";
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
 import { Button } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 export interface SupportModalTriggerProps {
 	/** Если передан - это будет ответ в существующий поток */
@@ -30,12 +31,16 @@ export function SupportModalTrigger({
 			<>
 				<Button
 					onClick={() => setOpen(true)}
-					className={className}
 					variant="outline"
 					size="xl"
+					className={cn("rounded-full p-1", className)}
 				>
-					<QuestionIcon size={16} weight="duotone" />
-					{label}
+					<QuestionIcon
+						size={26}
+						weight="duotone"
+						className="shrink-0 md:hidden"
+					/>
+					<span className="hidden md:block">{label}</span>
 				</Button>
 				<SupportModal
 					open={open}

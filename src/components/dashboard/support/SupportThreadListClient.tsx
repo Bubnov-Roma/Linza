@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	EnvelopeIcon,
-	EnvelopeOpenIcon,
-	GlobeIcon,
-	HeadsetIcon,
-	TelegramLogoIcon,
-} from "@phosphor-icons/react";
+import { EnvelopeOpenIcon, HeadsetIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -148,38 +142,6 @@ export default function SupportThreadListClient({
 										>
 											{CHATS_STATUS_LABELS[thread.status] || thread.status}
 										</Badge>
-										<span className="text-xs text-muted-foreground flex items-center gap-1">
-											{thread.platform === "WEBSITE" && (
-												<>
-													<GlobeIcon
-														weight="duotone"
-														size={12}
-														className="shrink-0 inline"
-													/>{" "}
-													Сайт
-												</>
-											)}
-											{thread.platform === "TELEGRAM" && (
-												<>
-													<TelegramLogoIcon
-														weight="duotone"
-														size={12}
-														className="shrink-0 inline"
-													/>{" "}
-													Telegram
-												</>
-											)}
-											{thread.platform === "EMAIL" && (
-												<>
-													<EnvelopeIcon
-														weight="duotone"
-														size={12}
-														className="shrink-0 inline"
-													/>{" "}
-													Email
-												</>
-											)}
-										</span>
 									</div>
 								</div>
 							</Card>

@@ -753,7 +753,7 @@ export function PaymentsPanel({
 			</div>
 
 			<AlertDialog open={showStatusAlert} onOpenChange={setShowStatusAlert}>
-				<AlertDialogContent className="p-2 md:p-6 space-y-6">
+				<AlertDialogContent className="p-2 md:p-6 space-y-6 backdrop-blur-xs">
 					<AlertDialogHeader>
 						<AlertDialogTitle className="flex items-center gap-2">
 							Обновите статус заказа
@@ -774,21 +774,20 @@ export function PaymentsPanel({
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter className="flex">
-						<AlertDialogCancel className="flex flex-1">
-							<Button asChild variant="outline" className="flex-1">
+						<AlertDialogCancel asChild className="flex flex-1">
+							<Button variant="outline" className="flex-1">
 								Позже
 							</Button>
 						</AlertDialogCancel>
 						<AlertDialogAction
+							asChild
 							className="flex flex-1"
 							onClick={() => {
 								setShowStatusAlert(false);
 								onStatusChangeNeeded?.();
 							}}
 						>
-							<Button asChild className="flex-1">
-								Обновить статус
-							</Button>
+							<Button className="flex-1">Обновить статус</Button>
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

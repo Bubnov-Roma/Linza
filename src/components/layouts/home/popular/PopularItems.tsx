@@ -57,7 +57,7 @@ export const PopularItems = ({ popular }: { popular: GroupedEquipment[] }) => {
 	if (popular.length === 0) return null;
 
 	return (
-		<section>
+		<section suppressHydrationWarning>
 			<div className="flex items-baseline justify-between container mx-auto">
 				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none px-4">
 					Популярное

@@ -9,6 +9,7 @@ import {
 	SUPPORT_EMAIL_DEFAULT,
 	SUPPORT_PHONE_DEFAULT,
 	SUPPORT_TELEGRAM_DEFAULT,
+	SUPPORT_VK_DEFAULT,
 	type SupportInfo,
 } from "@/constants";
 
@@ -18,6 +19,7 @@ import { WORK_END, WORK_START } from "@/lib/utils";
 export interface SiteSettingsInfo {
 	phone: string;
 	telegram: string;
+	vk: string;
 	address: string;
 	supportEmail: string;
 	privacyPolicy: string;
@@ -39,6 +41,7 @@ export async function getSiteSettings(): Promise<SiteSettingsInfo> {
 				in: [
 					"supportPhone",
 					"supportTelegram",
+					"supportVk",
 					"supportAddress",
 					"supportEmail",
 					"privacyPolicy",
@@ -69,6 +72,7 @@ export async function getSiteSettings(): Promise<SiteSettingsInfo> {
 	return {
 		phone: map.supportPhone ?? SUPPORT_PHONE_DEFAULT,
 		telegram: map.supportTelegram ?? SUPPORT_TELEGRAM_DEFAULT,
+		vk: map.supportVk ?? SUPPORT_VK_DEFAULT,
 		address: map.supportAddress ?? SUPPORT_ADDRESS_DEFAULT,
 		supportEmail: map.supportEmail ?? SUPPORT_EMAIL_DEFAULT,
 		privacyPolicy: map.privacyPolicy ?? DEFAULT_PRIVACY,
@@ -104,6 +108,7 @@ export async function updateSiteSettingsAction(
 		if (patch.phone !== undefined) addPromise("supportPhone", patch.phone);
 		if (patch.telegram !== undefined)
 			addPromise("supportTelegram", patch.telegram);
+		if (patch.vk !== undefined) addPromise("supportVk", patch.vk);
 		if (patch.address !== undefined)
 			addPromise("supportAddress", patch.address);
 		if (patch.supportEmail !== undefined)
@@ -147,6 +152,7 @@ export async function getSupportInfo(): Promise<SupportInfo> {
 				in: [
 					"supportPhone",
 					"supportTelegram",
+					"supportVk",
 					"supportAddress",
 					"supportEmail",
 				],
@@ -160,6 +166,7 @@ export async function getSupportInfo(): Promise<SupportInfo> {
 	return {
 		phone: map.supportPhone ?? SUPPORT_PHONE_DEFAULT,
 		telegram: map.supportTelegram ?? SUPPORT_TELEGRAM_DEFAULT,
+		vk: map.supportVk ?? SUPPORT_VK_DEFAULT,
 		address: map.supportAddress ?? SUPPORT_ADDRESS_DEFAULT,
 		email: map.supportEmail ?? SUPPORT_EMAIL_DEFAULT,
 	};

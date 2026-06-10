@@ -16,7 +16,7 @@ export const RenderIcon = ({
 				? "text-foreground opacity-100"
 				: "opacity-70 group-hover/btn:opacity-100 text-muted-foreground"
 		)}
-		weight={isActive ? "fill" : "regular"}
+		weight={isActive ? "fill" : "duotone"}
 		strokeWidth={isActive ? 2.5 : 2}
 	/>
 );

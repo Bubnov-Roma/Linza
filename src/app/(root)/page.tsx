@@ -40,6 +40,7 @@ export default async function HomePage() {
 				<PopularItemsSection />
 			</Suspense>
 			<StudioSection
+				isAdmin={isAdmin}
 				banners={allBanners.filter(
 					(b) => b.placement === "studio" || b.placement === "both"
 				)}

@@ -474,7 +474,7 @@ export default function EquipmentTable() {
 	return (
 		<div className="w-full space-y-2 relative">
 			{/* Header */}
-			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 py-4 flex items-start justify-between gap-4">
 				<div className="flex items-center gap-2.5">
 					<CameraIcon size={20} weight="duotone" />
 					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
@@ -540,8 +540,8 @@ export default function EquipmentTable() {
 
 				{/* Add button */}
 				<Button
+					aria-label="Добавить новую технику"
 					onClick={() => setShowCreateSheet(true)}
-					variant="ghost"
 					size="sm"
 					className="sm:flex h-9 gap-2 font-bold"
 				>
@@ -550,7 +550,7 @@ export default function EquipmentTable() {
 			</div>
 
 			{/* Toolbar Card */}
-			<Card className="p-2">
+			<Card className="p-2 mx-2">
 				<CardContent className="px-0 space-y-3 justify-between">
 					<div className="flex flex-col lg:flex-row items-center gap-2 flex-wrap">
 						<div className="flex flex-col flex-1 w-full sm:max-w-sm">

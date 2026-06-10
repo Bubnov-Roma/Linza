@@ -5,6 +5,7 @@ import {
 	TelegramLogoIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
+import { VkLogoIcon } from "@/components/icons";
 import { Logo } from "@/components/icons/Logo";
 import type { SupportInfo } from "@/constants";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,8 @@ export async function Footer({ support }: { support: SupportInfo }) {
 		"text-sm text-muted-foreground hover:text-foreground transition-colors duration-200";
 	const sectionTitleClass =
 		"text-sm font-bold uppercase tracking-widest text-foreground/70 mb-6";
+
+	const encodedAddress = encodeURIComponent(support.address);
 
 	return (
 		<footer className="w-full border-t border-foreground/5 bg-background">
@@ -103,40 +106,120 @@ export async function Footer({ support }: { support: SupportInfo }) {
 						<div className="flex flex-col col-span-2 md:col-span-1">
 							<h3 className={sectionTitleClass}>Связь с нами</h3>
 							<ul className="space-y-5">
-								<li className="flex items-start gap-3">
-									<PhoneIcon size={20} weight="fill" className="shrink-0" />
+								{/* Телефон */}
+								<li>
 									<Link
 										href={`tel:${support.phone}`}
-										className={footerLinkClass}
+										className={cn(
+											"flex items-start gap-3 group",
+											footerLinkClass
+										)}
 									>
-										{support.phone}
+										<PhoneIcon
+											size={20}
+											weight="fill"
+											className="shrink-0 transition-colors duration-200"
+										/>
+										<span>{support.phone}</span>
 									</Link>
 								</li>
-								<li className="flex items-start gap-3">
-									<TelegramLogoIcon
-										weight="fill"
-										size={20}
-										className="shrink-0"
-									/>
+
+								{/* Telegram */}
+								<li>
 									<Link
 										href={`${support.telegram}`}
 										target="_blank"
-										className={footerLinkClass}
+										className={cn(
+											"flex items-start gap-3 group",
+											footerLinkClass
+										)}
 									>
-										{support.telegram}
+										<TelegramLogoIcon
+											weight="fill"
+											size={20}
+											className="shrink-0 transition-colors duration-200"
+										/>
+										<span>{support.telegram}</span>
 									</Link>
 								</li>
-								<li className="flex items-start gap-3">
-									<EnvelopeSimpleIcon
-										weight="fill"
-										size={20}
-										className="shrink-0"
-									/>
-									<span className={footerLinkClass}>linzarental@yandex.ru</span>
+
+								{/* VK */}
+								<li>
+									<Link
+										target="_blank"
+										href={support.vk}
+										className={cn(
+											"flex items-start gap-3 group",
+											footerLinkClass
+										)}
+									>
+										<VkLogoIcon className="shrink-0 transition-colors duration-200" />
+										<span>ВКонтакте</span>
+									</Link>
 								</li>
-								<li className="flex items-start gap-3">
-									<MapPinIcon weight="fill" size={20} className="shrink-0" />
-									<span className={footerLinkClass}>{support.address}</span>
+
+								{/* Email */}
+								<li>
+									<Link
+										href={`mailto:${support.email}`}
+										className={cn(
+											"flex items-start gap-3 group",
+											footerLinkClass
+										)}
+									>
+										<EnvelopeSimpleIcon
+											weight="fill"
+											size={20}
+											className="shrink-0 transition-colors duration-200"
+										/>
+										<span>{support.email}</span>
+									</Link>
+								</li>
+
+								{/* Адрес с картами */}
+								<li className="w-full">
+									<details className="group/map w-full appearance-none [&_summary::-webkit-details-marker]:hidden">
+										<summary
+											className={cn(
+												footerLinkClass,
+												"flex items-start gap-3 w-full list-none cursor-pointer select-none outline-none group"
+											)}
+										>
+											<MapPinIcon
+												size={20}
+												weight="fill"
+												className="shrink-0 transition-colors duration-200"
+											/>
+											<span>{support.address}</span>
+										</summary>
+
+										<div className="pt-3 space-y-2 ml-2.5 mt-2">
+											<Link
+												href={`https://yandex.ru/maps/?text=${encodedAddress}`}
+												target="_blank"
+												rel="noreferrer"
+												className="block text-xs py-1.5 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											>
+												📍 Открыть в Яндекс Картах
+											</Link>
+											<Link
+												href={`https://2gis.ru/search/${encodedAddress}`}
+												target="_blank"
+												rel="noreferrer"
+												className="block text-xs py-1.5 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											>
+												🏢 Открыть в 2GIS
+											</Link>
+											<Link
+												href={`https://maps.google.com/?q=${encodedAddress}`}
+												target="_blank"
+												rel="noreferrer"
+												className="block text-xs py-1.5 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											>
+												🗺 Открыть в Google Maps
+											</Link>
+										</div>
+									</details>
 								</li>
 							</ul>
 						</div>
@@ -144,9 +227,9 @@ export async function Footer({ support }: { support: SupportInfo }) {
 				</div>
 
 				{/* Bottom Bar */}
-				<div className="mt-16 pt-8 border-t border-foreground/5">
+				<div className="mt-16 pt-8 pb-8 md:pb-0 border-t border-foreground/5">
 					<div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-						<p className="text-xs font-medium text-muted-foreground/60">
+						<p className="text-xs font-medium text-muted-foreground/60 select-none">
 							© {new Date().getFullYear()} LINZA RENTAL. С любовью к кадру.
 						</p>
 
@@ -154,21 +237,21 @@ export async function Footer({ support }: { support: SupportInfo }) {
 							<Link
 								href="/privacy"
 								target="_blank"
-								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+								className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
 							>
 								Конфиденциальность
 							</Link>
 							<Link
 								href="/terms"
 								target="_blank"
-								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+								className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
 							>
 								Оферта
 							</Link>
 							<Link
 								href="/sitemap"
 								target="_blank"
-								className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+								className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
 							>
 								Карта сайта
 							</Link>

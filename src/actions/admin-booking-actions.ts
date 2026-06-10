@@ -472,18 +472,6 @@ export async function adminChangeBookingClientAction(
 				where: { id: bookingId },
 				data: { userId: newUserId },
 			}),
-			prisma.adminNotification.create({
-				data: {
-					type: "booking_client_changed",
-					userId,
-					payload: {
-						bookingId,
-						oldUserId: booking.userId,
-						newUserId,
-						newUserName: newUser.name,
-					} as Prisma.InputJsonValue,
-				},
-			}),
 		]);
 
 		await writeAuditLog(bookingId, userId, name, {
@@ -624,18 +612,6 @@ export async function adminUpdateBookingPricingAction(
 			prisma.booking.update({
 				where: { id: bookingId },
 				data: { totalAmount: finalTotal },
-			}),
-			prisma.adminNotification.create({
-				data: {
-					type: "booking_pricing_changed",
-					userId,
-					payload: {
-						bookingId,
-						oldTotal: booking.totalAmount,
-						newTotal: finalTotal,
-						adjustments,
-					} as unknown as Prisma.InputJsonValue,
-				},
 			}),
 		]);
 

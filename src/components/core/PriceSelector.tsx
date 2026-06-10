@@ -90,10 +90,10 @@ export function PriceSelector({
 							type="button"
 							onClick={() => handlePeriodClick(opt.id)}
 							className={cn(
-								"relative flex-1 flex flex-col items-center py-2 px-1 rounded-xl transition-all duration-300 cursor-pointer",
+								"relative flex-1 flex flex-col items-center py-2 px-1 rounded-2xl transition-all duration-300 cursor-pointer",
 								isSelected
-									? "bg-background shadow-md text-foreground"
-									: "text-muted-foreground hover:text-foreground"
+									? "bg-white dark:bg-background shadow-md text-foreground"
+									: "text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10"
 							)}
 						>
 							<span className="text-[10px] font-bold uppercase tracking-tight">

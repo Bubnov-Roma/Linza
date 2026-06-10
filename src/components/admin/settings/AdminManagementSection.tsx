@@ -2,6 +2,7 @@
 
 import {
 	CheckIcon,
+	MagnifyingGlassIcon,
 	PencilSimpleIcon,
 	ShieldCheckIcon,
 	ShieldSlashIcon,
@@ -170,11 +171,12 @@ function GrantAdminForm({ onGranted }: { onGranted: () => void }) {
 				<Button
 					type="button"
 					variant="outline"
-					size="sm"
+					size="icon-xl"
+					className="rounded-xl"
 					onClick={handleSearch}
 					disabled={isPending || !email.trim()}
 				>
-					Найти
+					<MagnifyingGlassIcon size={33} />
 				</Button>
 			</div>
 
@@ -205,13 +207,12 @@ function GrantAdminForm({ onGranted }: { onGranted: () => void }) {
 					</div>
 
 					<Button
-						type="button"
-						size="sm"
+						size="xl"
 						onClick={handleGrant}
 						disabled={isPending}
 						className="w-full"
 					>
-						<ShieldCheckIcon size={14} className="mr-1.5" />
+						<ShieldCheckIcon size={14} weight="duotone" />
 						Назначить администратором
 					</Button>
 				</>
@@ -407,10 +408,9 @@ export function AdminManagementSection() {
 	}, []);
 
 	return (
-		<Card className="py-6">
+		<Card className="py-6 lg:col-span-2">
 			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<ShieldCheckIcon size={16} />
+				<CardTitle className="flex items-start gap-2">
 					Управление администраторами
 				</CardTitle>
 				<CardDescription>

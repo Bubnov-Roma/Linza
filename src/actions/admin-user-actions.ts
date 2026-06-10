@@ -8,7 +8,7 @@ import { decrypt, encrypt } from "@/lib/crypto";
 import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
-import { cleanUndefined } from "@/utils";
+import { cleanUndefined, getSearchVariations } from "@/utils";
 
 // ─── Типы ─────────────────────────────────────────────────────────────────────
 
@@ -1185,6 +1185,37 @@ export async function adminUpdateApplicationFieldAction(
 			});
 		}
 
+		// Синхронизируем базовые поля User, чтобы поиск по таблице работал корректно
+		const userUpdateData: Prisma.UserUpdateInput = {};
+
+		if (
+			patch.firstName !== undefined ||
+			patch.lastName !== undefined ||
+			patch.middleName !== undefined
+		) {
+			const appData = updated.applicationData?.personalData || {};
+			const newFullName = [
+				appData.lastName,
+				appData.firstName,
+				appData.middleName,
+			]
+				.filter(Boolean)
+				.join(" ");
+
+			if (newFullName) userUpdateData.name = newFullName;
+		}
+
+		if (patch.contacts?.phone !== undefined) {
+			userUpdateData.phone = patch.contacts.phone;
+		}
+
+		if (Object.keys(userUpdateData).length > 0) {
+			await prisma.user.update({
+				where: { id: userId },
+				data: userUpdateData,
+			});
+		}
+
 		revalidatePath("/admin/users");
 		return { success: true };
 	} catch (e) {
@@ -1362,11 +1393,42 @@ export async function getPaginatedUsersAction(params: FetchUsersParams) {
 		};
 
 		if (params.search) {
-			where.OR = [
-				{ name: { contains: params.search } },
-				{ email: { contains: params.search } },
-				{ phone: { contains: params.search } },
-			];
+			const searchTerm = params.search.trim();
+			const variations = getSearchVariations(searchTerm);
+			const searchWords = searchTerm.split(/\s+/).filter(Boolean);
+			const phoneDigits = searchTerm.replace(/\D/g, "");
+
+			const orConditions: Prisma.UserWhereInput[] = [];
+
+			// 1. Ищем по всем вариациям раскладки (email, nickname, точное совпадение name)
+			variations.forEach((v) => {
+				orConditions.push(
+					{ email: { contains: v, mode: "insensitive" } },
+					{ nickname: { contains: v, mode: "insensitive" } },
+					{ name: { contains: v, mode: "insensitive" } }
+				);
+			});
+
+			// 2. Умный поиск по частям ФИО (ищем только оригинальный запрос без транслитерации,
+			// чтобы не перегружать БД сложными AND-условиями для каждой раскладки)
+			if (searchWords.length > 0) {
+				orConditions.push({
+					AND: searchWords.map((word) => ({
+						name: { contains: word, mode: "insensitive" },
+					})),
+				});
+			}
+
+			// 3. Поиск по телефону
+			if (phoneDigits.length > 0) {
+				orConditions.push(
+					{ phone: { contains: phoneDigits } },
+					{ extraPhone: { contains: phoneDigits } },
+					{ phone: { contains: searchTerm } }
+				);
+			}
+
+			where.OR = orConditions;
 		}
 
 		if (params.appFilter && params.appFilter !== "all") {

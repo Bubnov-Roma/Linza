@@ -1,7 +1,8 @@
 "use server";
 
-import { BookingStatus, type Prisma } from "@prisma/client";
+import { BookingStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { createAdminNotification } from "@/actions/admin-notification-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -9,10 +10,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function submitBookingAction(formData: {
 	items: {
-		id: string; // id isPrimary-записи (используется как fallback)
-		allUnitIds: string[]; // все id сиблингов для раскрытия quantity → N items
-		quantity: number; // сколько единиц этой позиции
-		priceToPay: number; // цена за одну единицу
+		id: string;
+		allUnitIds: string[];
+		quantity: number;
+		priceToPay: number;
 		deposit?: number;
 		replacementValue?: number;
 	}[];
@@ -37,8 +38,6 @@ export async function submitBookingAction(formData: {
 		for (const item of formData.items) {
 			if (item.quantity <= 0) continue;
 
-			// Получаем свежие доступные единицы с тем же title из БД
-			// Используем allUnitIds как список кандидатов, фильтруем только доступные
 			const availableUnits = await prisma.equipment.findMany({
 				where: {
 					id: { in: item.allUnitIds },
@@ -48,10 +47,8 @@ export async function submitBookingAction(formData: {
 				take: item.quantity,
 			});
 
-			// Если доступных меньше чем запрошено — добавляем isPrimary как fallback
 			const unitIds = availableUnits.map((u) => u.id);
 
-			// Дополнить до нужного количества если не хватает (fallback на isPrimary)
 			while (unitIds.length < item.quantity) {
 				unitIds.push(item.id);
 			}
@@ -67,14 +64,12 @@ export async function submitBookingAction(formData: {
 		}
 
 		if (bookingItemRows.length === 0) {
-			// Защита от пустого заказа
 			return {
 				success: false,
 				error: "Нет доступной техники для бронирования",
 			};
 		}
 
-		// Валидируем промокод повторно на сервере и получаем его id
 		let promoCodeId: string | null = null;
 		if (formData.promoCode) {
 			const promo = await prisma.promoCode.findUnique({
@@ -103,12 +98,12 @@ export async function submitBookingAction(formData: {
 				userId: session.user.id,
 				startDate: new Date(formData.startDate),
 				endDate: new Date(formData.endDate),
-				totalAmount: formData.totalPrice, // уже итоговая цена со скидкой
+				totalAmount: formData.totalPrice,
 				insuranceIncluded: formData.hasInsurance,
 				totalReplacementValue: formData.totalReplacementValue,
 				status: BookingStatus.PENDING_REVIEW,
-				promoCode: formData.promoCode ?? null, // <- сохраняем код
-				discountAmount: formData.discountAmount ?? 0, // <- сохраняем скидку
+				promoCode: formData.promoCode ?? null,
+				discountAmount: formData.discountAmount ?? 0,
 				bookingItems: {
 					create: bookingItemRows,
 				},
@@ -116,14 +111,21 @@ export async function submitBookingAction(formData: {
 		});
 
 		if (promoCodeId) {
-			// Инкрементируем счётчик использований промокода (отдельно, не блокируем booking)
 			await prisma.promoCode
 				.update({
 					where: { id: promoCodeId },
 					data: { usedCount: { increment: 1 } },
 				})
-				.catch(() => {}); // не блокируем заказ если что-то пошло не так
+				.catch(() => {});
 		}
+
+		await createAdminNotification({
+			type: "bookingCreated",
+			userId: session.user.id,
+			entityId: booking.id,
+			entityType: "booking",
+			payload: { totalAmount: formData.totalPrice },
+		});
 
 		revalidatePath("/dashboard/bookings");
 		return { success: true, bookingId: booking.id };
@@ -163,24 +165,22 @@ export async function cancelBookingAction(
 			};
 		}
 
-		// Транзакция: обновляем статус и создаем уведомление
-		await prisma.$transaction([
-			prisma.booking.update({
-				where: { id: bookingId },
-				data: {
-					status: BookingStatus.CANCELLED,
-					cancellationReason: reason,
-					cancelledAt: new Date(),
-				},
-			}),
-			prisma.adminNotification.create({
-				data: {
-					type: "booking_cancelled",
-					userId: session.user.id,
-					payload: { booking_id: bookingId, reason } as Prisma.InputJsonValue,
-				},
-			}),
-		]);
+		await prisma.booking.update({
+			where: { id: bookingId },
+			data: {
+				status: BookingStatus.CANCELLED,
+				cancellationReason: reason,
+				cancelledAt: new Date(),
+			},
+		});
+
+		await createAdminNotification({
+			type: "bookingCancelled",
+			userId: session.user.id,
+			entityId: bookingId,
+			entityType: "booking",
+			payload: { reason },
+		});
 
 		if (booking.promoCode) {
 			await prisma.promoCode
@@ -235,7 +235,6 @@ export async function updateBookingDatesAction(
 		const newEnd = new Date(endDate);
 		let promoExpired = false;
 
-		// Проверяем не вышел ли перенос за дедлайн промокода
 		if (booking.promoCode) {
 			const promo = await prisma.promoCode.findUnique({
 				where: { code: booking.promoCode },
@@ -250,42 +249,38 @@ export async function updateBookingDatesAction(
 			}
 		}
 
-		// Строим data обновления
 		const updateData: Parameters<typeof prisma.booking.update>[0]["data"] = {
 			startDate: new Date(startDate),
 			endDate: newEnd,
 			status: BookingStatus.PENDING_REVIEW,
 		};
 
-		// Если промокод сгорел — сбрасываем и возвращаем оригинальную сумму
 		if (promoExpired) {
 			updateData.promoCode = null;
 			updateData.discountAmount = 0;
-			// Возвращаем оригинальную цену: totalAmount + то что было скидкой
 			updateData.totalAmount =
 				(booking.totalAmount ?? 0) + (booking.discountAmount ?? 0);
 		}
 
-		await prisma.$transaction([
-			prisma.booking.update({
-				where: { id: bookingId },
-				data: updateData,
-			}),
-			prisma.adminNotification.create({
-				data: {
-					type: "booking_dates_changed",
-					userId: session.user.id,
-					payload: {
-						booking_id: bookingId,
-						start_date: startDate,
-						end_date: endDate,
-						promo_expired: promoExpired,
-					} as Prisma.InputJsonValue,
-				},
-			}),
-		]);
+		await prisma.booking.update({
+			where: { id: bookingId },
+			data: updateData,
+		});
 
-		// Декрементируем usedCount если промо сгорело
+		// #7 — изменение дат заказа
+		await createAdminNotification({
+			type: "bookingUpdated",
+			userId: session.user.id,
+			entityId: bookingId,
+			entityType: "booking",
+			payload: {
+				changedField: "dates",
+				startDate,
+				endDate,
+				promoExpired,
+			},
+		});
+
 		if (promoExpired && booking.promoCode) {
 			await prisma.promoCode
 				.updateMany({
@@ -390,7 +385,6 @@ export async function updateBookingItemsAction(
 			}))
 		);
 
-		// Транзакция: удаляем старые items, создаем новые, обновляем сам заказ
 		await prisma.$transaction([
 			prisma.bookingItem.deleteMany({ where: { bookingId } }),
 			prisma.booking.update({
@@ -410,17 +404,19 @@ export async function updateBookingItemsAction(
 						: {}),
 				},
 			}),
-			prisma.adminNotification.create({
-				data: {
-					type: "booking_items_changed",
-					userId: session.user.id,
-					payload: {
-						booking_id: bookingId,
-						item_count: newRows.length,
-					} as Prisma.InputJsonValue,
-				},
-			}),
 		]);
+
+		// #7 — изменение комплектации заказа
+		await createAdminNotification({
+			type: "bookingUpdated",
+			userId: session.user.id,
+			entityId: bookingId,
+			entityType: "booking",
+			payload: {
+				changedField: "items",
+				itemCount: newRows.length,
+			},
+		});
 
 		revalidatePath(`/dashboard/bookings/${bookingId}`);
 		revalidatePath("/dashboard/bookings");
@@ -432,6 +428,8 @@ export async function updateBookingItemsAction(
 }
 
 // ── Admin: update booking status ──────────────────────────────────────────────
+// Примечание: это admin-действие, уведомление тут не нужно —
+// оно создаётся для клиента, а не для админа.
 
 export async function updateBookingStatusAction(
 	bookingId: string,
@@ -441,7 +439,7 @@ export async function updateBookingStatusAction(
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
-		const booking = await prisma.booking.update({
+		await prisma.booking.update({
 			where: { id: bookingId },
 			data: {
 				status: newStatus,
@@ -449,31 +447,7 @@ export async function updateBookingStatusAction(
 					? { cancelledAt: new Date() }
 					: {}),
 			},
-			select: { userId: true },
 		});
-
-		const notifyStatuses = [
-			BookingStatus.PENDING_REVIEW,
-			BookingStatus.WAIT_PAYMENT,
-			BookingStatus.READY_TO_RENT,
-			BookingStatus.ACTIVE,
-			BookingStatus.COMPLETED,
-			BookingStatus.CANCELLED,
-			BookingStatus.EXPIRED,
-		];
-
-		if (notifyStatuses.includes(newStatus)) {
-			await prisma.adminNotification.create({
-				data: {
-					type: "booking_status_changed",
-					userId: booking.userId,
-					payload: {
-						booking_id: bookingId,
-						new_status: newStatus,
-					} as Prisma.InputJsonValue,
-				},
-			});
-		}
 
 		revalidatePath("/admin/bookings");
 		revalidatePath(`/dashboard/bookings/${bookingId}`);

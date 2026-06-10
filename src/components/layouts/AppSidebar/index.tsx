@@ -1,3 +1,4 @@
+import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { Sidebar, SidebarRail } from "@/components/ui/sidebar";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { AppSidebarClient } from "./AppSidebarClient";
@@ -8,12 +9,15 @@ interface Props {
 }
 
 export async function AppSidebar({ isAdmin, categories }: Props) {
+	const supportInfo = await getSupportInfo();
+
 	return (
-		<Sidebar
-			collapsible="icon"
-			className="border-r-0 bg-background/80 backdrop-blur-2xl"
-		>
-			<AppSidebarClient isAdmin={isAdmin} categories={categories} />
+		<Sidebar collapsible="icon">
+			<AppSidebarClient
+				isAdmin={isAdmin}
+				categories={categories}
+				supportInfo={supportInfo}
+			/>
 			<SidebarRail />
 		</Sidebar>
 	);

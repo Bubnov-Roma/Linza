@@ -162,19 +162,19 @@ model User {
   clientApplication          ClientApplication?
   adminNotifications         AdminNotification[]
   categoryHistory            CategoryHistory[]
-  userDiscounts              UserDiscount[]          @relation("DiscountUser")
-  createdDiscounts           UserDiscount[]          @relation("DiscountCreator")
-  faqCreated                 FaqItem[]               @relation("FaqCreator")
-  faqUpdated                 FaqItem[]               @relation("FaqUpdater")
-  notesReceived              UserAdminNote[]         @relation("NoteTarget")
-  notesWritten               UserAdminNote[]         @relation("NoteAuthor")
-  bannersCreated             Banner[]                @relation("BannerCreator")
-  balanceTransactions        BalanceTransaction[]    @relation("UserBalance")
-  balanceTxAuthored          BalanceTransaction[]    @relation("TxAuthor")
-  bookingAuditLogs           BookingAuditLog[]       @relation("AuditAuthor")
-  bookingLabels              BookingLabel[]          @relation("LabelAuthor")
-  documentGenerationLogs     DocumentGenerationLog[] @relation("DocGenAuthor")
-  documentTemplates          DocumentTemplate[]      @relation("TemplateCreator")
+  userDiscounts              UserDiscount[]            @relation("DiscountUser")
+  createdDiscounts           UserDiscount[]            @relation("DiscountCreator")
+  faqCreated                 FaqItem[]                 @relation("FaqCreator")
+  faqUpdated                 FaqItem[]                 @relation("FaqUpdater")
+  notesReceived              UserAdminNote[]           @relation("NoteTarget")
+  notesWritten               UserAdminNote[]           @relation("NoteAuthor")
+  bannersCreated             Banner[]                  @relation("BannerCreator")
+  balanceTransactions        BalanceTransaction[]      @relation("UserBalance")
+  balanceTxAuthored          BalanceTransaction[]      @relation("TxAuthor")
+  bookingAuditLogs           BookingAuditLog[]         @relation("AuditAuthor")
+  bookingLabels              BookingLabel[]            @relation("LabelAuthor")
+  documentGenerationLogs     DocumentGenerationLog[]   @relation("DocGenAuthor")
+  documentTemplates          DocumentTemplate[]        @relation("TemplateCreator")
   bookingPaymentsAuthored    BookingPayment[]          @relation("PaymentAuthor")
   auditLogsReceived          UserAuditLog[]            @relation("UserAuditTarget")
   auditLogsAuthored          UserAuditLog[]            @relation("UserAuditAuthor")
@@ -185,8 +185,8 @@ model User {
   createdPromoCodes          PromoCode[]               @relation("PromoCreator")
 
   supportThreads             SupportThread[]
-  sentSupportMessages        SupportMessage[]        @relation("SupportMessageAuthor")
-  readSupportMessages        SupportMessageRead[]    @relation("SupportMessageReader")
+  sentSupportMessages        SupportMessage[]          @relation("SupportMessageAuthor")
+  readSupportMessages        SupportMessageRead[]      @relation("SupportMessageReader")
 }
 
 model UserAuditLog {
@@ -219,7 +219,7 @@ model Account {
   id_token          String? 
   session_state     String?
 
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
 }
 
@@ -231,7 +231,7 @@ model InviteToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -262,7 +262,7 @@ model ClientApplication {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Booking {
@@ -282,7 +282,7 @@ model Booking {
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
-  user                  User          @relation(fields: [userId], references: [id])
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookingItems          BookingItem[]
   auditLogs             BookingAuditLog[]
   labels                BookingLabel[]
@@ -320,6 +320,7 @@ model BookingAuditLog {
   booking     Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   author      User?   @relation("AuditAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
+
 model BookingLabel {
   id             String    @id @default(uuid())
   bookingId      String
@@ -356,8 +357,8 @@ model BookingAdminNote {
   note      String   @db.Text
   createdAt DateTime @default(now())
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  author  User?   @relation("BookingNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  author    User?   @relation("BookingNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 }
 // ─── BOOKING PAYMENTS ────────────────────────────────────────────────────────
 
@@ -426,8 +427,8 @@ model EquipmentRelation {
   equipmentId String
   relatedId   String
 
-  equipment Equipment @relation("EquipmentToRelated", fields: [equipmentId], references: [id], onDelete: Cascade)
-  related   Equipment @relation("RelatedToEquipment", fields: [relatedId], references: [id], onDelete: Cascade)
+  equipment   Equipment @relation("EquipmentToRelated", fields: [equipmentId], references: [id], onDelete: Cascade)
+  related     Equipment @relation("RelatedToEquipment", fields: [relatedId], references: [id], onDelete: Cascade)
 
   @@unique([equipmentId, relatedId])
 }
@@ -473,8 +474,8 @@ model EquipmentImageLink {
   imageId     String
   orderIndex  Int    @default(0)
 
-  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  image     Image     @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  image       Image     @relation(fields: [imageId], references: [id], onDelete: Cascade)
 
   @@unique([equipmentId, imageId])
 }
@@ -495,8 +496,8 @@ model CartItem {
   cancelledAt       DateTime?
   changeLog         Json      @default("[]")
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  equipment         Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   @@unique([userId, equipmentId])
 }
 
@@ -506,32 +507,33 @@ model Favorite {
   equipmentId String   
   createdAt   DateTime @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
 }
 
 model EquipmentSet {
-  id              String   @id @default(uuid())
-  userId          String
-  name            String
-  description     String?  @db.Text
-  items           Json     @default("[]")
+  id               String   @id @default(uuid())
+  userId           String
+  name             String
+  description      String?  @db.Text
+  items            Json     @default("[]")
   totalPricePerDay Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AdminNotification {
-  id        String   @id @default(uuid())
-  type      String
-  userId    String?
-  payload   Json     @default("{}")
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  type       String   
+  userId     String?  // клиент, который совершил действие
+  entityId   String?  // id заказа / треда / анкеты / faqQuestion
+  entityType String?  // "booking" | "studioBooking" | "application" | "supportThread" | "faqQuestion" | "user"
+  payload    Json     @default("{}")
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model CategoryHistory {
@@ -543,7 +545,7 @@ model CategoryHistory {
   changes    Json?
   changedAt  DateTime           @default(now())
 
-  user User? @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+  user       User? @relation(fields: [changedBy], references: [id], onDelete: SetNull)
 }
 
 model FaqItem {
@@ -559,8 +561,8 @@ model FaqItem {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  author  User? @relation("FaqCreator", fields: [createdBy], references: [id])
-  updater User? @relation("FaqUpdater", fields: [updatedBy], references: [id])
+  author  User? @relation("FaqCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  updater User? @relation("FaqUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
 }
 
 model FaqQuestion {
@@ -595,8 +597,8 @@ model Banner {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  creator User? @relation("BannerCreator", fields: [createdBy], references: [id], onDelete: SetNull)
-  images BannerImage[]
+  creator    User? @relation("BannerCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  images     BannerImage[]
 }
 
 model BannerImage {
@@ -607,7 +609,7 @@ model BannerImage {
   orderIndex Int      @default(0)
   createdAt  DateTime @default(now())
 
-  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  banner     Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
 }
 
 
@@ -635,8 +637,8 @@ model UserDiscount {
   createdBy   String?
   createdAt   DateTime     @default(now())
 
-  user    User  @relation("DiscountUser", fields: [userId], references: [id], onDelete: Cascade)
-  creator User? @relation("DiscountCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  user        User  @relation("DiscountUser", fields: [userId], references: [id], onDelete: Cascade)
+  creator     User? @relation("DiscountCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 }
 
 model DocumentTemplate {
@@ -727,12 +729,12 @@ model StudioBooking {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  user    User         @relation(fields: [userId], references: [id])
-  tariff  StudioTariff @relation(fields: [tariffId], references: [id], onDelete: Restrict)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tariff             StudioTariff @relation(fields: [tariffId], references: [id], onDelete: Restrict)
 
-  items       StudioBookingItem[]
-  auditLogs   StudioBookingAuditLog[]
-  payments    StudioBookingPayment[]
+  items              StudioBookingItem[]
+  auditLogs          StudioBookingAuditLog[]
+  payments           StudioBookingPayment[]
 }
 
 // Дополнительная техника в заказе студии

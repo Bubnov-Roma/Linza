@@ -18,7 +18,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
-	Label,
 	Textarea,
 } from "@/components/ui";
 
@@ -122,16 +121,16 @@ export function SupportModal({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-md" showCloseButton={false}>
 				<DialogHeader>
 					<DialogTitle className="flex align-start pb-4">
 						{isNewThread
-							? "Новый вопрос в поддержку"
+							? "Новое сообщение в поддержку"
 							: `Ответ в теме: ${existingThread.subject}`}
 					</DialogTitle>
 					<DialogDescription className="hidden">
 						{isNewThread
-							? "Отправьте ваш вопрос."
+							? "Отправьте ваше сообщение."
 							: "Продолжите диалог с поддержкой"}
 					</DialogDescription>
 				</DialogHeader>
@@ -141,7 +140,7 @@ export function SupportModal({
 						<>
 							{/* Тема */}
 							<Input
-								placeholder="Тема вопроса*"
+								placeholder="Тема сообщения*"
 								value={newSubject}
 								onChange={(e) => setNewSubject(e.target.value)}
 								disabled={isPending}
@@ -150,7 +149,7 @@ export function SupportModal({
 
 							{/* Сообщение */}
 							<Textarea
-								placeholder="Ваше сообщение*"
+								placeholder="Текст сообщения*"
 								value={newMessage}
 								onChange={(e) => setNewMessage(e.target.value)}
 								disabled={isPending}
@@ -179,23 +178,17 @@ export function SupportModal({
 
 					{!isNewThread && (
 						<>
-							<div className="space-y-2">
-								<Label className="text-xs font-semibold">Тема</Label>
-								<div className="px-3 py-2 rounded-lg bg-foreground/5 text-sm text-muted-foreground border border-input">
-									{existingThread.subject}
-								</div>
+							<div className="px-3 py-2 rounded-lg bg-foreground/5 text-sm text-muted-foreground border border-input">
+								{existingThread.subject}
 							</div>
-							<div className="space-y-2">
-								<Label className="text-xs font-semibold">Ваш ответ</Label>
-								<Textarea
-									placeholder="Напишите сообщение..."
-									value={replyMessage}
-									onChange={(e) => setReplyMessage(e.target.value)}
-									disabled={isPending}
-									rows={3}
-									className="resize-none text-sm"
-								/>
-							</div>
+							<Textarea
+								placeholder="Ваш ответ"
+								value={replyMessage}
+								onChange={(e) => setReplyMessage(e.target.value)}
+								disabled={isPending}
+								rows={3}
+								className="resize-none text-sm"
+							/>
 						</>
 					)}
 

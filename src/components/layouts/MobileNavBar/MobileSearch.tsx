@@ -4,6 +4,7 @@ import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { SearchFilters } from "@/components/core/search/SearchFilters";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
+import { Button } from "@/components/ui";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useSearchState } from "@/hooks";
 import { useSearchHistory } from "@/hooks/use-search-history";
@@ -47,25 +48,25 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 			<div
 				aria-hidden={!isOpen}
 				className={cn(
-					"fixed inset-x-0 top-0 z-45 flex flex-col bg-background/80 backdrop-blur-2xl",
+					"fixed inset-x-0 top-0 bottom-0 z-55 flex flex-col bg-background/60 backdrop-blur-2xl",
 					"transition-[clip-path,opacity] duration-300 ease-[cubic-bezier(0.34,1.06,0.64,1)]",
 					isOpen
 						? "pointer-events-auto opacity-100"
 						: "pointer-events-none opacity-0"
 				)}
 				style={{
-					bottom: "calc(3.5rem + env(safe-area-inset-bottom))",
 					clipPath: isOpen
 						? "inset(0 0 0 0 round 0px)"
 						: "inset(0 0 100% 0 round 0px)",
 				}}
 			>
-				<div className="shrink-0 flex flex-col w-full backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-muted-foreground/10">
-					<div className="mx-3 mb-2">
+				{/* Хедер поиска */}
+				<div className="shrink-0 flex flex-col w-full backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-muted-foreground/10 border-b border-foreground/5">
+					<div className="mx-3 mb-2 flex items-center gap-2">
+						{/* Поле ввода */}
 						<div
 							className={cn(
-								"flex items-center gap-3 bg-foreground/5 rounded-2xl px-4 h-12",
-								"bg-white dark:bg-black"
+								"flex-1 flex items-center gap-3 bg-white dark:bg-black rounded-2xl px-4 h-12 shadow-xs transition-all"
 							)}
 						>
 							<MagnifyingGlassIcon
@@ -77,9 +78,7 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 								type="text"
 								inputMode="search"
 								style={{ fontSize: "16px" }}
-								className={cn(
-									"flex-1 bg-transparent border-none focus:outline-none placeholder:text-muted-foreground text-foreground w-0 min-w-0"
-								)}
+								className="flex-1 bg-transparent border-none focus:outline-none placeholder:text-muted-foreground text-foreground w-0 min-w-0"
 								placeholder="Поиск техники..."
 								value={state.query}
 								onChange={(e) => state.setQuery(e.target.value)}
@@ -88,15 +87,27 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 								<button
 									type="button"
 									onClick={() => state.setQuery("")}
-									className="p-1 bg-foreground/5 rounded-full shrink-0"
+									className="p-1 bg-foreground/5 rounded-full shrink-0 active:scale-90 transition-transform"
 								>
 									<XIcon size={13} className="text-muted-foreground" />
 								</button>
 							)}
 						</div>
+
+						{/* Кнопка закрытия всего поиска (Поверх MobileSearch) */}
+						<Button
+							size="icon"
+							variant="social"
+							onClick={handleClose}
+							className="h-12 w-12 transition-all shrink-0"
+						>
+							<XIcon className="shrink-0" size={22} weight="bold" />
+						</Button>
 					</div>
+
+					{/* Фильтры */}
 					{state.query.trim().length > 1 && (
-						<div className="px-1 py-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150 bg-muted-foreground/13 drop-shadow-xs shadow-muted-foreground snap-center">
+						<div className="px-1 py-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150 bg-muted-foreground/13 snap-center">
 							<SearchFilters
 								categories={categories}
 								category={state.category}
@@ -109,6 +120,8 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 						</div>
 					)}
 				</div>
+
+				{/* Результаты поиска */}
 				<SearchPanel
 					state={state}
 					categories={categories}

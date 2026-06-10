@@ -39,21 +39,34 @@ export function encrypt(plaintext: string): string {
 export function decrypt(ciphertext: string): string {
 	if (!ciphertext) return "";
 	const parts = ciphertext.split(":");
-	// Если формат не совпадает — скорее всего старые незашифрованные данные, возвращаем как есть
+
+	// Если формат не совпадает — возвращаем как есть
 	if (parts.length !== 3) return ciphertext;
+
 	try {
 		const key = getKey();
 		const [ivHex, authTagHex, encryptedHex] = parts;
 		if (!ivHex || !authTagHex || !encryptedHex)
 			return "*** ОШИБКА РАСШИФРОВКИ ***";
+
 		const iv = Buffer.from(ivHex, "hex");
 		const authTag = Buffer.from(authTagHex, "hex");
 		const encrypted = Buffer.from(encryptedHex, "hex");
 		const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
 		decipher.setAuthTag(authTag);
-		return decipher.update(encrypted).toString("utf8") + decipher.final("utf8");
+
+		const decryptedText =
+			decipher.update(encrypted).toString("utf8") + decipher.final("utf8");
+
+		// Защита: Если результат расшифровки всё ещё выглядит как зашифрованная строка
+		// (формат iv:authTag:ciphertext), значит данные были зашифрованы дважды. Расшифровываем еще раз!
+		if (/^[a-f0-9]{24}:[a-f0-9]{32}:[a-f0-9]+$/i.test(decryptedText)) {
+			return decrypt(decryptedText);
+		}
+
+		return decryptedText;
 	} catch {
-		// Если ключ не тот или данные повреждены — вернуть маску
+		// Если ключ не тот или данные повреждены
 		return "*** ОШИБКА РАСШИФРОВКИ ***";
 	}
 }

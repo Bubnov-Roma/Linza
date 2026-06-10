@@ -1,6 +1,7 @@
 export interface SupportInfo {
 	phone: string;
 	telegram: string;
+	vk: string;
 	address: string;
 	email: string;
 }
@@ -11,3 +12,5 @@ export const SUPPORT_ADDRESS_DEFAULT = "Самара, ул. Чапаевская
 export const DEFAULT_PRIVACY = "Здесь будет политика конфиденциальности...";
 export const DEFAULT_TERMS = "Здесь будет договор оферты...";
 export const SUPPORT_EMAIL_DEFAULT = "support@linzarental.ru";
+export const SUPPORT_VK_DEFAULT =
+	"https://vk.com/im/convo/-195519707?entrypoint=community_page&tab=all";

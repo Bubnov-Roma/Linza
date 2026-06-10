@@ -15,13 +15,15 @@ import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
 import {
 	AdminNotificationsPoller,
-	SupportModalTrigger,
+	ClientChatsBridge,
 } from "@/components/shared";
 import CookieBanner from "@/components/shared/CookieBanner";
 import { YandexMetrika } from "@/components/shared/YandexMetrika";
 import { prisma } from "@/lib/prisma";
 import type { ClientFormValues } from "@/schemas";
 import type { ClientApplication } from "@/types";
+import { decryptApplicationDataForClient } from "@/utils";
+import { getClientDisplayData } from "@/utils/client-data.utils";
 
 export const viewport = {
 	themeColor: [
@@ -92,6 +94,7 @@ export default async function RootLayout({
 	let pendingBookings = 0;
 	let pendingApplications = 0;
 	let pendingStudio = 0;
+	let pendingChats = 0;
 
 	const typedInitialApp: ClientApplication | null = initialApp
 		? {
@@ -100,18 +103,61 @@ export default async function RootLayout({
 			}
 		: null;
 
+	const decryptedInitialApp: ClientApplication | null = typedInitialApp
+		? {
+				...typedInitialApp,
+				applicationData:
+					decryptApplicationDataForClient(typedInitialApp.applicationData) ??
+					typedInitialApp.applicationData,
+			}
+		: null;
+
+	const appDisplayData = decryptedInitialApp
+		? getClientDisplayData(decryptedInitialApp.applicationData)
+		: null;
+
+	const displayName =
+		user?.nickname || // никнейм из JWT
+		appDisplayData?.name || // ФИО из анкеты
+		user?.name || // имя из провайдера (Google/Yandex)
+		user?.email?.split("@")[0] || // email-prefix как запасной вариант
+		null;
+
 	const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
 	if (isAdmin) {
-		const [bookingCount, appCount, studioCount] = await Promise.all([
-			prisma.booking.count({ where: { status: "PENDING_REVIEW" } }),
-			prisma.clientApplication.count({ where: { status: "PENDING" } }),
-			prisma.studioBooking.count({ where: { status: "PENDING_REVIEW" } }), // Пример
-		]);
+		const [bookingCount, appCount, studioCount, chatsCount] = await Promise.all(
+			[
+				prisma.booking.count({ where: { status: "PENDING_REVIEW" } }),
+				prisma.clientApplication.count({ where: { status: "PENDING" } }),
+				prisma.studioBooking.count({ where: { status: "PENDING_REVIEW" } }),
+				prisma.supportThread.count({ where: { status: "WAITING_FOR_ADMIN" } }),
+			]
+		);
 		pendingBookings = bookingCount;
 		pendingApplications = appCount;
 		pendingStudio = studioCount;
+		pendingChats = chatsCount;
 	}
+
+	let clientUnreadChats = 0;
+
+	if (user?.id && !isAdmin) {
+		const threads = await prisma.supportThread.findMany({
+			where: { userId: user.id },
+			select: {
+				messages: {
+					orderBy: { createdAt: "desc" },
+					take: 1,
+					select: { isAdmin: true },
+				},
+			},
+		});
+		clientUnreadChats = threads.filter(
+			(t) => t.messages[0]?.isAdmin === true
+		).length;
+	}
+
 	return (
 		<html lang="ru" suppressHydrationWarning>
 			<head>
@@ -128,11 +174,16 @@ export default async function RootLayout({
 							initialBookings={pendingBookings}
 							initialApps={pendingApplications}
 							initialStudio={pendingStudio}
+							initialChats={pendingChats}
 						/>
+					)}
+					{!isAdmin && user?.id && (
+						<ClientChatsBridge initialCount={clientUnreadChats} />
 					)}
 					<ApplicationInitializer
 						userId={session?.user?.id ?? null}
-						initialData={typedInitialApp}
+						initialData={decryptedInitialApp}
+						displayName={displayName}
 					>
 						<AppSidebar isAdmin={isAdmin} categories={categories} />
 						<SidebarInset className="flex flex-col min-h-screen">
@@ -143,8 +194,11 @@ export default async function RootLayout({
 							/>
 							<main className="flex-1 pt-16">{children}</main>
 							<Footer support={support} />
-							<SupportModalTrigger />
-							<MobileNavBar categories={categories} isAdmin={isAdmin} />
+							<MobileNavBar
+								categories={categories}
+								isAdmin={isAdmin}
+								support={support}
+							/>
 						</SidebarInset>
 					</ApplicationInitializer>
 					<CookieBanner />

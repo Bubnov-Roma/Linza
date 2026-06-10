@@ -41,7 +41,7 @@ export function CategoryFlyout({
 					}}
 					transition={{ type: "spring", stiffness: 400, damping: 30 }}
 					className={cn(
-						"fixed left-20 top-0 bottom-0 w-72 z-90 bg-sidebar border-r border-foreground/8 flex flex-col shadow-md shadow-foreground/10 space-y-6"
+						"fixed left-20 -ml-px top-0 bottom-0 w-72 z-10 border-r border-foreground/8 flex flex-col shadow-xl shadow-foreground/10 space-y-6"
 					)}
 				>
 					<Link
@@ -56,18 +56,29 @@ export function CategoryFlyout({
 						<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/10 group-hover/header:bg-primary/60">
 							<Icon
 								weight="duotone"
-								className="text-foreground group-hover/"
+								className="text-foreground group-hover/header:text-primary-foreground transition-colors"
 								size={24}
 								strokeWidth={inCat ? 2.5 : 2}
 							/>
 						</div>
 					</Link>
+
 					<div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-6 space-y-0.5">
+						{/* Добавляем "Все позиции" наверх всплывающего списка */}
+						{category.subcategories.length > 0 && (
+							<M3NavItem
+								href={`/equipment?category=${category.slug}`}
+								isActive={inCat && !currentSubcategory}
+								label="Все позиции"
+							/>
+						)}
+
+						{/* Подкатегории */}
 						{category.subcategories.map((sub) => (
 							<M3NavItem
 								key={sub.id}
 								href={`/equipment?category=${category.slug}&subcategory=${sub.slug}`}
-								isActive={currentSubcategory === sub.slug}
+								isActive={currentSubcategory === sub.slug && inCat}
 								label={sub.name}
 							/>
 						))}

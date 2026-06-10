@@ -13,6 +13,12 @@ export type ApplicationStatus =
 	| "REJECTED"
 	| "BLOCKED";
 
+export const ENCRYPTED_PATHS = [
+	"applicationData.passport.seriesAndNumber",
+	"applicationData.passport.issuedBy",
+	"applicationData.personalData.inn",
+	"applicationData.personalData.snils",
+] as const;
 export interface UserApplication {
 	id: string;
 	status: ApplicationStatus;

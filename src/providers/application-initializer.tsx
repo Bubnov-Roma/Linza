@@ -6,10 +6,12 @@ import type { ClientApplication } from "@/types";
 
 export function ApplicationInitializer({
 	initialData,
+	displayName,
 	children,
 }: {
 	userId: string | null;
 	initialData: ClientApplication | null;
+	displayName: string | null;
 	children: React.ReactNode;
 }) {
 	const { setInitialState } = useApplicationStore();
@@ -18,7 +20,8 @@ export function ApplicationInitializer({
 	if (!isInitialized.current) {
 		setInitialState(
 			initialData?.status || "NO_APPLICATION",
-			initialData?.applicationData || null
+			initialData?.applicationData || null,
+			displayName
 		);
 		isInitialized.current = true;
 	}

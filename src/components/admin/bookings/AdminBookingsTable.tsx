@@ -7,7 +7,6 @@ import {
 	DotsThreeVerticalIcon,
 	EyeIcon,
 	FunnelIcon,
-	MagnifyingGlassIcon,
 	PackageIcon,
 	PlusIcon,
 	ProhibitIcon,
@@ -24,6 +23,7 @@ import {
 	adminQuickPayBookingAction,
 	getPaginatedAdminBookingsAction,
 } from "@/actions/admin-booking-actions";
+import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { BookingDetailSheet } from "@/components/admin/bookings/BookingDetailSheet";
 import { CreateBookingSheet } from "@/components/admin/bookings/create/CreateBookingSheet";
 import {
@@ -39,6 +39,7 @@ import {
 	HoverCard,
 	HoverCardContent,
 	HoverCardTrigger,
+	InlineSearchInput,
 	Input,
 	Select,
 	SelectContent,
@@ -537,7 +538,7 @@ export default function AdminBookingsTable({
 	return (
 		<>
 			{/* ── Header ── */}
-			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 py-4 flex items-start justify-between gap-4">
 				<div className="flex items-center gap-2.5">
 					<PackageIcon size={20} weight="duotone" />
 					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
@@ -551,7 +552,7 @@ export default function AdminBookingsTable({
 				</div>
 
 				<Button
-					variant="ghost"
+					aria-label="Добавить новый заказ"
 					size="sm"
 					className="h-9 gap-2 font-bold"
 					onClick={() => setCreateOpen(true)}
@@ -559,29 +560,23 @@ export default function AdminBookingsTable({
 					<PlusIcon size={14} weight="bold" />
 				</Button>
 			</div>
-			<div className="p-3">
+			<div className="space-y-4 relative p-2">
 				{/* Controls */}
 				<Card className="p-2">
 					<CardContent className="space-y-3 p-0">
 						<div className="flex flex-col sm:flex-row gap-3">
 							{/* Search */}
-							<div className="relative flex-1">
-								<MagnifyingGlassIcon className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-								<Input
-									placeholder="Клиент, техника, ID, метка..."
-									className="pl-9 h-9"
+							<div className="flex-1 w-full sm:max-w-sm">
+								<InlineSearchInput
 									value={search}
-									onChange={(e) => setSearch(e.target.value)}
+									className="h-9"
+									onChange={setSearch}
+									placeholder="Клиент, техника, ID, метка..."
+									fetchSuggestion={async (q) => {
+										const results = await getAutocompleteAction("bookings", q);
+										return results[0] || null;
+									}}
 								/>
-								{search && (
-									<button
-										type="button"
-										onClick={() => setSearch("")}
-										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-									>
-										<XIcon size={12} />
-									</button>
-								)}
 							</div>
 
 							{/* Status filter */}
@@ -732,7 +727,7 @@ export default function AdminBookingsTable({
 				</Card>
 
 				{/* Summary strip */}
-				<div className="flex items-center gap-4 text-sm text-muted-foreground p-2">
+				<div className="flex items-center gap-4 text-sm text-muted-foreground">
 					<span>
 						Найдено: <strong className="text-foreground">{totalCount}</strong>
 					</span>
@@ -748,7 +743,7 @@ export default function AdminBookingsTable({
 				</div>
 
 				{/* Table */}
-				<Card className="overflow-hidden relative">
+				<Card className="overflow-hidden relative rounded-xl">
 					{/* NpLoader (Top Loading Bar) */}
 					<div
 						className={cn(

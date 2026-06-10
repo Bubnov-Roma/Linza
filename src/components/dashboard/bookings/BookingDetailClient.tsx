@@ -1,27 +1,24 @@
 "use client";
 
-import { TagChevronIcon } from "@phosphor-icons/react";
+import {
+	CalendarIcon,
+	CaretDownIcon,
+	CheckIcon,
+	LayoutIcon,
+	ListBulletsIcon,
+	PackageIcon,
+	PencilIcon,
+	TagChevronIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import { differenceInHours } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-	ArrowLeft,
-	CalendarClock,
-	CalendarDays,
-	Check,
-	ChevronDown,
-	Clock,
-	LayoutDashboard,
-	Package,
-	Pencil,
-	Table,
-	X,
-} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { CancelBookingDialog } from "@/components/dashboard/bookings/CancelBookingDialog";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
-import { ClientTime } from "@/components/shared";
+import { BackButton, ClientTime } from "@/components/shared";
 import { SupportBlock } from "@/components/shared/SupportBlock";
 import {
 	AlertDialog,
@@ -85,12 +82,7 @@ export function BookingDetailClient({
 			{/* ── Header ── */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 				<div className="flex items-center gap-4">
-					<Link
-						href="/dashboard/bookings"
-						className="w-10 h-10 rounded-xl border border-foreground/10 flex items-center justify-center hover:bg-foreground/5 transition-all shrink-0"
-					>
-						<ArrowLeft size={18} />
-					</Link>
+					<BackButton />
 					<div>
 						<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
 							Детализация заказа
@@ -121,9 +113,9 @@ export function BookingDetailClient({
 									)}
 								>
 									{isCancelled ? (
-										<X size={20} />
+										<XIcon size={20} />
 									) : (
-										<Clock size={20} className="animate-pulse" />
+										<CheckIcon size={20} className="animate-pulse" />
 									)}
 								</div>
 								<div>
@@ -134,7 +126,7 @@ export function BookingDetailClient({
 									</p>
 								</div>
 							</div>
-							<ChevronDown
+							<CaretDownIcon
 								className={cn(
 									"transition-transform duration-300",
 									isStatusExpanded && "rotate-180"
@@ -177,7 +169,7 @@ export function BookingDetailClient({
 															)}
 														>
 															{isDone ? (
-																<Check size={14} strokeWidth={3} />
+																<CheckIcon size={14} strokeWidth={3} />
 															) : (
 																<div className="w-1.5 h-1.5 rounded-full bg-current" />
 															)}
@@ -213,7 +205,7 @@ export function BookingDetailClient({
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div className="space-y-1">
 								<div className="flex items-center gap-2 text-muted-foreground mb-2">
-									<CalendarDays size={14} />
+									<CalendarIcon size={14} />
 									<span className="text-xs uppercase font-bold">Выдача</span>
 								</div>
 								<p className="text-lg font-black">
@@ -222,7 +214,7 @@ export function BookingDetailClient({
 							</div>
 							<div className="space-y-1">
 								<div className="flex items-center gap-2 text-muted-foreground mb-2">
-									<CalendarClock size={14} />
+									<CalendarIcon size={14} />
 									<span className="text-xs uppercase font-bold">Возврат</span>
 								</div>
 								<p className="text-lg font-black">
@@ -248,12 +240,12 @@ export function BookingDetailClient({
 									className="w-full h-14 rounded-2xl border-foreground/10 justify-between px-6"
 								>
 									<div className="flex items-center gap-3">
-										<Pencil size={16} />
+										<PencilIcon size={16} />
 										<span className="font-bold uppercase tracking-tight text-xs">
 											Редактирование заказа
 										</span>
 									</div>
-									<ChevronDown
+									<CaretDownIcon
 										className={cn(
 											"transition-transform",
 											showEditMenu && "rotate-180"
@@ -274,15 +266,15 @@ export function BookingDetailClient({
 												href={`/dashboard/bookings/${booking.id}/edit-dates`}
 												className="flex items-center gap-3 p-4 text-sm font-medium hover:bg-foreground/5 rounded-xl transition-colors"
 											>
-												<CalendarClock size={16} className="opacity-40" />{" "}
+												<CalendarIcon size={16} className="opacity-40" />{" "}
 												Изменить даты
 											</Link>
 											<Link
 												href={`/dashboard/bookings/${booking.id}/edit-items`}
 												className="flex items-center gap-3 p-4 text-sm font-medium hover:bg-foreground/5 rounded-xl transition-colors"
 											>
-												<Package size={16} className="opacity-40" /> Изменить
-												технику
+												<PackageIcon size={16} className="opacity-40" />{" "}
+												Изменить технику
 											</Link>
 											<button
 												type="button"
@@ -292,7 +284,7 @@ export function BookingDetailClient({
 												}}
 												className="w-full flex items-center gap-3 p-4 text-sm font-medium text-destructive hover:bg-destructive/5 rounded-xl transition-colors border-t border-foreground/5"
 											>
-												<X size={16} /> Отменить заказ
+												<XIcon size={16} /> Отменить заказ
 											</button>
 										</motion.div>
 									)}
@@ -326,7 +318,7 @@ export function BookingDetailClient({
 									{formatPlural(booking.bookingItems.length, "equipment")})
 								</p>
 							</div>
-							<ChevronDown
+							<CaretDownIcon
 								className={cn(
 									"transition-transform duration-300",
 									isStatusExpanded && "rotate-180"
@@ -364,7 +356,7 @@ export function BookingDetailClient({
 															/>
 														) : (
 															<div className="w-full h-full flex items-center justify-center">
-																<Package
+																<PackageIcon
 																	size={14}
 																	className="text-muted-foreground/30"
 																/>
@@ -447,7 +439,7 @@ export function BookingDetailClient({
 				<AlertDialogContent className="bg-background/40 backdrop-blur-xl">
 					<AlertDialogHeader>
 						<div className="flex items-center gap-3 mb-1">
-							<Check
+							<CheckIcon
 								size={20}
 								className="bg-emerald-400 p-1 rounded-full text-white"
 							/>
@@ -465,7 +457,7 @@ export function BookingDetailClient({
 								className="flex items-center gap-2 flex-1"
 							>
 								<Link href="/dashboard">
-									<LayoutDashboard size={14} />B дашборд
+									<LayoutIcon size={14} />B кабинет
 								</Link>
 							</Button>
 						</AlertDialogAction>
@@ -476,7 +468,7 @@ export function BookingDetailClient({
 								className="flex items-center gap-2 flex-1"
 							>
 								<Link href="/dashboard/bookings">
-									<Table size={14} />К заказам
+									<ListBulletsIcon size={14} />К заказам
 								</Link>
 							</Button>
 						</AlertDialogCancel>

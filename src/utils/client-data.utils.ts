@@ -1,5 +1,3 @@
-"use client";
-
 import type { ClientFormValues, IndividualClient } from "@/schemas";
 
 function isIndividualClient(

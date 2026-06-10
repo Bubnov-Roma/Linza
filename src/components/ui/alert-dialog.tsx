@@ -54,7 +54,7 @@ function AlertDialogContent({
 	return (
 		<AlertDialogPortal>
 			<AlertDialogOverlay />
-			<div className="fixed inset-0 z-71 pointer-events-none flex items-center justify-center">
+			<div className="fixed inset-0 z-80 pointer-events-none flex items-center justify-center">
 				<motion.div
 					initial={{ opacity: 0, scale: 0.95, y: 8 }}
 					animate={{ opacity: 1, scale: 1, y: 0 }}

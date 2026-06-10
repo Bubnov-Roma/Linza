@@ -14,6 +14,7 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { useApplicationStore } from "@/store";
 
 interface UserMenuProps {
 	isAdmin: boolean;
@@ -21,20 +22,23 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
-	const { user, profile } = useAuth();
+	const { user } = useAuth();
 	const router = useRouter();
 	const [isOpen, setIsOpen] = useState(false);
-
-	// Используем состояние сайдбара для десктопной версии
 	const { state, isMobile } = useSidebar();
 	const isCollapsed = state === "collapsed" && !isMobile;
 
-	const avatarUrl = user?.user_metadata?.avatar_url;
+	const storedDisplayName = useApplicationStore((s) => s.displayName);
+	const avatarUrl = user?.image;
 	const name =
-		profile?.name ||
-		user?.user_metadata?.name ||
+		storedDisplayName ||
+		user?.nickname ||
+		user?.name ||
 		user?.email?.split("@")[0] ||
-		"Гость";
+		"—";
+
+	const nameInitial =
+		name !== "—" ? name : user?.email?.charAt(0).toUpperCase() || "?";
 
 	// ─── МОБИЛЬНЫЙ ВАРИАНТ (Нижний Nav Bar) ───
 	if (variant === "mobile") {
@@ -77,14 +81,14 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 					{avatarUrl ? (
 						<Image
 							src={avatarUrl}
-							alt={name}
+							alt={nameInitial}
 							width={36}
 							height={36}
 							className="object-cover w-full h-full"
 						/>
 					) : (
 						<div className="flex h-full w-full items-center justify-center bg-primary/30 text-foreground text-sm font-bold">
-							{name.charAt(0).toUpperCase()}
+							{nameInitial.charAt(0).toUpperCase()}
 						</div>
 					)}
 					<span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
@@ -127,7 +131,7 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 				<UserMenuDropdown
 					align="end"
 					side={isCollapsed ? "right" : "bottom"}
-					sideOffset={8}
+					sideOffset={6}
 					isAdmin={isAdmin}
 				>
 					<SidebarMenuButton
@@ -139,14 +143,14 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 							{avatarUrl ? (
 								<Image
 									src={avatarUrl}
-									alt={name}
+									alt={nameInitial}
 									width={32}
 									height={32}
 									className="object-cover w-full h-full"
 								/>
 							) : (
 								<div className="flex h-full w-full items-center justify-center bg-primary/30 text-foreground text-sm font-bold">
-									{name.charAt(0).toUpperCase()}
+									{nameInitial.charAt(0).toUpperCase()}
 								</div>
 							)}
 						</div>
@@ -154,7 +158,7 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 						{!isCollapsed && (
 							<>
 								<div className="grid flex-1 text-left text-sm leading-tight ml-2">
-									<span className="truncate font-semibold">{name}</span>
+									<span className="truncate font-semibold">{nameInitial}</span>
 									<span className="truncate text-xs text-muted-foreground">
 										{user.email}
 									</span>

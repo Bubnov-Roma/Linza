@@ -237,7 +237,7 @@ export function AdminNewThreadModal({
 					<div className="space-y-2">
 						<Label className="text-xs font-semibold">Тема</Label>
 						<Input
-							placeholder="Тема обращения..."
+							placeholder="Тема сообщения"
 							value={subject}
 							onChange={(e) => setSubject(e.target.value)}
 							disabled={isPending}

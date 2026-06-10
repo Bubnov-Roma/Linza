@@ -43,7 +43,7 @@
   --brand-soft-contrast: oklch(0.3144 0.0656 255.42);
   --brand-glow:  var(--brand-color);
   --brand-bg-soft: oklch(0.6 0.22 264 / 0.04);
-  --secondary-color: oklch(0.9418 0.0201 84.59);
+  --secondary-color: oklch(91.018% 0.00572 84.456);
   --secondary-foreground: oklch(0.15 0.04 45);  /* dark brown for text on secondary bg */
   --destructive: oklch(60.951% 0.18179 33.143);
   --warning: oklch(61.775% 0.2387 27.968 / 0.699);
@@ -73,7 +73,7 @@
   --bg-card: oklch(28.04% 0.01189 264.39 / 0.892);
   --border-soft: oklch(1 0 0 / 0.5);
   --brand-bg-soft: oklch(0.75 0.15 250 / 0.08);
-  --secondary-color: oklch(0.3327 0.0174 93.27);
+  --secondary-color: oklch(40.051% 0.02133 96.475);
   /* Dark theme inputs */
   --input-bg: oklch(1 0 0 / 0.07); 
   --input-shadow: 0 1px 0 oklch(1 0 0 / 0.06);

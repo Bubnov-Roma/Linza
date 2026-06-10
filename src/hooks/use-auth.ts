@@ -17,40 +17,24 @@ interface UserProfile {
 export function useAuth() {
 	const { data: session, status, update } = useSession();
 	const isLoading = status === "loading";
-	const user = session?.user;
+	const sessionUser = session?.user;
 
-	const profile: UserProfile | null = user
+	const user: UserProfile | null = sessionUser
 		? {
-				id: user.id || "",
-				name: user.name,
-				email: user.email,
-				image: user.image,
-				role: user.role || "USER",
-				nickname: user.nickname ?? "",
-				companyName: user.companyName ?? "",
-				phone: user.phone ?? "",
-				extraPhone: user.extraPhone ?? "",
+				id: sessionUser.id || "",
+				name: sessionUser.name,
+				email: sessionUser.email,
+				image: sessionUser.image,
+				role: sessionUser.role || "USER",
+				nickname: sessionUser.nickname ?? "",
+				companyName: sessionUser.companyName ?? "",
+				phone: sessionUser.phone ?? "",
+				extraPhone: sessionUser.extraPhone ?? "",
 			}
 		: null;
 
 	return {
-		user: user
-			? {
-					id: user.id || "",
-					email: user.email,
-					name: user.name,
-					image: user.image,
-					user_metadata: {
-						name: user.name,
-						avatar_url: user.image,
-						nickname: user.nickname,
-						company_name: user.companyName,
-						phone: user.phone,
-						extra_phone: user.extraPhone,
-					},
-				}
-			: null,
-		profile,
+		user,
 		isLoading,
 		isAuthenticated: status === "authenticated",
 		refreshProfile: update,

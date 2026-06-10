@@ -2,92 +2,76 @@ import Link from "next/link";
 import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCarousel } from "@/components/layouts/home/events-banner/BannerCarousel";
 import { Button } from "@/components/ui";
-import { cn } from "@/lib/utils";
 
 interface StudioSectionProps {
 	banners: Banner[];
+	isAdmin: boolean;
 }
 
-const STUDIO_FEATURES = [
-	"Циклорама · Хромакей · Импульсный и постоянный свет",
-	"Готовые сетапы для подкастов и стримов",
-	"Воркшопы, мастер-классы и открытые съёмки",
-];
-
-export const StudioSection = async ({ banners }: StudioSectionProps) => {
-	const hasBanners = banners.length > 0;
-
+export const StudioSection = async ({
+	banners,
+	isAdmin,
+}: StudioSectionProps) => {
 	return (
-		<section className="container mx-auto px-2 md:px-4">
-			<div className="flex items-baseline justify-between px-2 md:px-0">
-				<h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase italic tracking-tight select-none">
-					Студия
-				</h2>
-				<Button
-					asChild
-					variant="link"
-					size="xl"
-					className="text-sm text-foreground/80 px-2 uppercase font-black italic"
-				>
-					<Link href="/studio">Забронировать зал</Link>
-				</Button>
-			</div>
-			<div
-				className={cn(
-					"relative overflow-hidden rounded-2xl bg-foreground not-first:text-background text-background",
-					hasBanners ? "grid grid-cols-1 lg:grid-cols-2" : "flex flex-col"
-				)}
-			>
-				<div className="absolute inset-0 bg-linear-to-t md:bg-linear-to-l from-background/60  to-transparent z-0" />
-				{/* ── Левая колонка: текст ── */}
-				<div
-					className={cn(
-						"flex flex-col justify-between gap-6 px-6 sm:px-10 py-8 sm:py-10 rounded-2xl",
-						!hasBanners && "md:flex-row"
-					)}
-				>
-					<div className="space-y-4">
-						<p className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-50 italic">
-							Студия Linza · Самара
-						</p>
-						<h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase italic tracking-tight leading-tight select-none">
-							Включайся в процесс
+		<section className="container mx-auto pt-4 md:pt-10 px-4">
+			<div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_540px] gap-8 items-center bg-muted/30 dark:bg-muted/5 rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface">
+				{/* Левая колонка — Текст и УТП студии */}
+				<div className="space-y-6 pt-1 md:pr-4">
+					<div className="space-y-4 xl:space-y-10">
+						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
+							Пространство для ваших съёмок в Самаре
+						</span>
+						<h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black leading-[0.85] uppercase italic text-foreground tracking-tighter">
+							STUDIO
+						</h1>
+						<h2 className="italic text-lg sm:text-xl md:text-2xl font-black text-muted-foreground tracking-wide mt-1">
+							Локации с профессиональным светом
 						</h2>
-
-						{/* Фичи — три строки с акцентом */}
-						<ul className="space-y-2 pt-1">
-							{STUDIO_FEATURES.map((f) => (
-								<li
-									key={f}
-									className="flex items-start gap-2 text-sm opacity-75 leading-snug"
-								>
-									{/* Небольшой декоративный маркер */}
-									<span className="mt-1.5 w-1 h-1 rounded-full bg-background/60 shrink-0" />
-									{f}
-								</li>
-							))}
-						</ul>
 					</div>
 
-					<Button
-						asChild
-						variant="outline"
-						size="xl"
-						className={cn(
-							"z-10 relatives bg-foreground/10 border-background/30 text-background hover:bg-foreground/50 uppercase font-bold rounded-2xl w-full sm:w-auto transition-colors italic",
-							!hasBanners ? "self-end" : "self-start"
-						)}
-					>
-						<Link href="/studio">Заглянуть в студию</Link>
-					</Button>
+					<p className="hidden md:block text-muted-foreground text-sm sm:text-base max-w-md leading-relaxed">
+						Современные интерьеры, просторная циклорама и съёмочные зоны с
+						топовым импульсным и постоянным светом. Любое оборудование из
+						каталога доступно прямо в зале.
+					</p>
+
+					{/* Быстрые ссылки в стиле Telegram-интерфейсов */}
+					<div className="flex flex-wrap gap-2 pt-2">
+						<Button asChild size="lg" className="rounded-xl font-bold flex-1">
+							<Link href="/studio">Забронировать зал</Link>
+						</Button>
+						<Button
+							asChild
+							size="lg"
+							variant="secondary"
+							className="rounded-xl font-bold flex-1"
+						>
+							<Link href="/equipment">Подобрать технику</Link>
+						</Button>
+					</div>
 				</div>
 
-				{/* ── Правая колонка: баннер как визуальное продолжение блока ── */}
-				{hasBanners && (
-					<div className="relative w-full min-h-70 lg:h-full flex flex-col">
+				{/* Правая колонка — Иммерсивный слайдер студии */}
+				<div className="w-full h-full min-h-80 md:min-h-100">
+					{banners.length > 0 ? (
 						<BannerCarousel banners={banners} variant="studio" />
-					</div>
-				)}
+					) : isAdmin ? (
+						<div className="h-full flex flex-col justify-center items-center rounded-3xl border border-dashed border-foreground/15 p-8 text-center text-sm text-muted-foreground bg-background/50">
+							<p className="font-bold mb-1">Баннеры студии не добавлены</p>
+							<p className="text-xs mb-4">
+								Создайте баннер для студии в панели управления
+							</p>
+							<Button
+								asChild
+								size="sm"
+								variant="outline"
+								className="rounded-xl"
+							>
+								<Link href="/admin">В админку</Link>
+							</Button>
+						</div>
+					) : null}
+				</div>
 			</div>
 		</section>
 	);

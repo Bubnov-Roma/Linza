@@ -7,15 +7,11 @@ import {
 	type Role,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { createAdminNotification } from "@/actions/admin-notification-actions";
 import { auth } from "@/auth";
+import { encrypt } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
-import {
-	type ClientFormValues,
-	clientFormSchema,
-	individualClientSchema,
-} from "@/schemas";
-import type { AllowedUpdateField } from "@/types";
+import { type ClientFormValues, clientFormSchema } from "@/schemas";
 
 type ActionResponse = {
 	success: boolean;
@@ -68,6 +64,14 @@ export async function submitClientApplicationAction(
 			},
 		});
 
+		const existingUser = await prisma.user.findUnique({
+			where: { id: session.user.id },
+			select: { createdAt: true },
+		});
+
+		const isFirstApplication =
+			!existingUser?.createdAt ||
+			Date.now() - existingUser.createdAt.getTime() < 60_000;
 		await prisma.clientApplication.upsert({
 			where: { userId: session.user.id },
 			update: {
@@ -85,6 +89,12 @@ export async function submitClientApplicationAction(
 			},
 		});
 
+		await createAdminNotification({
+			type: isFirstApplication ? "userRegistered" : "applicationSubmitted",
+			userId: session.user.id,
+			entityType: isFirstApplication ? "user" : "application",
+		});
+
 		revalidatePath("/dashboard/profile");
 		return { success: true, message: "Анкета успешно отправлена ✔️" };
 	} catch (error: unknown) {
@@ -93,102 +103,23 @@ export async function submitClientApplicationAction(
 	}
 }
 
-export async function updateApplicationDataAction(payload: {
-	field: AllowedUpdateField;
-	value: unknown;
-}): Promise<{ success: boolean; error?: string }> {
-	try {
-		const session = await auth();
-		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
-
-		const row = await prisma.clientApplication.findUnique({
-			where: { userId: session.user.id },
-			select: { applicationData: true, status: true },
-		});
-
-		if (!row) return { success: false, error: "Анкета не найдена" };
-
-		const allowedStatuses = [
-			ApplicationStatus.APPROVED,
-			ApplicationStatus.STANDARD,
-			ApplicationStatus.REVIEWING,
-			ApplicationStatus.CLARIFICATION,
-			ApplicationStatus.PENDING,
-			ApplicationStatus.REJECTED,
-			ApplicationStatus.LOADING,
-			ApplicationStatus.BLOCKED,
-			ApplicationStatus.DRAFT,
-			ApplicationStatus.NO_APPLICATION,
-		];
-
-		if (!allowedStatuses.includes(row.status)) {
-			return {
-				success: false,
-				error: "Статус анкеты не позволяет вносить изменения",
-			};
-		}
-
-		const current = (row.applicationData as Record<string, unknown>) || {};
-		const updated = deepSet(current, payload.field, payload.value);
-
-		const updateSchema = individualClientSchema.extend({
-			agreements: z
-				.object({
-					comment: z.string().optional(),
-					newsletter: z.boolean().optional(),
-					personalDataConsent: z.boolean().optional(),
-				})
-				.optional(),
-		});
-		const parsed = updateSchema.safeParse(updated);
-		if (!parsed.success) {
-			return {
-				success: false,
-				error: parsed.error.issues[0]?.message ?? "Ошибка валидации",
-			};
-		}
-
-		await prisma.$transaction([
-			prisma.clientApplication.update({
-				where: { userId: session.user.id },
-				data: {
-					applicationData: parsed.data as unknown as Prisma.InputJsonValue,
-				},
-			}),
-			prisma.adminNotification.create({
-				data: {
-					type: "application_dataUpdated",
-					userId: session.user.id,
-					payload: { field: payload.field } as Prisma.InputJsonValue,
-				},
-			}),
-		]);
-
-		revalidatePath("/dashboard/profile");
-		return { success: true };
-	} catch (error: unknown) {
-		if (error instanceof Error) return { success: false, error: error.message };
-		return { success: false, error: "Ошибка обновления" };
-	}
-}
-
-function deepSet(
-	obj: Record<string, unknown>,
-	path: string,
-	value: unknown
+function encryptSensitiveFields(
+	data: Record<string, unknown>
 ): Record<string, unknown> {
-	const keys = path.split(".");
-	const [head, ...rest] = keys;
-	if (!head) return obj;
-	if (rest.length === 0) return { ...obj, [head]: value };
-	return {
-		...obj,
-		[head]: deepSet(
-			(obj[head] as Record<string, unknown>) ?? {},
-			rest.join("."),
-			value
-		),
-	};
+	const result = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+	const appData = (result.applicationData as Record<string, unknown>) ?? {};
+	const passport = (appData.passport as Record<string, unknown>) ?? {};
+	const personalData = (appData.personalData as Record<string, unknown>) ?? {};
+
+	if (passport.seriesAndNumber)
+		passport.seriesAndNumber = encrypt(passport.seriesAndNumber as string);
+	if (passport.issuedBy)
+		passport.issuedBy = encrypt(passport.issuedBy as string);
+	if (personalData.inn) personalData.inn = encrypt(personalData.inn as string);
+	if (personalData.snils)
+		personalData.snils = encrypt(personalData.snils as string);
+
+	return result;
 }
 
 export async function saveDraftAction(
@@ -424,5 +355,59 @@ export async function createUserDiscountAction(data: {
 	} catch (error: unknown) {
 		if (error instanceof Error) return { success: false, error: error.message };
 		return { success: false, error: "Ошибка при добавлении скидки" };
+	}
+}
+
+export async function updateFullApplicationDataAction(
+	data: ClientFormValues
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
+
+		// 1. Валидируем всю пришедшую форму
+		const parsed = clientFormSchema.safeParse(data);
+		if (!parsed.success) {
+			return { success: false, error: "Ошибка валидации данных" };
+		}
+
+		// 2. Шифруем чувствительные поля
+		const encryptedData = encryptSensitiveFields(
+			parsed.data as unknown as Record<string, unknown>
+		);
+
+		// 3. Сохраняем в БД и кидаем уведомление админу
+		const personalData = data.applicationData.personalData;
+
+		const newFullName = personalData.name;
+
+		await prisma.$transaction([
+			// Добавляем обновление User для корректного поиска
+			prisma.user.update({
+				where: { id: session.user.id },
+				data: {
+					name: newFullName || null,
+					phone: personalData.phone || null,
+				},
+			}),
+			prisma.clientApplication.update({
+				where: { userId: session.user.id },
+				data: {
+					applicationData: encryptedData as unknown as Prisma.InputJsonValue,
+				},
+			}),
+		]);
+
+		await createAdminNotification({
+			type: "applicationUpdated",
+			userId: session.user.id,
+			entityType: "application",
+			payload: { field: "allFields" },
+		});
+
+		revalidatePath("/dashboard/profile");
+		return { success: true };
+	} catch {
+		return { success: false, error: "Ошибка обновления данных" };
 	}
 }

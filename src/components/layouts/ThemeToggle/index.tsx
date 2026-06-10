@@ -10,6 +10,8 @@ import {
 } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { menuBtnClass } from "@/components/layouts/AppSidebar/menuBtnClass";
+import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 // ─── Shared icon (hydration-safe) ────────────────────────────────────────────
@@ -125,30 +127,93 @@ export function ThemeToggle({
 	);
 }
 
-// ─── Variant: "icon-button" — только иконка (для nav bars) ───────────────────
+// ─── Variant: "icon-button" — адаптирован под обычный вид и под AppSidebar ───
 
-export function ThemeIconButton({
-	size = 22,
-	className,
-	weight = "duotone",
-}: {
+interface ThemeIconButtonProps {
 	size?: number;
 	className?: string;
 	weight?: IconWeight;
-}) {
+	isSidebar?: boolean;
+	isCollapsed?: boolean;
+	CollapseLabel?: React.ComponentType<{ text: string }>;
+}
+
+export function ThemeIconButton({
+	size = 20,
+	className,
+	weight = "duotone",
+	isSidebar = false,
+	isCollapsed = false,
+	CollapseLabel,
+}: ThemeIconButtonProps) {
 	const { resolvedTheme, setTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 
+	const isDark = resolvedTheme === "dark";
+
 	const toggleTheme = () => {
-		setTheme(resolvedTheme === "dark" ? "light" : "dark");
+		setTheme(isDark ? "light" : "dark");
 		if (typeof navigator !== "undefined" && navigator.vibrate) {
 			navigator.vibrate(5);
 		}
 	};
 
+	const iconContent = !mounted ? (
+		<SpinnerIcon
+			size={size}
+			weight={weight}
+			className="animate-spin text-muted-foreground"
+		/>
+	) : isDark ? (
+		<SunIcon size={size} weight={weight} />
+	) : (
+		<MoonIcon size={size} weight={weight} />
+	);
+
+	// Интеграция внутрь структуры AppSidebar
+	if (isSidebar) {
+		return (
+			<SidebarMenuItem>
+				<SidebarMenuButton
+					className={menuBtnClass(false, isCollapsed)}
+					tooltip={!isCollapsed ? "Сменить тему" : ""}
+					onClick={toggleTheme}
+				>
+					<div
+						className={cn(
+							"flex items-center w-full h-full group/btn",
+							isCollapsed ? "flex-col justify-center gap-1" : ""
+						)}
+					>
+						{/* Контейнер-пилюля вокруг иконки */}
+						<div
+							className={cn(
+								"flex items-center justify-center shrink-0 transition-all duration-300 text-muted-foreground group-hover/btn:text-foreground",
+								isCollapsed
+									? "w-12 h-7 rounded-full group-hover/btn:bg-foreground/10 group-hover/btn:scale-110"
+									: "w-6"
+							)}
+						>
+							{iconContent}
+						</div>
+
+						{!isCollapsed && (
+							<span className="font-medium text-base truncate ml-3 flex-1 text-left">
+								{!mounted ? "Тема" : isDark ? "Светлая тема" : "Тёмная тема"}
+							</span>
+						)}
+
+						{isCollapsed && CollapseLabel && <CollapseLabel text="Тема" />}
+					</div>
+				</SidebarMenuButton>
+			</SidebarMenuItem>
+		);
+	}
+
+	// Дефолтный изолированный вариант кнопки (например, для шапки)
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: <for SidebarMenuButton>
+		// biome-ignore lint/a11y/useSemanticElements: <for span>
 		<span
 			tabIndex={0}
 			role="button"
@@ -161,8 +226,7 @@ export function ThemeIconButton({
 			onClick={(e) => {
 				e.preventDefault();
 				e.stopPropagation();
-				setTheme(resolvedTheme === "dark" ? "light" : "dark");
-				if (navigator.vibrate) navigator.vibrate(5);
+				toggleTheme();
 			}}
 			className={cn(
 				"text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl transition-all p-2 hover:bg-foreground/10 group/theme",
@@ -170,25 +234,9 @@ export function ThemeIconButton({
 			)}
 			aria-label="Переключить тему"
 		>
-			{!mounted ? (
-				<SpinnerIcon
-					size={size}
-					weight={weight}
-					className="text-muted-foreground group-hover/theme:scale-120 group-hover/theme:text-foreground  duration-300 animate-spin"
-				/>
-			) : resolvedTheme === "dark" ? (
-				<MoonIcon
-					size={size}
-					weight={weight}
-					className="text-muted-foreground group-hover/theme:scale-120 group-hover/theme:text-foreground  duration-300"
-				/>
-			) : (
-				<SunIcon
-					size={size}
-					weight={weight}
-					className="text-muted-foreground group-hover/theme:scale-120 group-hover/theme:text-foreground   duration-300"
-				/>
-			)}
+			<div className="transition-transform duration-300 group-hover/theme:scale-125">
+				{iconContent}
+			</div>
 		</span>
 	);
 }

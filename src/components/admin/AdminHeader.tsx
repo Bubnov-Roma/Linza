@@ -46,17 +46,17 @@ export function AdminHeader() {
 								variant="ghost"
 								className="relative h-10 w-10 rounded-full"
 							>
-								{user?.user_metadata?.avatar_url ? (
+								{user?.image ? (
 									<Image
 										width={48}
 										height={48}
-										src={user.user_metadata.avatar_url}
-										alt={user.user_metadata.name || "user name"}
+										src={user.image}
+										alt={user.name || "user name"}
 										className="h-full w-full rounded-full object-cover"
 									/>
 								) : (
 									<div className="flex h-full w-full items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-500 text-white">
-										{user?.user_metadata?.name?.charAt(0) || "A"}
+										{user?.name?.charAt(0) || "A"}
 									</div>
 								)}
 							</Button>
@@ -64,9 +64,7 @@ export function AdminHeader() {
 						<DropdownMenuContent align="end">
 							<DropdownMenuLabel>
 								<div className="flex flex-col space-y-1">
-									<p className="text-sm font-medium">
-										{user?.user_metadata?.name}
-									</p>
+									<p className="text-sm font-medium">{user?.name}</p>
 									<p className="text-xs text-gray-500">Администратор</p>
 								</div>
 							</DropdownMenuLabel>

@@ -6,6 +6,7 @@ import type {
 	SupportThread,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { createAdminNotification } from "@/actions/admin-notification-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -104,6 +105,14 @@ export async function createSupportThreadAction(data: {
 					orderBy: { createdAt: "asc" },
 				},
 			},
+		});
+
+		await createAdminNotification({
+			type: "supportMessageClient",
+			userId: authResult.userId,
+			entityId: thread.id,
+			entityType: "supportThread",
+			payload: { subject: data.subject },
 		});
 
 		revalidatePath("/dashboard/support");
@@ -230,6 +239,21 @@ export async function sendSupportMessageAction(data: {
 				status: isAdmin ? "WAITING_FOR_CLIENT" : "WAITING_FOR_ADMIN",
 			},
 		});
+
+		if (!isAdmin) {
+			// const isFirstMessage = thread.messages?.length === 0; // нет — используем флаг
+			// Определяем: новый тред или ответ
+			// Смотрим на количество сообщений в треде ДО отправки
+			const msgCount = await prisma.supportMessage.count({
+				where: { threadId: data.threadId },
+			});
+			await createAdminNotification({
+				type: msgCount <= 1 ? "supportMessageClient" : "supportMessageReply",
+				userId: authResult.userId,
+				entityId: data.threadId,
+				entityType: "supportThread",
+			});
+		}
 
 		revalidatePath("/support");
 		revalidatePath(`/dashboard/support/${data.threadId}`);
@@ -706,4 +730,38 @@ export async function editSupportMessageAction(data: {
 
 	revalidatePath(`/admin/support/thread/${message.threadId}`);
 	return { success: true };
+}
+
+/**
+ * Количество тредов, ожидающих ответа админа (для поллинга)
+ */
+export async function getPendingChatsCountAction(): Promise<number> {
+	const authResult = await requireAdminOrManager();
+	if (!authResult.ok) return 0;
+
+	return prisma.supportThread.count({
+		where: { status: "WAITING_FOR_ADMIN" },
+	});
+}
+
+/**
+ * Есть ли у клиента непрочитанные ответы от админа (для поллинга)
+ */
+export async function getClientUnreadChatsCountAction(): Promise<number> {
+	const authResult = await requireAuth();
+	if (!authResult.ok) return 0;
+
+	// Треды клиента где последнее сообщение от админа
+	const threads = await prisma.supportThread.findMany({
+		where: { userId: authResult.userId },
+		select: {
+			messages: {
+				orderBy: { createdAt: "desc" },
+				take: 1,
+				select: { isAdmin: true },
+			},
+		},
+	});
+
+	return threads.filter((t) => t.messages[0]?.isAdmin === true).length;
 }

@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { createAdminNotification } from "@/actions/admin-notification-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -57,11 +58,18 @@ export async function scheduleAccountDeletionAction(): Promise<{
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
 		const deletionDate = new Date();
-		deletionDate.setDate(deletionDate.getDate() + 1);
+		deletionDate.setDate(deletionDate.getDate() + 7);
 
 		await prisma.user.update({
 			where: { id: session.user.id },
 			data: { deletionScheduledAt: deletionDate },
+		});
+
+		await createAdminNotification({
+			type: "userDeletionRequested",
+			userId: session.user.id,
+			entityType: "user",
+			payload: { scheduledAt: deletionDate.toISOString() },
 		});
 
 		return { success: true };

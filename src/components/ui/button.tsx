@@ -9,20 +9,20 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default:
-					"bg-primary brightness-100 text-primary-foreground hover:brightness-105",
+					"bg-primary brightness-105 text-primary-foreground hover:brightness-115 transition-all duration-300",
 				destructive:
 					"bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
 				outline:
 					"border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
 				secondary:
-					"bg-secondary text-secondary-foreground hover:bg-secondary/50",
+					"bg-secondary text-secondary-foreground hover:brightness-95 text-foreground/80",
 				ghost:
-					"hover:bg-muted-foreground/25 hover:text-foreground transition-colors duration-500",
+					"hover:bg-muted-foreground/25 hover:text-foreground transition-colors duration-300",
 				link: "text-primary underline-offset-4 hover:underline",
 				social:
 					"bg-muted-foreground/5 backdrop-blur-lg border border-foreground/5 text-foreground hover:bg-white/10 hover:shadow-xl hover:border-foreground/10 active:shadow-md",
 				glass: cn(
-					"relative overflow-hidden bg-secondary/80 backdrop-blur-lg text-foreground transition-all duration-500",
+					"relative overflow-hidden bg-secondary/80 backdrop-blur-lg text-foreground transition-all duration-300",
 					"hover:border-primary/30",
 					// glow layer under btn
 					"before:content-[''] before:absolute before:inset-0 before:-z-10 before:bg-[var(--brand-glow)] before:opacity-0 before:blur-xl before:transition-opacity hover:before:opacity-30",
@@ -52,6 +52,7 @@ const buttonVariants = cva(
 				"icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-8",
 				"icon-lg": "size-10",
+				"icon-xl": "size-12",
 			},
 		},
 		compoundVariants: [

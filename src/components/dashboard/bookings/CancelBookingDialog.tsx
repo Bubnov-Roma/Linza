@@ -74,19 +74,19 @@ export function CancelBookingDialog({
 
 				<div className="space-y-2 py-1">
 					{CANCELLATION_PRESETS.map((preset) => (
-						<button
+						<Button
 							key={preset}
-							type="button"
+							size="xl"
 							onClick={() => setSelected(preset)}
 							className={cn(
-								"w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-all",
+								"w-full text-left px-4 py-2.5 rounded-2xl border text-sm transition-all",
 								selected === preset
-									? "border-primary/40 bg-primary/10 text-primary"
+									? "border-muted-foreground/40 bg-muted-foreground/10 text-foreground"
 									: "border-foreground/10 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-foreground/5"
 							)}
 						>
 							{preset}
-						</button>
+						</Button>
 					))}
 
 					{/* Custom textarea */}
@@ -97,7 +97,7 @@ export function CancelBookingDialog({
 							placeholder="Опишите причину отмены..."
 							autoFocus
 							rows={3}
-							className="w-full px-4 py-3 rounded-xl border border-foreground/10 bg-card/40 text-sm placeholder:text-muted-foreground/40 outline-none focus:border-primary/40 focus:bg-card/70 transition-all resize-none"
+							className="w-full rounded-xl resize-none"
 						/>
 					)}
 				</div>

@@ -4,7 +4,7 @@ export const menuBtnClass = (isActive: boolean, isCollapsed: boolean) =>
 	cn(
 		"transition-all duration-300 group/btn w-full",
 		isCollapsed
-			? "!h-[55px] flex flex-col items-center justify-center !p-0 bg-transparent hover:bg-transparent hover:bg-shadow-xs"
+			? "!h-[64px] flex flex-col items-center justify-center !p-0"
 			: "!h-14 rounded-xl pl-4 flex-row",
 		!isCollapsed && isActive && "text-foreground font-bold",
 		!isCollapsed &&

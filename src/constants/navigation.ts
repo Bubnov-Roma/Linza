@@ -2,11 +2,11 @@
 
 import type { Icon } from "@phosphor-icons/react";
 import {
-	AirplayIcon,
 	CameraIcon,
 	ChatsIcon,
+	FilmSlateIcon,
 	FolderIcon,
-	HeartIcon,
+	HeadsetIcon,
 	HouseLineIcon,
 	PackageIcon,
 	QuestionIcon,
@@ -45,7 +45,7 @@ export const ADMIN_NAV: NavItem[] = [
 	{
 		title: "Студия",
 		href: "/admin/studio",
-		icon: AirplayIcon,
+		icon: FilmSlateIcon,
 	},
 	{
 		title: "Чаты",
@@ -73,11 +73,11 @@ export const MOBILE_NAV: NavItem[] = [
 	{
 		title: "Студия",
 		href: "/studio",
-		icon: AirplayIcon,
+		icon: FilmSlateIcon,
 	},
 	{
-		title: "Избранное",
+		title: "Связь",
 		href: "/favorites",
-		icon: HeartIcon,
+		icon: HeadsetIcon,
 	},
 ];

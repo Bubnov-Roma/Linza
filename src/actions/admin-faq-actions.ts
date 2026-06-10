@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { createAdminNotification } from "@/actions/admin-notification-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -151,6 +152,13 @@ export async function submitFaqQuestionAction(data: {
 				email: data.email?.trim() || null,
 			},
 		});
+
+		await createAdminNotification({
+			type: "faqQuestionSubmitted",
+			entityType: "faqQuestion",
+			payload: { preview: data.text.slice(0, 80) },
+		});
+
 		return { success: true };
 	} catch (error: unknown) {
 		if (error instanceof Error) return { success: false, error: error.message };

@@ -150,7 +150,7 @@ export default function SupportThreadDetailClient({
 					</div>
 				</div>
 			</div>
-			<div className="border border-muted-foreground/10 card-surface h-[calc(100vh-400px)] min-h-125 flex flex-col overflow-hidden rounded-2xl">
+			<div className="border border-muted-foreground/10 glass-card h-[calc(100vh-400px)] min-h-125 flex flex-col overflow-hidden rounded-2xl">
 				{/* 1. ЛЕНТА СООБЩЕНИЙ */}
 				<div
 					ref={scrollContainerRef}
@@ -225,7 +225,7 @@ export default function SupportThreadDetailClient({
 								autoFocus
 								actionIcon={<PaperPlaneTiltIcon size={14} weight="duotone" />}
 								placeholder="Напишите ваше сообщение..."
-								className="flex-1 h-26"
+								className="flex-1 h-26 rounded-xl"
 							/>
 							<p className="text-[11px] text-muted-foreground/60 text-right pr-2">
 								Нажмите Enter для отправки

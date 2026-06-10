@@ -8,6 +8,7 @@ import {
 	updateSiteSettingsAction,
 } from "@/actions/admin-settings-actions";
 import { AdminManagementSection } from "@/components/admin/settings/AdminManagementSection";
+import { NotificationsSoundSection } from "@/components/admin/settings/NotificationsSoundSection";
 import { PromoCodesSection } from "@/components/admin/settings/PromoCodesSection";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
 import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
@@ -55,7 +56,6 @@ export function SettingsClient({
 		setIsSaving(true);
 		try {
 			const result = await updateSiteSettingsAction(formData);
-
 			if (result.success) {
 				toast.success("Настройки успешно обновлены");
 			} else {
@@ -93,7 +93,7 @@ export function SettingsClient({
 								оформлении заказов клиентом
 							</CardDescription>
 						</CardHeader>
-						<CardContent className="flex gap-4  pt-6">
+						<CardContent className="flex gap-4 pt-6">
 							<div className="space-y-2 flex-1">
 								<Label>Открытие (ч)</Label>
 								<Input
@@ -180,11 +180,20 @@ export function SettingsClient({
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Telegram (@username или ссылка)</Label>
+								<Label>Telegram (ссылка)</Label>
 								<Input
 									value={formData.telegram}
 									onChange={(e) =>
 										setFormData({ ...formData, telegram: e.target.value })
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>ВКонтакте (ссылка)</Label>
+								<Input
+									value={formData.vk}
+									onChange={(e) =>
+										setFormData({ ...formData, vk: e.target.value })
 									}
 								/>
 							</div>
@@ -216,7 +225,6 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, companyName: e.target.value })
 									}
-									placeholder=""
 								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
@@ -251,14 +259,16 @@ export function SettingsClient({
 						</CardContent>
 					</Card>
 				</div>
-				<div className="flex flex-col gap-6 lg:flex-row lg:col-span-2 w-full">
-					<PromoCodesSection />
-					<AdminManagementSection />
-				</div>
+
+				{/* Промокоды и управление */}
+				<PromoCodesSection />
+				<AdminManagementSection />
+
+				{/* Звуки уведомлений — вне формы, управляется через Zustand/localStorage */}
+				<NotificationsSoundSection />
 
 				{/* Юридические документы */}
-
-				<Card className="lg:col-span-2">
+				<Card className="lg:col-span-2 py-6">
 					<CardHeader>
 						<CardTitle>Юридические документы</CardTitle>
 						<CardDescription>Редактор в формате Markdown</CardDescription>

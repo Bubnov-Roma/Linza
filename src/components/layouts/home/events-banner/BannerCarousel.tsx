@@ -1,18 +1,12 @@
 "use client";
 
-import {
-	CaretLeftIcon,
-	CaretRightIcon,
-	PauseIcon,
-	PlayIcon,
-} from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
-import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Banner } from "@/actions/admin-banner-actions";
 import { BannerCard } from "@/components/layouts/home/events-banner/BannerCard";
 import { BannerModal } from "@/components/layouts/home/events-banner/BannerModal";
-import { Button, CardContent } from "@/components/ui";
+import { Button, Card, Label } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface BannerCarouselProps {
@@ -30,191 +24,138 @@ export function BannerCarousel({
 	const [activeBanner, setActiveBanner] = useState<Banner | null>(null);
 	const [isPlaying, setIsPlaying] = useState(true);
 
-	// Реф для предотвращения ложных кликов по карточке во время свайпа
 	const isDraggingRef = useRef(false);
-
-	// Синхронизируем состояние автоплея из кук при первом рендере (защита от SSR гидратации)
-	useEffect(() => {
-		const savedPlayState = Cookies.get(`banner_playing_${variant}`);
-		if (savedPlayState === "false") {
-			setIsPlaying(false);
-		} else if (savedPlayState === "true") {
-			setIsPlaying(true);
-		} else {
-			setIsPlaying(banners.length > 1 && autoplayMs > 0);
-		}
-	}, [variant, banners.length, autoplayMs]);
-
-	const togglePlay = useCallback(() => {
-		setIsPlaying((prev) => {
-			const nextState = !prev;
-			Cookies.set(`banner_playing_${variant}`, String(nextState), {
-				expires: 7,
-			});
-			return nextState;
-		});
-	}, [variant]);
-
-	const prev = useCallback(
-		() => setCurrent((c) => (c - 1 + banners.length) % banners.length),
-		[banners.length]
-	);
+	const hasNav = banners.length > 1;
 
 	const next = useCallback(
 		() => setCurrent((c) => (c + 1) % banners.length),
 		[banners.length]
 	);
 
-	// Логика автопрокрутки интервалом
+	const prev = useCallback(
+		() => setCurrent((c) => (c - 1 + banners.length) % banners.length),
+		[banners.length]
+	);
+
+	// Логика автоплея
 	useEffect(() => {
-		if (!isPlaying || banners.length <= 1 || !autoplayMs) return;
+		if (!isPlaying || !hasNav || !autoplayMs) return;
 		const id = setInterval(next, autoplayMs);
 		return () => clearInterval(id);
-	}, [isPlaying, banners.length, autoplayMs, next]);
+	}, [isPlaying, hasNav, autoplayMs, next]);
 
 	if (banners.length === 0) return null;
 	const currentBanner = banners[current];
+
 	if (!currentBanner) return null;
 
-	const hasNav = banners.length > 1;
-
-	// Строгая типизация обработчика завершения свайпа без any
 	const handleDragEnd = (
 		_: MouseEvent | TouchEvent | PointerEvent,
 		info: PanInfo
 	): void => {
-		const swipeThreshold = 50; // Расстояние в px, после которого свайп засчитывается
-		const swipeVelocity = 200; // Скорость движения
+		const swipeThreshold = 50;
+		if (info.offset.x < -swipeThreshold) next();
+		else if (info.offset.x > swipeThreshold) prev();
 
-		if (info.offset.x < -swipeThreshold || info.velocity.x < -swipeVelocity) {
-			next();
-		} else if (
-			info.offset.x > swipeThreshold ||
-			info.velocity.x > swipeVelocity
-		) {
-			prev();
-		}
-
-		// Небольшой таймаут, чтобы событие клика по кнопке внутри карточки не сработало сразу после свайпа
 		setTimeout(() => {
 			isDraggingRef.current = false;
 		}, 50);
 	};
 
-	const handleCardClick = (): void => {
-		if (isDraggingRef.current) return;
-		setActiveBanner(currentBanner);
-	};
-
 	return (
-		<div className="relative w-full h-full aspect-7/5 sm:aspect-auto min-h-50 sm:min-h-70 overflow-hidden rounded-lg group/carousel select-none">
-			{/* Контейнер для анимации слайдов */}
+		<Card
+			className={cn(
+				"relative w-full h-full aspect-16/10 lg:aspect-7/5 overflow-hidden rounded-2xl select-none shadow-xs group/carousel"
+			)}
+			onMouseEnter={() => setIsPlaying(false)} // Пауза при наведении (очень удобно для пользователя)
+			onMouseLeave={() => setIsPlaying(true)}
+		>
+			{/* Стрелки навигации — появляются только при ховере в стиле Telegram desktop */}
+			{hasNav && (
+				<>
+					<Button
+						type="button"
+						onClick={prev}
+						className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 text-white backdrop-blur-xs flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all duration-300 transform group-hover/carousel:translate-x-0 -translate-x-2"
+					>
+						<CaretLeftIcon size={18} weight="bold" />
+					</Button>
+					<Button
+						type="button"
+						onClick={next}
+						className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 text-white backdrop-blur-xs flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all duration-300 transform group-hover/carousel:translate-x-0 translate-x-2"
+					>
+						<CaretRightIcon size={18} weight="bold" />
+					</Button>
+				</>
+			)}
+
+			{/* Контейнер слайдов */}
 			<div className="w-full h-full relative touch-pan-y">
 				<AnimatePresence mode="popLayout" initial={false}>
 					<motion.div
 						key={current}
 						drag={hasNav ? "x" : false}
 						dragConstraints={{ left: 0, right: 0 }}
-						dragElastic={0.5}
+						dragElastic={0.2}
 						onDragStart={() => {
 							isDraggingRef.current = true;
 						}}
 						onDragEnd={handleDragEnd}
-						initial={{ opacity: 0, scale: 0.96, filter: "blur(4px)" }}
-						animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-						exit={{ opacity: 0, scale: 1.06, filter: "blur(6px)" }}
-						transition={{
-							duration: 0.5,
-							ease: [0.215, 0.61, 0.355, 1.0],
-						}}
+						initial={{ opacity: 0, x: 40 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: -40 }}
+						transition={{ type: "spring", stiffness: 300, damping: 30 }}
 						className={cn(
 							"w-full h-full",
-							hasNav ? "cursor-grab active:cursor-grabbing" : ""
+							hasNav && "cursor-grab active:cursor-grabbing"
 						)}
 					>
 						<BannerCard
 							banner={currentBanner}
-							onClick={handleCardClick}
+							onClick={() =>
+								!isDraggingRef.current && setActiveBanner(currentBanner)
+							}
 							isActive={true}
 							variant={variant}
-							hasNav={hasNav}
+							hasNav={false} // Навигацию вынесли наружу карты
 						/>
 					</motion.div>
 				</AnimatePresence>
-
-				{/* ── Overlay навигация ── */}
-				{hasNav && (
-					<CardContent
-						className={cn(
-							"absolute bottom-0 right-0 pl-4 pr-2 py-1 flex items-center justify-between gap-8 z-5 pointer-events-auto bg-black/10 rounded-lg m-0.5"
-						)}
-					>
-						{/* Точки */}
-						<div className="flex items-center gap-1.5 flex-wrap">
-							{banners.map((_, i) => (
-								<Button
-									key={i}
-									type="button"
-									onClick={() => setCurrent(i)}
-									aria-label={`Слайд ${i + 1}`}
-									className={cn(
-										"rounded-full transition-all duration-300 cursor-pointer p-0",
-										i === current
-											? "w-6 h-3 bg-white/20 hover:bg-white/80"
-											: "w-3 h-3 bg-white/20 hover:bg-white/80"
-									)}
-								/>
-							))}
-						</div>
-
-						{/* Плей/пауза + стрелки */}
-						<div className="flex items-center gap-0.5 shrink-0 rounded-full">
-							<Button
-								variant="ghost"
-								size="icon"
-								type="button"
-								onClick={togglePlay}
-								aria-label={isPlaying ? "Пауза" : "Автопрокрутка"}
-								title={
-									isPlaying
-										? "Остановить автопрокрутку"
-										: "Включить автопрокрутку"
-								}
-								className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10"
-							>
-								{isPlaying ? (
-									<PauseIcon size={12} weight="fill" />
-								) : (
-									<PlayIcon size={12} weight="fill" />
-								)}
-							</Button>
-
-							<Button
-								variant="ghost"
-								size="icon"
-								type="button"
-								onClick={prev}
-								aria-label="Предыдущий"
-								className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10 text-lg font-light leading-none"
-							>
-								<CaretLeftIcon size={12} weight="fill" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								type="button"
-								onClick={next}
-								aria-label="Следующий"
-								className="h-8 w-8 rounded-full flex items-center justify-center transition-colors text-white/20 hover:text-white/80 hover:bg-white/10 text-lg font-light leading-none"
-							>
-								<CaretRightIcon size={12} weight="fill" />
-							</Button>
-						</div>
-					</CardContent>
-				)}
 			</div>
 
-			{/* Модальное окно */}
+			{/* ── Линейный Прогресс-бар (Стиль Stories) ── */}
+			{hasNav && (
+				<div className="absolute bottom-4 inset-x-6 z-20 flex gap-1.5 px-1">
+					{banners.map((_, i) => (
+						<Label
+							key={i}
+							onClick={() => setCurrent(i)}
+							className="h-1 flex-1 min-w-4 rounded-full bg-white/10 backdrop-blur-xs overflow-hidden cursor-pointer relative"
+						>
+							{/* Полоска прогресса */}
+							{i === current && (
+								<motion.div
+									initial={{ width: "0%" }}
+									animate={isPlaying ? { width: "100%" } : { width: "100%" }}
+									// Если стоит на паузе из-за ховера, сохраняем текущее или делаем плавную анимацию
+									transition={{
+										duration: autoplayMs / 1000,
+										ease: "linear",
+									}}
+									className="absolute inset-y-0 left-0 bg-white/50 rounded-full"
+								/>
+							)}
+							{/* Если слайд уже пройден */}
+							{i < current && (
+								<div className="absolute inset-0 bg-white/30  rounded-full" />
+							)}
+						</Label>
+					))}
+				</div>
+			)}
+
+			{/* Модалка */}
 			<AnimatePresence>
 				{activeBanner && (
 					<BannerModal
@@ -223,6 +164,6 @@ export function BannerCarousel({
 					/>
 				)}
 			</AnimatePresence>
-		</div>
+		</Card>
 	);
 }

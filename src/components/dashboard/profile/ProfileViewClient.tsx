@@ -3,17 +3,9 @@
 import { ProfileDetails } from "@/components/dashboard/profile/ProfileDetails";
 import { ProfileSkeleton } from "@/components/dashboard/profile/ProfileSkeleton";
 import { ClientForm } from "@/components/forms";
-import type { SupportInfo } from "@/constants";
 import { useApplicationStore } from "@/store";
-import type { ClientApplication } from "@/types";
 
-interface ProfileViewClientProps {
-	initialData?: ClientApplication | null;
-	support: SupportInfo;
-	userId?: string;
-}
-
-export const ProfileViewClient = ({ support }: ProfileViewClientProps) => {
+export const ProfileViewClient = () => {
 	const applicationData = useApplicationStore((state) => state.applicationData);
 	const status = useApplicationStore((state) => state.status);
 
@@ -26,7 +18,7 @@ export const ProfileViewClient = ({ support }: ProfileViewClientProps) => {
 			{status === "NO_APPLICATION" || status === "DRAFT" ? (
 				<ClientForm />
 			) : (
-				<ProfileDetails data={applicationData} support={support} />
+				<ProfileDetails data={applicationData} />
 			)}
 		</div>
 	);

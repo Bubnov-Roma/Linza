@@ -7,7 +7,6 @@ import {
 	CopyIcon,
 	DotsThreeVerticalIcon,
 	FunnelIcon,
-	MagnifyingGlassIcon,
 	PlusIcon,
 	ProhibitIcon,
 	TagIcon,
@@ -25,6 +24,7 @@ import {
 	exportAdminUsersAction,
 	getPaginatedUsersAction,
 } from "@/actions/admin-user-actions";
+import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { toggleUserBlockAction } from "@/actions/client-application-actions";
 import { CreateUserSheet } from "@/components/admin/users/CreateUserSheet";
 import { AppStatusBadge } from "@/components/admin/users/details-panel/AppStatusBadge";
@@ -40,6 +40,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	InlineSearchInput,
 	Input,
 	Select,
 	SelectContent,
@@ -342,7 +343,7 @@ export default function UsersTable({
 	return (
 		<>
 			{/* ── Header ── */}
-			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 py-4 flex items-start justify-between gap-4">
 				<div className="flex items-center gap-2.5">
 					<UserIcon size={20} weight="duotone" />
 					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
@@ -356,8 +357,8 @@ export default function UsersTable({
 				</div>
 
 				<Button
-					variant="ghost"
 					size="sm"
+					aria-label="Добавить нового клиента"
 					className="h-9 gap-2 font-bold"
 					onClick={() => setCreateOpen(true)}
 				>
@@ -371,23 +372,17 @@ export default function UsersTable({
 					<CardContent className="p-0">
 						<div className="flex flex-col sm:flex-row gap-3">
 							{/* Search */}
-							<div className="relative flex-1">
-								<MagnifyingGlassIcon className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-								<Input
-									placeholder="Имя, email, телефон..."
-									className="pl-9 h-9"
+							<div className="flex-1 w-full sm:max-w-sm">
+								<InlineSearchInput
+									className="h-9"
 									value={search}
-									onChange={(e) => setSearch(e.target.value)}
+									onChange={setSearch}
+									placeholder="Имя, email, телефон..."
+									fetchSuggestion={async (q) => {
+										const results = await getAutocompleteAction("users", q);
+										return results[0] || null;
+									}}
 								/>
-								{search && (
-									<button
-										type="button"
-										onClick={() => setSearch("")}
-										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-									>
-										<XIcon size={12} />
-									</button>
-								)}
 							</div>
 
 							{/* App status filter */}

@@ -28,10 +28,21 @@ export const authConfig = {
 		}),
 	],
 	callbacks: {
-		async jwt({ token, user }) {
+		async jwt({ token, user, trigger, session }) {
 			if (user) {
 				token.role = user.role ?? "GUEST";
 				token.id = user.id ?? "";
+				token.nickname = user.nickname ?? null;
+				token.extraPhone = user.extraPhone ?? null;
+				token.phone = user.phone ?? null;
+			}
+			if (trigger === "update" && session) {
+				if ("nickname" in session) token.nickname = session.nickname ?? null;
+				if ("extraPhone" in session)
+					token.extraPhone = session.extraPhone ?? null;
+				if ("email" in session) token.email = session.email ?? null;
+				if ("image" in session) token.picture = session.image ?? null;
+				if ("phone" in session) token.phone = session.phone ?? null;
 			}
 			return token;
 		},
@@ -39,6 +50,9 @@ export const authConfig = {
 			if (session.user) {
 				session.user.id = token.id as string;
 				session.user.role = token.role;
+				session.user.nickname = token.nickname as string | null;
+				session.user.extraPhone = token.extraPhone as string | null;
+				session.user.phone = token.phone as string | null;
 			}
 			return session;
 		},

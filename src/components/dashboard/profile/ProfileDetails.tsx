@@ -3,22 +3,18 @@
 import {
 	ArrowClockwiseIcon,
 	ArrowLeftIcon,
-	ArrowSquareOutIcon,
 	EnvelopeIcon,
 	EnvelopeOpenIcon,
-	GlobeIcon,
 	ImageIcon,
 	LockIcon,
 	MonitorIcon,
 	PhoneIcon,
 	PlusIcon,
-	TelegramLogoIcon,
 	TrashIcon,
 	UserIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
-import Link from "next/link";
 import { signOut } from "next-auth/react";
 import type React from "react";
 import { useState } from "react";
@@ -52,7 +48,6 @@ import {
 	Button,
 	Input,
 } from "@/components/ui";
-import type { SupportInfo } from "@/constants";
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { ClientFormValues } from "@/schemas";
@@ -61,13 +56,7 @@ import { getClientDisplayData } from "@/utils/client-data.utils";
 
 type ProfileTab = "profile" | "settings" | "update_data";
 
-export function ProfileDetails({
-	data,
-	support,
-}: {
-	data: ClientFormValues | null;
-	support: SupportInfo;
-}) {
+export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 	const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
 	const [showAvatarUploader, setShowAvatarUploader] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -76,15 +65,13 @@ export function ProfileDetails({
 
 	const { user, refreshProfile } = useAuth();
 	const status = useApplicationStore((s) => s.status);
+	const { setDisplayName, applicationData } = useApplicationStore();
 	const displayData = getClientDisplayData(data);
 
-	const nickname = user?.user_metadata?.nickname as string | undefined;
-	const fullName =
-		displayData?.name ??
-		(user?.user_metadata?.name as string | undefined) ??
-		null;
-	const displayName = nickname ?? fullName ?? user?.email?.split("@")[0] ?? "—";
-	const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+	const nickname = user?.nickname || null;
+	const fullName = displayData?.name || user?.name || null;
+	const displayName = nickname || fullName || user?.email?.split("@")[0] || "—";
+	const avatarUrl = user?.image || undefined;
 
 	const tabs: { id: ProfileTab; label: string }[] = [
 		{ id: "profile", label: "Профиль" },
@@ -147,7 +134,9 @@ export function ProfileDetails({
 			const res = await scheduleAccountDeletionAction();
 			if (!res.success) throw new Error(res.error);
 
-			toast.info("Аккаунт будет удалён через 3 дня. Войдите снова для отмены.");
+			toast.info(
+				"Аккаунт будет удалён через 7 дней. Войдите снова для отмены."
+			);
 			await signOut({ callbackUrl: "/auth" });
 		} catch {
 			toast.error("Ошибка при удалении аккаунта");
@@ -281,7 +270,7 @@ export function ProfileDetails({
 							type="button"
 							onClick={() => setActiveTab(id)}
 							className={cn(
-								"px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+								"px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200",
 								activeTab === id
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
@@ -332,38 +321,6 @@ export function ProfileDetails({
 							return null;
 						}}
 					/>
-
-					<SectionCard title="Поддержка">
-						<Link
-							href={support.telegram}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="detail-row hover:bg-foreground/5 transition-colors group"
-						>
-							<div className="flex items-center gap-3">
-								<TelegramLogoIcon
-									size={14}
-									className="text-muted-foreground/40"
-								/>
-								<span className="text-sm text-muted-foreground">Telegram</span>
-							</div>
-							<ArrowSquareOutIcon
-								size={12}
-								className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors"
-							/>
-						</Link>
-						<Link
-							href={`tel:${support.phone.replace(/\s/g, "")}`}
-							className="detail-row hover:bg-foreground/5 transition-colors"
-						>
-							<div className="flex items-center gap-3">
-								<PhoneIcon size={14} className="text-muted-foreground/40" />
-								<span className="text-sm text-muted-foreground">
-									{support.phone}
-								</span>
-							</div>
-						</Link>
-					</SectionCard>
 				</div>
 			)}
 
@@ -384,6 +341,14 @@ export function ProfileDetails({
 								onSave={async (val) => {
 									await updateUserFieldAction("nickname", val);
 									await refreshProfile({ nickname: val });
+									// Если никнейм очищен — фолбэк на ФИО из анкеты, потом на имя из провайдера
+									const trimmed = val.trim();
+									const fallbackName =
+										getClientDisplayData(applicationData)?.name ||
+										user?.name ||
+										user?.email?.split("@")[0] ||
+										null;
+									setDisplayName(trimmed || fallbackName);
 									toast.success(
 										val.trim() ? "Никнейм сохранён" : "Никнейм удалён"
 									);
@@ -424,7 +389,7 @@ export function ProfileDetails({
 					<SectionCard icon={<PhoneIcon size={14} />} title="Доп. телефон">
 						<div className="px-5 py-4">
 							<InlineEditField
-								value={(user?.user_metadata?.extra_phone as string) ?? ""}
+								value={user?.extraPhone ?? ""}
 								onSave={async (val) => {
 									await updateUserFieldAction("extraPhone", val);
 									await refreshProfile({ extraPhone: val });
@@ -643,7 +608,7 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 				return (
 					<div
 						key={`social-${i}-${s.url}`}
-						className="px-5 py-3 border-b border-foreground/5 last:border-b-0 space-y-2 gap-2 flex items-center"
+						className="px-5 py-3 border-b border-foreground/5 last:border-b-0  gap-2 flex items-center"
 					>
 						<InlineEditField
 							value={s.url}
@@ -654,9 +619,10 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 						{socials.length > 1 && (
 							<Button
 								variant="ghost"
+								size="icon-lg"
 								onClick={() => handleDelete(i)}
 								disabled={saving}
-								className="ml-auto w-6 h-6 flex items-center justify-center rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+								className="ml-auto rounded-2xl flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
 							>
 								<TrashIcon size={12} />
 							</Button>
@@ -670,10 +636,10 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 					<InlineEditField
 						value=""
 						placeholder="@username или https://..."
-						icon={<GlobeIcon size={14} />}
 						autoFocus
 						onSave={handleAdd}
 						onCancel={() => setAdding(false)}
+						className="h-11"
 					/>
 				</div>
 			) : (

@@ -1,352 +1,224 @@
 "use client";
 
-import {
-	FileMagnifyingGlassIcon,
-	MapPinIcon,
-	ShieldCheckIcon,
-	UserIcon,
-} from "@phosphor-icons/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { MapPinIcon, ShieldCheckIcon, UserIcon } from "@phosphor-icons/react";
 import { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
-import { updateApplicationDataAction } from "@/actions/client-application-actions";
-import { InlineEditField } from "@/components/shared";
+import { updateFullApplicationDataAction } from "@/actions/client-application-actions";
+import { AddressFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/address/AddressFieldsGroup";
+import { FioInput } from "@/components/forms/client-forms/client-types/sections/individual/id/FioInput";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	Button,
-} from "@/components/ui";
+	DateInput,
+	FormCheckbox,
+	FormTextarea,
+	PassportInput,
+	PhoneInput,
+} from "@/components/forms/shared";
+import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { type ClientFormValues, phoneRegex } from "@/schemas";
+import { type ClientFormValues, individualClientSchema } from "@/schemas";
 import { useApplicationStore } from "@/store";
-import { deepSetClient } from "@/utils";
-import { getClientDisplayData } from "@/utils/client-data.utils";
 
-// ── Per-field Zod validators (slices of the main schema) ─────────────────────
-
-const nameSchema = z.string().min(6, "Введите полное ФИО");
-const phoneSchema = z
-	.string()
-	.min(1, "Укажите номер")
-	.transform((v) => v.replace(/\s/g, ""))
-	.pipe(z.string().regex(phoneRegex, "Формат: +X(XXX)XXX-XX-XX"));
-
-const passportNumberSchema = z
-	.string()
-	.transform((v) => v.replace(/\D/g, ""))
-	.pipe(z.string().length(10, "Серия и номер — 10 цифр"));
-
-const dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
-const dateSchema = z.string().regex(dateRegex, "ДД.ММ.ГГГГ");
-
-const issuedBySchema = z.string().min(10, "Укажите кем выдан документ");
-
-const addressLineSchema = z.string().min(5, "Укажите адрес");
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface ApplicationDataEditorProps {
+export function ApplicationDataEditor({
+	data,
+}: {
 	data: ClientFormValues | null;
-}
-
-type Section = "personal" | "passport" | "addresses";
-
-export function ApplicationDataEditor({ data }: ApplicationDataEditorProps) {
-	const [openSection, setOpenSection] = useState<Section | null>(null);
-	const [showConfirm, setShowConfirm] = useState(false);
-	const [pendingField, setPendingField] = useState<{
-		field: string;
-		value: unknown;
-		label: string;
-	} | null>(null);
-
+}) {
 	const { setFormDraft } = useApplicationStore();
-	const display = getClientDisplayData(data);
+	const [openSection, setOpenSection] = useState<string | null>("personal");
+	const [isSaving, setIsSaving] = useState(false);
 
-	if (!display || !data) return null;
+	// Инициализируем форму существующими данными
+	const methods = useForm<ClientFormValues>(
+		data
+			? {
+					resolver: zodResolver(individualClientSchema),
+					defaultValues: data,
+					mode: "onBlur",
+				}
+			: {
+					resolver: zodResolver(individualClientSchema),
+					mode: "onBlur",
+				}
+	);
 
-	// After successful server save, patch the store so the profile tab
-	// reflects the new value immediately without a full page reload.
-	const applyOptimisticUpdate = (field: string, value: unknown) => {
-		// Re-use the existing deep-merge by rebuilding applicationData manually
-		const current = data as Record<string, unknown>;
-		const keys = field.split(".");
-		const patched = deepSetClient(current, keys, value);
-		setFormDraft(patched as Partial<ClientFormValues>);
-	};
+	if (!data) return null;
 
-	// Queue a save — show confirmation dialog first
-	const requestSave = (field: string, value: unknown, label: string) => {
-		setPendingField({ field, value, label });
-		setShowConfirm(true);
-	};
+	const isSameAddress = methods.watch("applicationData.addresses.isSame");
 
-	const confirmSave = async () => {
-		if (!pendingField) return;
-		const result = await updateApplicationDataAction({
-			field: pendingField.field as Parameters<
-				typeof updateApplicationDataAction
-			>[0]["field"],
-			value: pendingField.value,
-		});
-		if (result.success) {
-			applyOptimisticUpdate(pendingField.field, pendingField.value);
-			toast.success(`${pendingField.label} обновлено`);
-		} else {
-			toast.error(result.error);
+	const onSubmit = async (formValues: ClientFormValues) => {
+		// Если адреса совпадают, копируем регистрацию в факт
+		if (formValues.applicationData.addresses.isSame) {
+			formValues.applicationData.addresses.actual = {
+				...formValues.applicationData.addresses.registration,
+			};
 		}
-		setShowConfirm(false);
-		setPendingField(null);
-	};
 
-	// Validate + queue
-	const makeFieldSaver =
-		(field: string, label: string, schema: z.ZodTypeAny) =>
-		async (raw: string) => {
-			const parsed = schema.safeParse(raw);
-			if (!parsed.success) {
-				throw new Error(parsed.error.issues[0]?.message ?? "Ошибка");
+		setIsSaving(true);
+		try {
+			const res = await updateFullApplicationDataAction(formValues);
+			if (res.success) {
+				toast.success("Данные успешно обновлены");
+				setFormDraft(formValues); // Оптимистичное обновление UI профиля
+				methods.reset(formValues); // Сбрасываем isDirty
+			} else {
+				toast.error(res.error || "Ошибка сохранения");
 			}
-			requestSave(field, parsed.data, label);
-		};
-
-	const { applicationData: ad } = data;
+		} catch {
+			toast.error("Критическая ошибка сохранения");
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
 	return (
-		<>
-			<div className="space-y-3 animate-in fade-in duration-200">
-				{/* ── Personal data ── */}
+		<FormProvider {...methods}>
+			<form
+				onSubmit={methods.handleSubmit(onSubmit)}
+				className="space-y-4 animate-in fade-in duration-200"
+			>
+				{/* ── Личные данные ── */}
 				<AccordionSection
-					icon={<UserIcon size={14} />}
+					icon={
+						<UserIcon
+							size={14}
+							weight={openSection === "personal" ? "duotone" : "regular"}
+						/>
+					}
 					title="Личные данные"
 					open={openSection === "personal"}
 					onToggle={() =>
 						setOpenSection((s) => (s === "personal" ? null : "personal"))
 					}
 				>
-					<FieldRow label="ФИО">
-						<InlineEditField
-							value={ad.personalData.name}
-							placeholder="Фамилия Имя Отчество"
-							onSave={makeFieldSaver(
-								"applicationData.personalData.name",
-								"ФИО",
-								nameSchema
-							)}
-							onCancel={() => {}}
+					<div className="p-5 space-y-4">
+						<FioInput
+							name="applicationData.personalData.name"
+							label="ФИО полностью"
+							required
 						/>
-					</FieldRow>
-					<FieldRow label="Телефон">
-						<InlineEditField
-							value={ad.personalData.phone}
-							placeholder="+7(___) ___-__-__"
-							type="tel"
-							onSave={makeFieldSaver(
-								"applicationData.personalData.phone",
-								"Телефон",
-								phoneSchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<PhoneInput
+								name="applicationData.personalData.phone"
+								label="Телефон"
+								required
+							/>
+							<DateInput
+								name="applicationData.personalData.birth"
+								label="Дата рождения"
+								required
+							/>
+						</div>
+					</div>
 				</AccordionSection>
 
-				{/* ── Passport ── */}
+				{/* ── Паспорт ── */}
 				<AccordionSection
-					icon={<ShieldCheckIcon size={14} />}
+					icon={
+						<ShieldCheckIcon
+							size={14}
+							weight={openSection === "passport" ? "duotone" : "regular"}
+						/>
+					}
 					title="Паспортные данные"
 					open={openSection === "passport"}
 					onToggle={() =>
 						setOpenSection((s) => (s === "passport" ? null : "passport"))
 					}
 				>
-					<FieldRow label="Серия и номер">
-						<InlineEditField
-							value={ad.passport.seriesAndNumber}
-							placeholder="0000 000000"
-							onSave={makeFieldSaver(
-								"applicationData.passport.seriesAndNumber",
-								"Серия и номер",
-								passportNumberSchema
-							)}
-							onCancel={() => {}}
+					<div className="p-5 space-y-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<PassportInput
+								name="applicationData.passport.seriesAndNumber"
+								label="Серия и номер"
+								required
+							/>
+							<DateInput
+								name="applicationData.passport.issueDate"
+								label="Дата выдачи"
+								required
+							/>
+						</div>
+						<FormTextarea
+							name="applicationData.passport.issuedBy"
+							label="Кем выдан"
+							rows={2}
+							required
 						/>
-					</FieldRow>
-					<FieldRow label="Дата выдачи">
-						<InlineEditField
-							value={ad.passport.issueDate}
-							placeholder="ДД.ММ.ГГГГ"
-							onSave={makeFieldSaver(
-								"applicationData.passport.issueDate",
-								"Дата выдачи",
-								dateSchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
-					<FieldRow label="Кем выдан">
-						<InlineEditField
-							value={ad.passport.issuedBy}
-							placeholder="Наименование органа"
-							onSave={makeFieldSaver(
-								"applicationData.passport.issuedBy",
-								"Орган выдачи",
-								issuedBySchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
+					</div>
 				</AccordionSection>
 
-				{/* ── Addresses ── */}
+				{/* ── Адреса ── */}
 				<AccordionSection
-					icon={<MapPinIcon size={14} />}
+					icon={
+						<MapPinIcon
+							size={14}
+							weight={openSection === "addresses" ? "duotone" : "regular"}
+						/>
+					}
 					title="Адреса"
 					open={openSection === "addresses"}
 					onToggle={() =>
 						setOpenSection((s) => (s === "addresses" ? null : "addresses"))
 					}
 				>
-					<p className="card-section-label px-5 pt-3 pb-1">Адрес регистрации</p>
-					<FieldRow label="Индекс">
-						<InlineEditField
-							value={ad.addresses.registration.index}
-							placeholder="000000"
-							onSave={makeFieldSaver(
-								"applicationData.addresses.registration.index",
-								"Индекс регистрации",
-								z.string().regex(/^\d{6}$/, "6 цифр")
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
-					<FieldRow label="Страна">
-						<InlineEditField
-							value={ad.addresses.registration.country}
-							placeholder="Россия"
-							onSave={makeFieldSaver(
-								"applicationData.addresses.registration.country",
-								"Страна регистрации",
-								addressLineSchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
-					<FieldRow label="Регион">
-						<InlineEditField
-							value={ad.addresses.registration.region}
-							placeholder="Московская область"
-							onSave={makeFieldSaver(
-								"applicationData.addresses.registration.region",
-								"Регион регистрации",
-								addressLineSchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
-					<FieldRow label="Город">
-						<InlineEditField
-							value={ad.addresses.registration.city}
-							placeholder="Самара"
-							onSave={makeFieldSaver(
-								"applicationData.addresses.registration.city",
-								"Город регистрации",
-								addressLineSchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
-					<FieldRow label="Улица, дом">
-						<InlineEditField
-							value={ad.addresses.registration.address}
-							placeholder="ул. Пушкина, д. 1, кв. 2"
-							onSave={makeFieldSaver(
-								"applicationData.addresses.registration.address",
-								"Адрес регистрации",
-								addressLineSchema
-							)}
-							onCancel={() => {}}
-						/>
-					</FieldRow>
-
-					{!ad.addresses.isSame && (
-						<>
-							<p className="card-section-label px-5 pt-4 pb-1">
-								Фактический адрес
+					<div className="p-5 space-y-6">
+						<div>
+							<p className="text-sm font-bold mb-3 text-emerald-500">
+								Адрес регистрации
 							</p>
-							<FieldRow label="Улица, дом">
-								<InlineEditField
-									value={ad.addresses.actual?.address ?? ""}
-									placeholder="ул. Пушкина, д. 1, кв. 2"
-									onSave={makeFieldSaver(
-										"applicationData.addresses.actual.address",
-										"Фактический адрес",
-										addressLineSchema
-									)}
-									onCancel={() => {}}
-								/>
-							</FieldRow>
-						</>
-					)}
+							<AddressFieldsGroup prefix="applicationData.addresses.registration" />
+						</div>
+
+						<FormCheckbox
+							name="applicationData.addresses.isSame"
+							label="Совпадает с фактическим адресом проживания"
+						/>
+
+						{!isSameAddress && (
+							<div className="pt-2 animate-in fade-in slide-in-from-top-2">
+								<p className="text-sm font-bold mb-3 text-purple-500">
+									Фактический адрес
+								</p>
+								<AddressFieldsGroup prefix="applicationData.addresses.actual" />
+							</div>
+						)}
+					</div>
 				</AccordionSection>
 
-				{/* ── Warning banner ── */}
-				<div className="flex items-start gap-3 px-4 py-3 rounded-2xl border border-amber-500/50 bg-secondary/60">
-					<FileMagnifyingGlassIcon
-						size={14}
-						className="text-amber-400 shrink-0 mt-0.5"
-					/>
-					<p className="text-xs text-muted-foreground leading-relaxed">
-						После обновления персональных данных наш менеджер может запросить
-						подтверждающие документы.
-					</p>
-				</div>
-			</div>
-
-			{/* ── Confirmation dialog ── */}
-			<AlertDialog
-				open={showConfirm}
-				onOpenChange={(o) => {
-					if (!o) {
-						setShowConfirm(false);
-						setPendingField(null);
-					}
-				}}
-			>
-				<AlertDialogContent className="border-amber-500/20 bg-background/90 backdrop-blur-xl flex">
-					<AlertDialogHeader>
-						<AlertDialogTitle>Сохранить изменение?</AlertDialogTitle>
-						<AlertDialogDescription>
-							Данные в поле <strong>{pendingField?.label}</strong> будут
-							обновлены. Администратор получит уведомление о внесённом изменении
-							— это необходимо для поддержания актуальности верифицированных
-							данных.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							<Button variant="outline">Отменить</Button>
-						</AlertDialogCancel>
-						<AlertDialogAction onClick={confirmSave}>
-							<Button>Сохранить</Button>
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		</>
+				{/* ── Предупреждение ── */}
+				<p
+					className={cn(
+						"text-xs text-muted-foreground/60 leading-relaxed text-center font-mono",
+						methods.formState.isDirty &&
+							"text-foreground/80 font-black tracking-wide"
+					)}
+				>
+					После обновления персональных данных менеджер может запросить
+					подтверждающие документы
+				</p>
+				<Button
+					type="submit"
+					disabled={!methods.formState.isDirty || isSaving}
+					className={cn(
+						"w-full h-12 text-md rounded-2xl",
+						!methods.formState.isDirty &&
+							"bg-muted-foreground/5 text-muted-foreground"
+					)}
+				>
+					{isSaving
+						? "Сохранение..."
+						: !methods.formState.isDirty
+							? "Данные сохранены"
+							: "Сохранить изменения"}
+				</Button>
+			</form>
+		</FormProvider>
 	);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Вспомогательный компонент аккордеона
 function AccordionSection({
 	icon,
 	title,
@@ -370,7 +242,7 @@ function AccordionSection({
 			<button
 				type="button"
 				onClick={onToggle}
-				className="w-full card-section-header flex items-center justify-between hover:bg-foreground/2 transition-colors"
+				className="w-full card-section-header flex items-center justify-between hover:bg-foreground/5 transition-colors cursor-pointer"
 			>
 				<div className="flex items-center gap-2">
 					<span className="text-foreground">{icon}</span>
@@ -385,29 +257,11 @@ function AccordionSection({
 					▾
 				</span>
 			</button>
-
 			{open && (
 				<div className="divide-y divide-foreground/5 animate-in fade-in slide-in-from-top-1 duration-150">
 					{children}
 				</div>
 			)}
-		</div>
-	);
-}
-
-function FieldRow({
-	label,
-	children,
-}: {
-	label: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div className="px-5 py-3 space-y-1.5">
-			<p className="text-[11px] text-muted-foreground/50 font-medium">
-				{label}
-			</p>
-			{children}
 		</div>
 	);
 }

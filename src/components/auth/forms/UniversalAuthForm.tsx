@@ -70,11 +70,7 @@ export function UniversalAuthForm({
 	return (
 		<AuthCard
 			title={title}
-			description={
-				!isModal
-					? "Войдите через соц. сеть или по одноразовому коду"
-					: undefined
-			}
+			description={!isModal ? "Войдите через соц. сеть или по коду" : undefined}
 			isModal={isModal}
 			footerLink={
 				isModal

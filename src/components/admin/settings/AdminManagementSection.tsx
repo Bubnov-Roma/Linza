@@ -166,7 +166,7 @@ function GrantAdminForm({ onGranted }: { onGranted: () => void }) {
 						setFoundUser(null);
 					}}
 					onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-					className="flex-1"
+					className="flex-1 glass-input"
 				/>
 				<Button
 					type="button"

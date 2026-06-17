@@ -168,7 +168,7 @@ export function CategoryRow({
 						<Input
 							value={editName}
 							onChange={(e) => setEditName(e.target.value)}
-							className="h-8 text-sm font-semibold max-w-xs focus-visible:ring-1"
+							className="h-8 text-sm font-semibold max-w-xs focus-visible:ring-1 glass-input"
 							autoFocus
 							onClick={(e) => e.stopPropagation()}
 						/>
@@ -292,7 +292,7 @@ export function CategoryRow({
 									onChange={(e) => setEditNotes(e.target.value)}
 									rows={9}
 									placeholder="Внутреннее описание категории ( опционально )"
-									className="text-xs resize-none bg-background rounded-xl"
+									className="text-xs resize-none rounded-xl glass-input"
 								/>
 							</div>
 						</div>

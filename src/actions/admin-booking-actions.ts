@@ -10,9 +10,9 @@ import type {
 	PaymentMethod,
 	PaymentStatus,
 } from "@/core/domain/entities/Booking";
-import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
+import { extractEnrichedUserData } from "@/utils";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -436,10 +436,6 @@ export async function deleteBookingPaymentAction(
 		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
 	}
 }
-
-// ═══════════════════════════════════════════════════════════════════
-// Существующие actions (без изменений)
-// ═══════════════════════════════════════════════════════════════════
 
 // ── 2.2 Change booking client ─────────────────────────────────────────────────
 
@@ -930,6 +926,7 @@ export async function getPaginatedAdminBookingsAction(
 						name: true,
 						email: true,
 						phone: true,
+						image: true,
 						clientApplication: { select: { adminOverrides: true } },
 					},
 				},
@@ -990,6 +987,7 @@ export async function getPaginatedAdminBookingsAction(
 					clientId: b.userId,
 					clientName: fullName,
 					clientEmail: b.user?.email ?? null,
+					clientImage: b.user?.image ?? null,
 					equipmentTitles: [
 						...new Set(b.bookingItems.map((i) => i.equipment.title)),
 					],
@@ -1047,22 +1045,77 @@ export async function adminQuickPayBookingAction(bookingId: string) {
 			return { success: false, error: "Заказ уже полностью оплачен" };
 		}
 
-		await prisma.bookingPayment.create({
-			data: {
-				bookingId,
-				authorId: userId,
-				amount: remainder,
-				method: "CASH", // Быстрая оплата помечается как наличные по дефолту
-				type: "PAYMENT",
-				note: "Быстрая отметка об оплате",
-				paidAt: new Date(),
-			},
-		});
+		await prisma.$transaction([
+			prisma.bookingPayment.create({
+				data: {
+					bookingId,
+					authorId: userId,
+					amount: remainder,
+					method: "CARD",
+					type: "PAYMENT",
+					note: "Быстрая отметка об оплате",
+					paidAt: new Date(),
+				},
+			}),
+			prisma.booking.update({
+				where: { id: bookingId },
+				data: { status: "READY_TO_RENT" },
+			}),
+		]);
 
 		await writeAuditLog(bookingId, userId, name, {
 			action: "Быстрая оплата",
 			fieldName: "payments",
 			valueAfter: `Добавлен платёж на ${fmtRub(remainder)}`,
+		});
+
+		revalidatePath("/admin/bookings");
+		return { success: true };
+	} catch (e) {
+		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
+	}
+}
+
+export async function adminHalfPayBookingAction(bookingId: string) {
+	try {
+		const { userId, name } = await requireAdmin();
+
+		const booking = await prisma.booking.findUnique({
+			where: { id: bookingId },
+			include: { payments: { select: { amount: true } } },
+		});
+		if (!booking) return { success: false, error: "Заказ не найден" };
+
+		const totalPaid = booking.payments.reduce((s, p) => s + p.amount, 0);
+		const halfAmount = Math.ceil(booking.totalAmount / 2);
+		const toAdd = Math.max(0, halfAmount - totalPaid);
+
+		if (toAdd <= 0) {
+			return { success: false, error: "Предоплата уже внесена или превышена" };
+		}
+
+		await prisma.$transaction([
+			prisma.bookingPayment.create({
+				data: {
+					bookingId,
+					authorId: userId,
+					amount: toAdd,
+					method: "CASH",
+					type: "PAYMENT",
+					note: "Предоплата 50%",
+					paidAt: new Date(),
+				},
+			}),
+			prisma.booking.update({
+				where: { id: bookingId },
+				data: { status: "READY_TO_RENT" },
+			}),
+		]);
+
+		await writeAuditLog(bookingId, userId, name, {
+			action: "Предоплата 50%",
+			fieldName: "payments",
+			valueAfter: `Внесено ${fmtRub(toAdd)}, статус → Готов к выдаче`,
 		});
 
 		revalidatePath("/admin/bookings");

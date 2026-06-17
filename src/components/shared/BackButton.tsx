@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { CaretLeftIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface BackButtonProps {
@@ -21,15 +22,16 @@ export function BackButton({ fallback = "/", className }: BackButtonProps) {
 	};
 
 	return (
-		<button
-			type="button"
+		<Button
+			variant="ghost"
+			size="icon"
 			onClick={handleBack}
 			className={cn(
-				"w-8 h-8 rounded-xl border border-foreground/10 flex items-center justify-center text-center hover:bg-foreground/5 transition-all shrink-0",
+				"inline-flex items-center gap-2 transition-colors rounded-xl mr-2 p-0!",
 				className
 			)}
 		>
-			<ArrowLeft size={18} className="m-auto" />
-		</button>
+			<CaretLeftIcon size={18} className="m-auto" />
+		</Button>
 	);
 }

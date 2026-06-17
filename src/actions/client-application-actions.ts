@@ -11,7 +11,11 @@ import { createAdminNotification } from "@/actions/admin-notification-actions";
 import { auth } from "@/auth";
 import { encrypt } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
-import { type ClientFormValues, clientFormSchema } from "@/schemas";
+import {
+	buildFullName,
+	type ClientFormValues,
+	clientFormSchema,
+} from "@/schemas";
 
 type ActionResponse = {
 	success: boolean;
@@ -47,7 +51,13 @@ export async function submitClientApplicationAction(
 			return { success: false, message: "Не авторизован" };
 
 		const personalData = data.applicationData.personalData;
-		const fullName = personalData.name;
+		const { lastName, firstName, middleName } = personalData;
+		// Собираем ФИО из трёх отдельных полей
+		const fullName = buildFullName({
+			lastName,
+			firstName,
+			...(middleName ? { middleName } : {}),
+		});
 		const phone = personalData.phone;
 
 		await prisma.user.upsert({
@@ -72,6 +82,7 @@ export async function submitClientApplicationAction(
 		const isFirstApplication =
 			!existingUser?.createdAt ||
 			Date.now() - existingUser.createdAt.getTime() < 60_000;
+
 		await prisma.clientApplication.upsert({
 			where: { userId: session.user.id },
 			update: {
@@ -161,6 +172,21 @@ export async function saveDraftAction(
 					status: ApplicationStatus.DRAFT,
 				},
 			});
+
+			// Синхронизируем User.name при наличии хотя бы фамилии/имени
+			// чтобы поиск в таблице работал даже для черновиков
+			const pd = data?.applicationData?.personalData;
+			const draftName = buildFullName({
+				lastName: pd?.lastName || "",
+				firstName: pd?.firstName || "",
+				middleName: pd?.middleName || "",
+			});
+			if (draftName) {
+				await prisma.user.update({
+					where: { id: session.user.id },
+					data: { name: draftName },
+				});
+			}
 		}
 
 		return { success: true };
@@ -204,7 +230,6 @@ export async function updateUserRoleAction(
 	try {
 		const session = await auth();
 
-		// 1. Проверка прав (только ADMIN)
 		if (session?.user?.role !== "ADMIN") {
 			return {
 				success: false,
@@ -212,7 +237,6 @@ export async function updateUserRoleAction(
 			};
 		}
 
-		// 2. Защита от потери доступа (админ не может понизить сам себя)
 		if (session.user.id === userId) {
 			return {
 				success: false,
@@ -365,24 +389,26 @@ export async function updateFullApplicationDataAction(
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
-		// 1. Валидируем всю пришедшую форму
 		const parsed = clientFormSchema.safeParse(data);
 		if (!parsed.success) {
 			return { success: false, error: "Ошибка валидации данных" };
 		}
 
-		// 2. Шифруем чувствительные поля
 		const encryptedData = encryptSensitiveFields(
 			parsed.data as unknown as Record<string, unknown>
 		);
 
-		// 3. Сохраняем в БД и кидаем уведомление админу
 		const personalData = data.applicationData.personalData;
 
-		const newFullName = personalData.name;
+		const { lastName, firstName, middleName } = personalData;
+		// Собираем ФИО из трёх полей
+		const newFullName = buildFullName({
+			lastName,
+			firstName,
+			...(middleName ? { middleName } : {}),
+		});
 
 		await prisma.$transaction([
-			// Добавляем обновление User для корректного поиска
 			prisma.user.update({
 				where: { id: session.user.id },
 				data: {

@@ -23,9 +23,7 @@ export interface StepConfig {
 	availableFor: Array<ClientVariants>;
 }
 
-// ============================================================================
-// INDIVIDUAL STEPS
-// ============================================================================
+// ── INDIVIDUAL STEPS ──────────────────────────────────────────────────────────
 const INDIVIDUAL_STEPS: readonly StepConfig[] = [
 	{
 		id: "identity",
@@ -33,7 +31,14 @@ const INDIVIDUAL_STEPS: readonly StepConfig[] = [
 		title: "Личные данные и паспорт",
 		icon: UserCircleIcon,
 		component: IdentitySection,
-		fields: ["applicationData.personalData", "applicationData.passport"],
+		fields: [
+			"applicationData.personalData.lastName",
+			"applicationData.personalData.firstName",
+			"applicationData.personalData.middleName",
+			"applicationData.personalData.birth",
+			"applicationData.personalData.phone",
+			"applicationData.passport",
+		],
 		availableFor: ["individual", "individual_partner"],
 	},
 	{
@@ -61,9 +66,6 @@ const INDIVIDUAL_STEPS: readonly StepConfig[] = [
 	},
 ] as const;
 
-// ============================================================================
-// HELPER FUNCTION - Получить шаги для конкретного типа клиента
-// ============================================================================
 export const getStepsForClientType = (
 	clientType: ClientFormValues["clientType"]
 ): readonly StepConfig[] => {

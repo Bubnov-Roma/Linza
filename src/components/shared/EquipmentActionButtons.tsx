@@ -54,7 +54,8 @@ export function EquipmentActionButtons({
 						type="button"
 						onClick={handleShare}
 						className={cn(
-							"w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors shadow-sm p-2 text-primary-foreground/50"
+							"w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors shadow-sm p-2 text-primary-foreground/60",
+							isCopied && "text-primary-foreground"
 						)}
 					>
 						<ShareFatIcon weight={isCopied ? "fill" : "regular"} size={16} />
@@ -72,8 +73,8 @@ export function EquipmentActionButtons({
 						type="button"
 						onClick={handleHeart}
 						className={cn(
-							"w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors shadow-sm p-2 text-primary-foreground/50",
-							isFavorite && "text-primary"
+							"w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors shadow-sm p-2 text-primary-foreground/60",
+							isFavorite && "text-primary-accent"
 						)}
 					>
 						<HeartIcon weight={isFavorite ? "fill" : "regular"} size={16} />

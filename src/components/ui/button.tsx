@@ -20,7 +20,7 @@ const buttonVariants = cva(
 					"hover:bg-muted-foreground/25 hover:text-foreground transition-colors duration-300",
 				link: "text-primary underline-offset-4 hover:underline",
 				social:
-					"bg-muted-foreground/5 backdrop-blur-lg border border-foreground/5 text-foreground hover:bg-white/10 hover:shadow-xl hover:border-foreground/10 active:shadow-md",
+					"bg-muted-foreground/5 backdrop-blur-lg border border-foreground/5 text-foreground hover:bg-white/10 hover:shadow-lg hover:border-foreground/10 active:shadow-md",
 				glass: cn(
 					"relative overflow-hidden bg-secondary/80 backdrop-blur-lg text-foreground transition-all duration-300",
 					"hover:border-primary/30",
@@ -34,7 +34,7 @@ const buttonVariants = cva(
 				brand:
 					"bg-muted-foreground/10 text-foreground/80 hover:bg-primary hover:text-primary-foreground transition-all duration-200 group/auth",
 				tab: cn(
-					"flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-2xl text-muted-foreground hover:text-foreground transition-all duration-200"
+					"flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:drop-shadow-md active:bg-background active:insert-shadow transition-all duration-200"
 				),
 			},
 			isActive: {

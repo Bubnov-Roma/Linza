@@ -73,16 +73,21 @@ function buildPrismaWhere(
 	const where: Prisma.EquipmentWhereInput = {};
 
 	if (search) {
-		const baseTerms = [...new Set(search.split(" ").filter(Boolean))];
+		const searchWords = search.trim().split(/\s+/).filter(Boolean);
 
-		const allVariations = baseTerms.flatMap((term) =>
-			getSearchVariations(term)
-		);
-		where.OR = allVariations.flatMap((term) => [
-			{ title: { contains: term, mode: "insensitive" } },
-			{ description: { contains: term, mode: "insensitive" } },
-			{ inventoryNumber: { contains: term, mode: "insensitive" } },
-		]);
+		if (searchWords.length > 0) {
+			where.AND = searchWords.map((word) => {
+				const variations = getSearchVariations(word);
+
+				return {
+					OR: variations.flatMap((term) => [
+						{ title: { contains: term, mode: "insensitive" } },
+						{ description: { contains: term, mode: "insensitive" } },
+						{ inventoryNumber: { contains: term, mode: "insensitive" } },
+					]),
+				};
+			});
+		}
 	}
 
 	if (filters && filters.length > 0) {
@@ -698,7 +703,17 @@ const fetchEquipmentCached = cache(
 		const where: Prisma.EquipmentWhereInput = { isAvailable: true };
 
 		if (search) {
-			where.title = { contains: search };
+			const searchWords = search.trim().split(/\s+/).filter(Boolean);
+			if (searchWords.length > 0) {
+				where.AND = searchWords.map((word) => {
+					const variations = getSearchVariations(word);
+					return {
+						OR: variations.map((term) => ({
+							title: { contains: term, mode: "insensitive" },
+						})),
+					};
+				});
+			}
 		}
 
 		if (categorySlug && categorySlug !== "all") {

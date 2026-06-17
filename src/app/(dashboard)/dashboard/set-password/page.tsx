@@ -82,7 +82,7 @@ export default function SetPasswordPage() {
 								if (errors.password) setErrors((p) => ({ ...p, password: "" }));
 							}}
 							placeholder="Минимум 8 символов"
-							className="pl-8 h-11 pr-10"
+							className="glass-input pl-8 h-11 pr-10"
 						/>
 						<button
 							type="button"
@@ -119,7 +119,7 @@ export default function SetPasswordPage() {
 									setErrors((p) => ({ ...p, confirmPassword: "" }));
 							}}
 							placeholder="Повторите пароль"
-							className="pl-8 h-11 pr-10"
+							className="pl-8 h-11 pr-10 glass-input"
 						/>
 						<button
 							type="button"

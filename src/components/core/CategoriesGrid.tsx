@@ -38,7 +38,7 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 						<Link
 							key={cat.id}
 							href={`/equipment?category=${cat.slug}`}
-							className="group relative h-48 rounded-3xl bg-foreground/5 border border-muted-foreground/20 overflow-hidden"
+							className="group relative h-48 rounded-3xl bg-foreground/5 border border-muted-foreground/10 overflow-hidden"
 						>
 							{cat.imageUrl ? (
 								<>
@@ -61,7 +61,7 @@ export function CategoriesGrid({ categories }: CategoriesGridProps) {
 									</div>
 								)}
 								<div className="absolute inset-0 bg-linear-to-t from-background/40 to-transparent opacity-0 md:opacity-100 group-hover:opacity-0 transition-opacity duration-500 ease-in-out" />
-								<h3 className="relative font-semibold text-xl bg-background/80 uppercase italic tracking-[0.2em] mt-auto transition-all group-hover:backdrop-brightness-180 backdrop-blur-xl dark:group-hover:backdrop-brightness-90 py-3 px-5 rounded-2xl duration-500">
+								<h3 className="relative font-semibold text-xl bg-background/20 uppercase italic tracking-[0.2em] mt-auto transition-all group-hover:backdrop-brightness-125 backdrop-blur-lg dark:group-hover:backdrop-brightness-90 py-3 px-5 rounded-2xl duration-500">
 									{cat.name}
 								</h3>
 							</div>

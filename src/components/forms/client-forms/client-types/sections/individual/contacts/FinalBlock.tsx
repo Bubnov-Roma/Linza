@@ -6,11 +6,11 @@ import { Separator } from "@/components/ui";
 
 export const FinalBlock = () => {
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<FormTextarea
 				name="agreements.comment"
 				label="Комментарий"
-				placeholder="Дополнительная информация или пожелания (необязательно)"
+				placeholder="Дополнительная информация или комментарии (необязательно)"
 				rows={4}
 				className="mt-auto"
 			/>

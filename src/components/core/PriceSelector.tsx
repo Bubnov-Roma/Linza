@@ -96,7 +96,7 @@ export function PriceSelector({
 									: "text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10"
 							)}
 						>
-							<span className="text-[10px] font-bold uppercase tracking-tight">
+							<span className="text-[9px] md:text-[10px] font-bold lg:uppercase tracking-tight">
 								{opt.labelFull}
 							</span>
 						</button>
@@ -105,30 +105,27 @@ export function PriceSelector({
 			</div>
 
 			{/* Динамический бенефит (MD3 Low-emphasis) */}
-			{isDetails && (
-				<>
-					{currentBenefit ? (
-						<div className="flex items-center gap-1.5 text-lime-600 dark:text-lime-400">
-							<span className="text-[11px] font-bold">
-								Экономия {fmtRub(currentBenefit.savings)}
-								относительно суток
-							</span>
-						</div>
-					) : currentActivePeriod === "day" ? (
-						<div className="flex items-center gap-1.5 text-muted-foreground">
-							<span className="text-[11px] font-medium">
-								Стандартный суточный тариф
-							</span>
-						</div>
-					) : null}
-				</>
-			)}
+			{isDetails &&
+				(currentBenefit ? (
+					<div className="flex items-center gap-1.5 text-lime-600 dark:text-lime-400">
+						<span className="text-[11px] font-bold">
+							Экономия {fmtRub(currentBenefit.savings)}
+							относительно суток
+						</span>
+					</div>
+				) : currentActivePeriod === "day" ? (
+					<div className="flex items-center gap-1.5 text-muted-foreground">
+						<span className="text-[11px] font-medium">
+							Стандартный суточный тариф
+						</span>
+					</div>
+				) : null)}
 
 			{/* ── Price Display ── */}
 			<div
 				className={cn(
 					"flex items-end justify-between gap-4",
-					!isDetails && "flex-row items-end"
+					!isDetails && "flex-col items-start sm:flex-row"
 				)}
 			>
 				<div className="space-y-1">
@@ -136,7 +133,7 @@ export function PriceSelector({
 						<span
 							className={cn(
 								"font-black tracking-tighter italic uppercase",
-								isDetails ? "text-4xl" : "text-3xl"
+								isDetails ? "text-4xl" : "text-xl lg:text-2xl xl:text-3xl"
 							)}
 						>
 							{currentPrice}
@@ -149,7 +146,10 @@ export function PriceSelector({
 
 				{action && (
 					<div
-						className={cn("shrink-0", isDetails ? "w-50 sm:w-70" : "w-auto")}
+						className={cn(
+							"shrink-0",
+							isDetails ? "w-50 sm:w-70" : "w-full sm:w-fit"
+						)}
 					>
 						{action}
 					</div>

@@ -37,24 +37,27 @@
   --muted-foreground: oklch(0.2 0.05 264 / 0.5);
   --bg-card: oklch(100% 0.00011 271.152 / 0.976);
   --border-soft: oklch(0 0 0 / 0.1);
-  --brand-color: oklch(0.875 0.1783 92.59);
+  --brand-color: oklch(87.503% 0.17833 92.607);
   --brand-accent:oklch(0.7584 0.160163 74.7753);
   --brand-contrast: oklch(0.2453 0.0939 259.41);
   --brand-soft-contrast: oklch(0.3144 0.0656 255.42);
   --brand-glow:  var(--brand-color);
   --brand-bg-soft: oklch(0.6 0.22 264 / 0.04);
-  --secondary-color: oklch(91.018% 0.00572 84.456);
+  --secondary-color: oklch(88.814% 0.01667 297.343);
   --secondary-foreground: oklch(0.15 0.04 45);  /* dark brown for text on secondary bg */
   --destructive: oklch(60.951% 0.18179 33.143);
   --warning: oklch(61.775% 0.2387 27.968 / 0.699);
   /* Light theme inputs */
-  --input-bg: transparent;
+  --input-bg: oklch(0 0 0 / 0.030); 
   --input-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   --input-border: oklch(0 0 0 / 0.1);
-  --input-bg-hover: oklch(0 0 0 / 0.025);
+  --input-bg-hover: oklch(from var(--foreground) l c h / 0.05);
   --input-shadow-hover: 0 3px 8px rgba(0, 0, 0, 0.12);
   --input-shadow-focus: 0 2px 6px rgba(0, 0, 0, 0.1);
   --input-bg-focus: oklch(1 0 0 / 0.9);
+  --input-ring-width: 1px;
+  --input-border-focus: oklch(from var(--brand-color) l c h / 0.45);
+  --input-ring-focus: oklch(from var(--brand-color) l c h / 0.12);
   --sidebar: hsl(0 0% 98%);
   --sidebar-foreground: hsl(240 5.3% 26.1%);
   --sidebar-primary: hsl(240 5.9% 10%);
@@ -73,9 +76,9 @@
   --bg-card: oklch(28.04% 0.01189 264.39 / 0.892);
   --border-soft: oklch(1 0 0 / 0.5);
   --brand-bg-soft: oklch(0.75 0.15 250 / 0.08);
-  --secondary-color: oklch(40.051% 0.02133 96.475);
+  --secondary-color: oklch(41.679% 0.04842 295.28);
   /* Dark theme inputs */
-  --input-bg: oklch(1 0 0 / 0.07); 
+  --input-bg: oklch(1 0 0 / 0.08); 
   --input-shadow: 0 1px 0 oklch(1 0 0 / 0.06);
   --input-border: oklch(1 0 0 / 0.1);
   --input-bg-hover: oklch(1 0 0 / 0.11);
@@ -171,18 +174,13 @@
     box-shadow: var(--shadow-neumorph-inset);
   }
 
+  /* ── Input Glass ──────────────────────────────────────────────────────────── */
 
-   /* ── Input Glass ──────────────────────────────────────────────────────── */
-   
+
+/* ── 1. Standalone: <Input /> и <Textarea /> ──────────────────────────────── */
   .glass-input {
     @apply backdrop-blur-md outline-none transition-all duration-200 ease-out;
     background: var(--input-bg);
-    border: 1px solid oklch(0 0 0 / 0.1);  /* light: border-black/10 */
-    box-shadow: var(--input-shadow);
-  }
-
-  .dark .glass-input {
-    border-color: oklch(1 0 0 / 0.1);  /* dark: border-white/10 */
   }
 
   .glass-input::placeholder {
@@ -191,34 +189,91 @@
 
   .glass-input:hover {
     background: var(--input-bg-hover);
-    border-color: oklch(0 0 0 / 0.15);
-    box-shadow: var(--input-shadow-hover, var(--input-shadow));
+    box-shadow: var(--input-shadow-hover, var(--input-shadow)); 
     transform: translateY(-0.5px);
-  }
-
-  .dark .glass-input:hover {
-    border-color: oklch(1 0 0 / 0.15);
   }
 
   .glass-input:focus,
   .glass-input:focus-visible {
-    background: var(--input-bg-focus);
-    box-shadow: var(--input-shadow-focus);
-    border-color: oklch(from var(--brand-color) l c h / 0.5);
+    box-shadow: var(--input-shadow-hover, var(--input-shadow)); 
     transform: translateY(0);
   }
 
-  .glass-input-neumorphic {
-    @apply border border-foreground/10 drop-shadow-md dark:bg-white/5 shadow-md;
-  }
 
-   .glass-input-neumorphic:hover {
-    @apply bg-background/5;
-   }
+/* ── 2. Grouped: InputGroup with glass={true} ───────────────────────
+*/
 
-  .glass-input-neumorphic:focus {
-    background: var(--bg-card);
-  }
+.glass-input-group {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  transition:
+    background 0.2s ease-out,
+    box-shadow 0.2s ease-out,
+    border-color 0.2s ease-out,
+    transform 0.15s ease-out;
+}
+
+.glass-input-group:hover {
+  background: var(--input-bg-hover);
+  box-shadow: var(--input-shadow);
+  /* box-shadow: var(--input-shadow-hover, var(--input-shadow)); */
+  border-color: oklch(from var(--foreground) l c h / 0.18);
+  transform: translateY(-0.5px);
+} 
+
+.glass-input-group:focus-within {
+  /* background: var(--input-bg-focus); */
+  box-shadow: var(--input-shadow-hover, var(--input-shadow)); 
+  /* box-shadow:
+    var(--input-shadow-focus, var(--input-shadow)),
+    0 0 0 var(--input-ring-width) var(--input-ring-focus); */
+  border-color: var(--input-border-focus);
+  transform: translateY(0);
+}
+
+.glass-input-group:focus-within:hover {
+  transform: translateY(0);
+}
+
+
+/* Placeholder у дочерних полей */
+.glass-input-group textarea::placeholder,
+.glass-input-group input::placeholder {
+  color: oklch(from var(--foreground) l c h / 0.3);
+}
+
+/* Дочерние поля — сбрасываем все собственные стили,
+   чтобы не конфликтовать с контейнером */
+.glass-input-group textarea,
+.glass-input-group input {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  transform: none !important;
+}
+
+/* Кнопки внутри группы — прозрачный фон, лёгкий hover */
+.glass-input-group [data-slot="input-group-addon"] button {
+  background: transparent;
+  transition: color 0.15s, background 0.15s;
+}
+
+.glass-input-group [data-slot="input-group-addon"] button:hover {
+  background: oklch(from var(--foreground) l c h / 0.08);
+}
+
+/* Neumorphic-вариант (без изменений) */
+.glass-input-neumorphic {
+  @apply border border-foreground/10 drop-shadow-md dark:bg-white/5 shadow-md;
+}
+.glass-input-neumorphic:hover {
+  @apply bg-background/5;
+}
+.glass-input-neumorphic:focus {
+  background: var(--bg-card);
+}
+
 
   /* ── Surface cards ──────────────────────────────────────────────────────── */
 
@@ -362,7 +417,7 @@
   }
 
   .tabs-group {
-    @apply flex gap-1 p-1 w-fit bg-foreground/5 rounded-2xl overflow-x-auto shadow-neumorph-inset shadow-muted-foreground/10;
+    @apply flex gap-1 p-1 w-fit bg-card/50 rounded-2xl overflow-x-auto backdrop-blur-xl; 
   }
 
   [data-slot="calendar"] {

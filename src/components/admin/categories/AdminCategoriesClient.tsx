@@ -141,7 +141,7 @@ export default function AdminCategoriesClient({
 	const IconComp = (PHOSPHOR_ICON_MAP[newCatIcon] ||
 		PHOSPHOR_ICON_MAP.Package) as Icon;
 	return (
-		<div className="space-y-6 px-3 md:px-6">
+		<div className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
 			<div className="py-4 flex items-start justify-between gap-4">
 				<div className="flex-col">
 					<div className="flex items-center gap-2.5">
@@ -178,7 +178,7 @@ export default function AdminCategoriesClient({
 						<div className="space-y-1.5 flex-col flex-1">
 							<Label className="text-xs">Название</Label>
 							<Input
-								className="h-9"
+								className="h-9 glass-input"
 								value={newCatName}
 								onChange={(e) => setNewCatName(e.target.value)}
 								placeholder="Например: Мониторы"

@@ -178,6 +178,7 @@ export interface AdminBookingRow {
 	totalPaid?: number;
 	labelTexts?: string[];
 	payments?: BookingPaymentRow[];
+	clientImage?: string | null;
 	user?: {
 		balance: number;
 	};

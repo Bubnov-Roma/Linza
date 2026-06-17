@@ -31,6 +31,7 @@ import {
 } from "@/actions/client-application-actions";
 import { AppStatusBadge } from "@/components/admin/users/details-panel/AppStatusBadge";
 import { AuditTab } from "@/components/admin/users/details-panel/AuditTab";
+import { ChatTab } from "@/components/admin/users/details-panel/ChatTab";
 import type { UserComment } from "@/components/admin/users/details-panel/CommentsBlock";
 import { DiscountField } from "@/components/admin/users/details-panel/DiscountField";
 import {
@@ -274,17 +275,17 @@ export function UserDetailPanel({
 				<SheetContent
 					showCloseButton={false}
 					side="right"
-					className="w-full sm:max-w-175 flex flex-col p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl"
+					className="w-full sm:max-w-175 flex flex-col p-0 gap-0 overflow-hidden backdrop-blur-xl"
 				>
 					{/* ── M3 COMPACT RESPONSIVE HEADER ── */}
-					<SheetHeader className="p-6 pb-4 border-b border-foreground/10 shrink-0 bg-background/50">
+					<SheetHeader className="p-6 pb-4 shrink-0">
 						<div className="flex items-start gap-4">
 							{/* Аватар */}
 							<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm mt-1">
 								{user.avatarUrl ? (
 									<Image
 										src={user.avatarUrl}
-										alt=""
+										alt={user.name || "User avatar"}
 										width={64}
 										height={64}
 										className="object-cover rounded-full"
@@ -373,23 +374,25 @@ export function UserDetailPanel({
 					</SheetHeader>
 
 					{/* ── TABS ── */}
-					<div className="flex border-b border-foreground/8 shrink-0 bg-background overflow-x-auto">
+					<div className="flex border-b border-foreground/8 shrink-0 overflow-x-auto">
 						{TABS.map(({ id, label, icon: Icon }) => (
 							<button
 								type="button"
 								key={id}
 								onClick={() => setTab(id)}
 								className={cn(
-									"flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
+									"cursor-pointer flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
 									tab === id
-										? "text-foreground border-primary bg-secondary/50"
-										: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/5"
+										? "text-foreground border-foreground"
+										: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/3"
 								)}
 							>
 								<Icon
 									size={14}
-									weight={tab === id ? "duotone" : "regular"}
-									className={cn(tab === id && "text-primary")}
+									weight={tab === id ? "duotone" : "bold"}
+									className={cn(
+										tab === id ? "text-foreground" : "text-muted-foreground"
+									)}
 								/>{" "}
 								{label}
 							</button>
@@ -397,7 +400,7 @@ export function UserDetailPanel({
 					</div>
 
 					{/* ── BODY ── */}
-					<div className="flex-1 overflow-y-auto bg-background/50 mx-4 sm:mx-6">
+					<div className="flex-1 overflow-y-auto  mx-4 sm:mx-6">
 						{tab === "profile" && (
 							<ProfileTab
 								user={user}
@@ -423,18 +426,11 @@ export function UserDetailPanel({
 							/>
 						)}
 						{tab === "chat" && (
-							<div className="py-16 text-center space-y-4">
-								<div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto text-primary">
-									<ChatIcon size={32} />
-								</div>
-								<div>
-									<p className="text-base font-bold">Чат с клиентом</p>
-									<p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-										Здесь будет доступна история переписки и возможность
-										связаться с клиентом напрямую (В разработке).
-									</p>
-								</div>
-							</div>
+							<ChatTab
+								userId={user.id}
+								userName={user.name}
+								userEmail={user.email}
+							/>
 						)}
 						{tab === "labels" && (
 							<LabelsBlock
@@ -529,7 +525,7 @@ export function UserDetailPanel({
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="grid gap-4 py-4 bg-muted-foreground/30 px-2 rounded-2xl">
+					<div className="grid gap-4 py-4 bg-secondary/30 px-2 rounded-2xl">
 						<div className="flex flex-wrap gap-2">
 							<Button
 								variant={reviewStatusAction === "APPROVED" ? "outline" : "tab"}
@@ -537,7 +533,7 @@ export function UserDetailPanel({
 								onClick={() => setReviewStatusAction("APPROVED")}
 								className="flex-1"
 							>
-								Аккаунт одобрен
+								Успешно проверено
 							</Button>
 							<Button
 								variant={reviewStatusAction === "STANDARD" ? "outline" : "tab"}
@@ -581,7 +577,7 @@ export function UserDetailPanel({
 								}
 								value={reviewMessage}
 								onChange={(e) => setReviewMessage(e.target.value)}
-								className="mt-2 text-sm rounded-xl resize-none"
+								className="mt-2 text-sm rounded-xl resize-none glass-input"
 								rows={4}
 							/>
 						)}

@@ -11,7 +11,7 @@ export const metadata = {
 export default async function AdminClientThreadsPage({
 	params,
 }: {
-	params: { clientId: string };
+	params: Promise<{ clientId: string }>;
 }) {
 	const session = await auth();
 	const role = session?.user?.role;
@@ -20,7 +20,9 @@ export default async function AdminClientThreadsPage({
 		redirect("/");
 	}
 
-	const result = await getClientSupportThreadsAction(params.clientId);
+	const { clientId } = await params;
+
+	const result = await getClientSupportThreadsAction(clientId);
 
 	if (!result.success) {
 		notFound();
@@ -30,7 +32,7 @@ export default async function AdminClientThreadsPage({
 		<div className="min-h-screen bg-background">
 			<Suspense fallback={<AdminClientSkeleton />}>
 				<AdminClientThreadsClient
-					clientId={params.clientId}
+					clientId={clientId}
 					initialThreads={result.threads || []}
 				/>
 			</Suspense>

@@ -34,7 +34,7 @@ export const ValidatedInput = React.forwardRef<
 					{...props}
 					onKeyDown={onKeyDown}
 					className={cn(
-						"glass-input w-full",
+						"glass-input w-full rounded-lg",
 						icon && "pl-10",
 						suffix && "pr-10",
 						error && "border-red-400/50",

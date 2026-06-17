@@ -26,7 +26,7 @@ export const FormCheckbox = ({
 	return (
 		<div className="flex flex-col gap-1.5">
 			<Label
-				className={`flex items-center gap-3 cursor-pointer group transition-opacity`}
+				className={`flex items-center gap-3 cursor-pointer group transition-opacity font-bold uppercase tracking-[0.12em]`}
 			>
 				<div className="relative flex items-center justify-center">
 					<input

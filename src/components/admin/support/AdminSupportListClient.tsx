@@ -1,9 +1,11 @@
 "use client";
 
 import {
+	ChatCenteredIcon,
+	ChatsIcon,
 	FunnelIcon,
 	MagnifyingGlassIcon,
-	PencilLineIcon,
+	PlusIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -20,6 +22,7 @@ import {
 	CHATS_STATUS_LABELS,
 } from "@/constants/support-chats.constants";
 import { cn } from "@/lib/utils";
+import { formatPlural } from "@/utils";
 
 type FilterStatus =
 	| "all"
@@ -56,6 +59,9 @@ export default function AdminSupportListClient({
 		return () => clearInterval(interval);
 	}, [latestAt]);
 
+	const pendingCount = initialThreads.filter(
+		(t) => t.status === "WAITING_FOR_ADMIN"
+	).length;
 	// Фильтрация и сортировка
 	const filtered = useMemo(() => {
 		let result = [...threads];
@@ -126,22 +132,30 @@ export default function AdminSupportListClient({
 	return (
 		<div className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
 			{/* Заголовок */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-black italic uppercase tracking-tight">
+			<div className="px-3 py-4 flex items-start justify-between gap-4">
+				<div className="flex items-center gap-2.5">
+					<ChatsIcon size={20} weight="duotone" />
+					<h1 className="text-2xl font-black italic uppercase tracking-tighter">
 						Чаты
 					</h1>
-					<p className="text-sm text-muted-foreground mt-1">
-						Всего: {threads.length} • Найдено: {filtered.length}
-					</p>
+					{pendingCount > 0 ? (
+						<Badge className="h-5 px-2 text-[10px] font-bold bg-primary text-primary-foreground">
+							{formatPlural(pendingCount, "new")}
+						</Badge>
+					) : (
+						<p className="text-sm text-muted-foreground mt-1">
+							Найдено • {filtered.length}
+						</p>
+					)}
 				</div>
+
 				<Button
+					size="sm"
+					aria-label="Добавить нового клиента"
+					className="h-9 gap-2 font-bold"
 					onClick={() => setNewThreadOpen(true)}
-					size="xl"
-					className="gap-2 rounded-full"
 				>
-					<PencilLineIcon size={16} weight="bold" className="md:hidden" />
-					<span className="hidden md:block">Написать клиенту</span>
+					<PlusIcon size={14} weight="bold" />
 				</Button>
 			</div>
 
@@ -162,7 +176,7 @@ export default function AdminSupportListClient({
 						placeholder="Поиск по клиенту, email или теме..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-10 h-10 rounded-2xl"
+						className="pl-10 h-10 rounded-2xl glass-input"
 					/>
 					{searchQuery && (
 						<Button
@@ -244,79 +258,75 @@ export default function AdminSupportListClient({
 						<Card
 							key={thread.id}
 							onClick={() => router.push(`/admin/support/thread/${thread.id}`)}
-							className="block group cursor-pointer"
+							className={cn(
+								"p-4 block group cursor-pointer",
+								isWaitingForAdmin && " bg-red-500/5",
+								unreadCount > 0 && "ring-2 ring-green-500/30"
+							)}
 						>
-							<div
-								className={cn(
-									"p-4 transition-all hover:bg-muted-foreground/10",
-									isWaitingForAdmin && " bg-red-500/5",
-									unreadCount > 0 && "ring-2 ring-green-500/30"
-								)}
-							>
-								<div className="flex items-start justify-between gap-4">
-									{/* Основная информация */}
-									<div className="flex-1 min-w-0 space-y-2">
-										{/* Клиент и тема */}
-										<div className="flex items-start gap-3 flex-wrap">
-											<div className="flex-1 min-w-0">
-												<div className="flex items-center gap-2">
-													<Link
-														href={`/admin/support/${thread.userId}`}
-														onClick={(e) => e.stopPropagation()}
-														className="font-semibold text-foreground hover:underline truncate"
-													>
-														{thread.user.name || "Без имени"}
-													</Link>
-													{unreadCount > 0 && (
-														<Badge className="bg-green-600 text-white text-[10px] shrink-0">
-															{unreadCount} новых
-														</Badge>
-													)}
-												</div>
-												<p className="text-sm text-muted-foreground truncate">
-													{thread.user.email}
-												</p>
+							<div className="flex items-start justify-between gap-4">
+								{/* Основная информация */}
+								<div className="flex-1 min-w-0 space-y-2">
+									{/* Клиент и тема */}
+									<div className="flex items-start gap-3 flex-wrap">
+										<div className="flex-1 min-w-0">
+											<div className="flex items-center gap-2">
+												<Link
+													href={`/admin/support/${thread.userId}`}
+													onClick={(e) => e.stopPropagation()}
+													className="font-semibold text-foreground hover:underline truncate"
+												>
+													{thread.user.name || "Без имени"}
+												</Link>
+												{unreadCount > 0 && (
+													<Badge className="bg-green-600 text-white text-[10px] shrink-0">
+														{unreadCount} новых
+													</Badge>
+												)}
 											</div>
-										</div>
-
-										{/* Тема */}
-										<p className="font-medium text-foreground group-hover:underline">
-											{thread.subject}
-										</p>
-
-										{/* Последнее сообщение */}
-										{lastMsg && (
 											<p className="text-sm text-muted-foreground truncate">
-												{lastMsg.isAdmin ? "Вы:" : "Клиент:"}{" "}
-												{lastMsg.content.substring(0, 80)}
-												{lastMsg.content.length > 80 ? "..." : ""}
+												{thread.user.email}
 											</p>
-										)}
-
-										{/* Мета */}
-										<div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-											<span>{thread.messages.length} сообщений</span>
-											<span>•</span>
-											<span>{formatDate(thread.lastMessageAt)}</span>
 										</div>
 									</div>
 
-									{/* Статус и действия */}
-									<div className="flex flex-col items-end gap-2 shrink-0">
-										<Badge
-											variant="outline"
-											className={cn(
-												"text-[10px] font-medium",
-												CHATS_STATUS_COLORS[thread.status] ||
-													"bg-foreground/10 text-foreground/60"
-											)}
-										>
-											{CHATS_STATUS_LABELS[thread.status] || thread.status}
-										</Badge>
-										<span className="text-xs text-muted-foreground">
-											{thread.messages.length}
-										</span>
+									{/* Тема */}
+									<p className="font-medium text-foreground group-hover:underline">
+										{thread.subject}
+									</p>
+
+									{/* Последнее сообщение */}
+									{lastMsg && (
+										<p className="text-sm text-muted-foreground truncate">
+											{lastMsg.isAdmin ? "Вы:" : "Клиент:"}{" "}
+											{lastMsg.content.substring(0, 80)}
+											{lastMsg.content.length > 80 ? "..." : ""}
+										</p>
+									)}
+
+									{/* Мета */}
+									<div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+										<span>{thread.messages.length} сообщений</span>
+										<span>•</span>
+										<span>{formatDate(thread.lastMessageAt)}</span>
 									</div>
+								</div>
+
+								{/* Статус и действия */}
+								<div className="flex flex-col items-end gap-2 shrink-0">
+									<Badge
+										variant="outline"
+										className={cn(
+											"text-[10px] font-medium",
+											CHATS_STATUS_COLORS[thread.status] ||
+												"bg-foreground/10 text-foreground/60"
+										)}
+									>
+										{CHATS_STATUS_LABELS[thread.status] || thread.status}
+									</Badge>
+									<span className="text-xs text-muted-foreground">
+										{thread.messages.length}
+									</span>
 								</div>
 							</div>
 						</Card>
@@ -328,8 +338,9 @@ export default function AdminSupportListClient({
 					<div className="text-center py-12 text-muted-foreground">
 						{threads.length === 0 ? (
 							<>
+								<ChatCenteredIcon weight="duotone" size={22} />
 								<p className="text-lg font-semibold mb-2">
-									Потоков поддержки нет
+									Чатов с клиентами пока нет
 								</p>
 								<p className="text-sm">
 									Когда клиенты начнут писать, они появятся здесь

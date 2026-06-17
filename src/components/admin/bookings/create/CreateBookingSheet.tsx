@@ -499,7 +499,7 @@ export function CreateBookingSheet({
 								/>
 								<Input
 									placeholder="Поиск клиента по имени, email, телефону..."
-									className="pl-9 h-9 text-sm"
+									className="pl-9 h-9 text-sm glass-input"
 									value={clientQuery}
 									onChange={(e) => {
 										setClientQuery(e.target.value);
@@ -680,7 +680,7 @@ export function CreateBookingSheet({
 							/>
 							<Input
 								placeholder="Добавить технику..."
-								className="pl-9 h-9 text-sm"
+								className="pl-9 h-9 text-sm glass--input"
 								value={eqQuery}
 								onChange={(e) => {
 									setEqQuery(e.target.value);
@@ -754,7 +754,7 @@ export function CreateBookingSheet({
 											value={manualTotal}
 											onChange={(e) => setManualTotal(e.target.value)}
 											placeholder="0"
-											className="pr-8 h-9 text-sm"
+											className="pr-8 h-9 text-sm glass-input"
 										/>
 										<span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
 											₽
@@ -805,7 +805,7 @@ export function CreateBookingSheet({
 							placeholder="Необязательно — будет записан в историю изменений"
 							value={internalNote}
 							onChange={(e) => setInternalNote(e.target.value)}
-							className="text-sm resize-none h-20"
+							className="text-sm resize-none h-20 glass-input"
 						/>
 					</div>
 				</div>

@@ -9,30 +9,28 @@ import { cn } from "@/lib/utils";
 function InputGroup({
 	className,
 	error,
+	glass,
 	...props
-}: React.ComponentProps<"div"> & { error?: boolean }) {
+}: React.ComponentProps<"div"> & { error?: boolean; glass?: boolean }) {
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: the use of div is justified by styling
 		<div
 			data-slot="input-group"
 			role="group"
 			className={cn(
-				// "glass-input",
 				"group/input-group relative flex w-full items-center transition-all duration-300",
 				"h-12 min-w-0 rounded-2xl overflow-hidden",
-				"hover:bg-(--input-bg-hover) hover:border-black/15 dark:hover:border-white/15 focus:border-primary/30",
-				"focus-within:bg-(--input-bg-focus)! focus-within:shadow-(--input-shadow-focus)!",
 				"focus-within:border-[oklch(from_var(--brand-color)_l_c_h/0.5)] focus-within:translate-y-0 focus-within:ring-1 focus-within:ring-primary/10",
 				error
 					? "border-red-400/50 ring-red-400/10 shadow-error-glow"
 					: "border-foreground/10",
 				"has-[>textarea]:h-auto",
-
-				// Variants based on alignment.
+				// Variants based on alignment
 				"has-[>[data-align=inline-start]]:[&>input]:pl-2",
 				"has-[>[data-align=inline-end]]:[&>input]:pr-2",
 				"has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:[&>input]:pb-3",
 				"has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3",
+				glass && "glass-input-group border-transparent",
 				className
 			)}
 			{...props}
@@ -75,9 +73,7 @@ function InputGroupAddon({
 			data-align={align}
 			className={cn(inputGroupAddonVariants({ align }), className)}
 			onClick={(e) => {
-				if ((e.target as HTMLElement).closest("button")) {
-					return;
-				}
+				if ((e.target as HTMLElement).closest("button")) return;
 				e.currentTarget.parentElement?.querySelector("input")?.focus();
 			}}
 			{...props}
@@ -142,7 +138,7 @@ function InputGroupInput({
 		<input
 			data-slot="input-group-control"
 			className={cn(
-				"flex-1 h-full w-full bg-transparent border-none outline-none px-3",
+				"flex-1 h-full w-full bg-transparent border-none outline-none px-3 shadow-none",
 				"text-base md:text-sm placeholder:text-foreground/20",
 				"focus:ring-0 focus:outline-none",
 				"disabled:cursor-not-allowed disabled:opacity-50",
@@ -161,7 +157,8 @@ function InputGroupTextarea({
 		<Textarea
 			data-slot="input-group-control"
 			className={cn(
-				"flex-1 resize-none rounded-2xl border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent",
+				"flex-1 resize-none rounded-2xl border-0 bg-transparent! py-3 shadow-none",
+				"focus-visible:ring-0 dark:bg-transparent",
 				className
 			)}
 			{...props}

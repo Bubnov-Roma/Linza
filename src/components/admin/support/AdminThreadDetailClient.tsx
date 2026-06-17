@@ -1,16 +1,14 @@
 "use client";
 
 import {
-	CaretLeftIcon,
+	ArrowClockwiseIcon,
 	CheckIcon,
-	DoorOpenIcon,
 	LockIcon,
 	PaperPlaneTiltIcon,
 	PencilSimpleIcon,
 	WarningIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -22,7 +20,19 @@ import {
 	reopenSupportThreadAction,
 	sendSupportMessageAction,
 } from "@/actions/support-actions";
-import { Button, Textarea } from "@/components/ui";
+import { BackButton } from "@/components/shared";
+import { Badge, Button, Textarea } from "@/components/ui";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { CHATS_STATUS_LABELS } from "@/constants";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +45,6 @@ export default function AdminThreadDetailClient({
 	const [message, setMessage] = useState("");
 	const [isPending, startTransition] = useTransition();
 
-	// ИЗМЕНЕНО: Теперь ссылаемся на сам контейнер сообщений вместо нижнего div
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
 	// Редактирование
@@ -72,7 +81,6 @@ export default function AdminThreadDetailClient({
 		return () => clearInterval(interval);
 	}, [thread.id, thread.lastMessageAt]);
 
-	// ИЗМЕНЕНО: Точечный скролл внутри контейнера сообщений
 	const scrollToBottom = () => {
 		if (scrollContainerRef.current) {
 			scrollContainerRef.current.scrollTo({
@@ -156,9 +164,8 @@ export default function AdminThreadDetailClient({
 		});
 	};
 
+	// ИЗМЕНЕНО: Нативный confirm убран, функция вызывается сразу из диалога
 	const handleCloseThread = () => {
-		if (!confirm("Закрыть это обращение?")) return;
-
 		startTransition(async () => {
 			const result = await closeSupportThreadAction(thread.id);
 			if (!result.success) {
@@ -171,8 +178,6 @@ export default function AdminThreadDetailClient({
 	};
 
 	const handleReopenThread = () => {
-		if (!confirm("Переоткрыть это обращение?")) return;
-
 		startTransition(async () => {
 			const result = await reopenSupportThreadAction(thread.id);
 			if (!result.success) {
@@ -202,85 +207,134 @@ export default function AdminThreadDetailClient({
 	).length;
 
 	return (
-		// ИЗМЕНЕНО: Убран класс h-screen, добавлен безопасный внутренний отступ снизу pb-28
 		<div className="container mx-auto max-w-4xl px-4 pt-10 pb-28 space-y-6 flex flex-col">
 			{/* Заголовок */}
 			<div className="space-y-4 shrink-0">
-				<Link
-					href="/admin/support"
-					className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-				>
-					<CaretLeftIcon size={16} weight="bold" />
-					Вернуться к списку
-				</Link>
-
 				<div className="space-y-3">
-					<div className="flex items-start justify-between gap-4">
+					<div className="flex flex-col items-start justify-between gap-4">
 						<div className="space-y-2 flex-1">
-							<h1 className="text-2xl font-bold">{thread.subject}</h1>
-							<div className="space-y-1 text-sm text-muted-foreground">
-								<p>
-									<strong>Клиент:</strong> {thread.user.name || "Без имени"} (
-									{thread.user.email})
-								</p>
-								{thread.contactInfo && (
+							<h1 className="text-2xl font-bold gap-4">
+								<BackButton fallback="/admin/support" />
+								{thread.subject}
+							</h1>
+							<div className="flex flex-1 justify-between flex-col md:flex-row">
+								<div className="space-y-1 text-sm text-muted-foreground">
 									<p>
-										<strong>Контакт:</strong> {thread.contactInfo}
+										<strong>Клиент:</strong> {thread.user.name || "Без имени"} (
+										{thread.user.email})
 									</p>
-								)}
-								<p>
-									<strong>Создано:</strong> {formatDate(thread.createdAt)} в{" "}
-									{formatTime(thread.createdAt)}
-								</p>
-								<p>
-									<strong>Сообщений:</strong> {thread.messages.length}
-									{unreadCount > 0 && (
-										<span className="ml-2 px-2 py-0.5 bg-green-500/20 text-green-600 rounded text-xs">
-											{unreadCount} новых
-										</span>
+									{thread.contactInfo && (
+										<p>
+											<strong>Контакт:</strong> {thread.contactInfo}
+										</p>
 									)}
-								</p>
-							</div>
-						</div>
+									<p>
+										<strong>Создано:</strong> {formatDate(thread.createdAt)} в{" "}
+										{formatTime(thread.createdAt)}
+									</p>
+									<p>
+										<strong>Сообщений:</strong> {thread.messages.length}
+										{unreadCount > 0 && (
+											<span className="ml-2 px-2 py-0.5 bg-green-500/20 text-green-600 rounded text-xs">
+												{unreadCount} новых
+											</span>
+										)}
+									</p>
+								</div>
 
-						<div className="flex flex-col items-end gap-2 shrink-0">
-							<div
-								className={cn(
-									"px-4 py-2 rounded-lg font-medium text-sm",
-									thread.status === "OPEN" && "bg-blue-500/20 text-blue-600",
-									thread.status === "CLOSED" && "bg-gray-500/20 text-gray-600",
-									thread.status === "WAITING_FOR_ADMIN" &&
-										"bg-red-500/20 text-red-600",
-									thread.status === "WAITING_FOR_CLIENT" &&
-										"bg-green-500/20 text-green-600"
-								)}
-							>
-								{CHATS_STATUS_LABELS[thread.status] || thread.status}
-							</div>
+								<div className="flex md:flex-col items-end shrink-0 ml-auto gap-4">
+									<Badge
+										className={cn(
+											"px-3 py-1 rounded-xl font-medium text-sm select-none",
+											thread.status === "OPEN" &&
+												"bg-blue-500/10 text-blue-600",
+											thread.status === "CLOSED" &&
+												"bg-gray-500/10 text-gray-600",
+											thread.status === "WAITING_FOR_ADMIN" &&
+												"bg-red-500/10 text-red-600",
+											thread.status === "WAITING_FOR_CLIENT" &&
+												"bg-green-500/10 text-green-600"
+										)}
+									>
+										{CHATS_STATUS_LABELS[thread.status] || thread.status}
+									</Badge>
 
-							{!isClosed ? (
-								<Button
-									onClick={handleCloseThread}
-									disabled={isPending}
-									variant="outline"
-									size="md"
-									className="text-red-600 hover:text-red-600 hover:bg-red-500/10 border-red-300/30"
-								>
-									<LockIcon size={14} weight="duotone" />
-									Закрыть
-								</Button>
-							) : (
-								<Button
-									onClick={handleReopenThread}
-									disabled={isPending}
-									variant="outline"
-									size="sm"
-									className="text-green-600 hover:text-green-600 hover:bg-green-500/10 border-green-300/30"
-								>
-									<DoorOpenIcon size={14} weight="bold" />
-									Переоткрыть
-								</Button>
-							)}
+									{!isClosed ? (
+										<AlertDialog>
+											<AlertDialogTrigger asChild>
+												<Button
+													disabled={isPending}
+													variant="outline"
+													size="sm"
+													className="text-red-600 hover:text-red-600 hover:bg-red-500/10 border-red-300/30 shrink-0"
+												>
+													<CheckIcon size={14} weight="bold" />
+													Завершить
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent className="glass-card">
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														Закрыть это обращение?
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														Диалог будет переведен в архив. Клиент больше не
+														сможет отправлять новые сообщения, пока вы не
+														возобновите тикет.
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel asChild>
+														<Button variant="outline">Отмена</Button>
+													</AlertDialogCancel>
+													<AlertDialogAction
+														asChild
+														onClick={handleCloseThread}
+													>
+														<Button variant="destructive">Закрыть</Button>
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
+									) : (
+										<AlertDialog>
+											<AlertDialogTrigger asChild>
+												<Button
+													disabled={isPending}
+													variant="outline"
+													size="sm"
+													className="text-green-600 hover:text-green-600 hover:bg-green-500/10 border-green-300/30"
+												>
+													<ArrowClockwiseIcon size={14} weight="bold" />
+													Возобновить
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent className="glass-card">
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														Переоткрыть это обращение?
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														Чат снова станет активным, и клиент сможет
+														продолжить общение с поддержкой.
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel asChild>
+														<Button variant="outline">Отмена</Button>
+													</AlertDialogCancel>
+													<AlertDialogAction
+														onClick={handleReopenThread}
+														asChild
+													>
+														<Button>Возобновить</Button>
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
+									)}
+								</div>
+							</div>
 						</div>
 					</div>
 
@@ -296,9 +350,9 @@ export default function AdminThreadDetailClient({
 				</div>
 			</div>
 
-			{/* ИЗМЕНЕНО: Единый изолированный контейнер чата (Лента + Поле ввода) */}
+			{/* Контейнер чата (Лента + Поле ввода) */}
 			<div className="border border-muted-foreground/10 card-surface h-[calc(100vh-380px)] min-h-125 flex flex-col overflow-hidden rounded-2xl">
-				{/* 1. ЛЕНТА СООБЩЕНИЙ */}
+				{/* ЛЕНТА СООБЩЕНИЙ */}
 				<div
 					ref={scrollContainerRef}
 					className="flex-1 overflow-y-auto p-4 flex flex-col gap-3"
@@ -334,14 +388,13 @@ export default function AdminThreadDetailClient({
 										)}
 									>
 										{isEditing ? (
-											/* Режим редактирования */
 											<div className="space-y-2 min-w-48">
 												<Textarea
 													value={editContent}
 													onChange={(e) => setEditContent(e.target.value)}
 													disabled={isEditPending}
 													rows={3}
-													className="resize-none text-sm"
+													className="resize-none text-sm glass-input"
 													autoFocus
 													onKeyDown={(e) => {
 														if (e.key === "Enter" && e.ctrlKey)
@@ -372,7 +425,6 @@ export default function AdminThreadDetailClient({
 												</div>
 											</div>
 										) : (
-											/* Обычный режим отображения сообщения */
 											<p className="text-sm whitespace-pre-wrap">
 												{msg.content}
 											</p>
@@ -397,7 +449,6 @@ export default function AdminThreadDetailClient({
 													)}
 												</>
 											)}
-											{/* Кнопка редактирования — только для админских сообщений */}
 											{msg.isAdmin && !isEditing && !isClosed && (
 												<button
 													type="button"
@@ -422,7 +473,7 @@ export default function AdminThreadDetailClient({
 					)}
 				</div>
 
-				{/* 2. ФИКСИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ ЧАТА */}
+				{/* ФИКСИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ ЧАТА */}
 				<div className="p-4 border-t border-muted-foreground/10 bg-background/50 shrink-0">
 					{isClosed && (
 						<div className="bg-gray-500/10 border border-gray-300/30 rounded-lg p-3 flex items-center gap-2 text-sm text-gray-700/80 mb-3">
@@ -442,7 +493,7 @@ export default function AdminThreadDetailClient({
 									placeholder="Напишите ответ клиенту..."
 									rows={3}
 									disabled={isPending}
-									className="resize-none text-sm"
+									className="resize-none text-sm glass-input"
 									onKeyDown={(e) => {
 										if (e.key === "Enter" && e.ctrlKey && message.trim()) {
 											handleSendMessage();

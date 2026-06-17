@@ -293,7 +293,7 @@ export function FilterBuilder({
 											)
 										}
 										placeholder="Значение..."
-										className="h-8 flex-1 text-xs"
+										className="h-8 flex-1 text-xs glass-input"
 									/>
 								)}
 

@@ -203,7 +203,8 @@ export function BannerFormDialog({
 						<Input
 							value={form.title}
 							onChange={(e) => set("title", e.target.value)}
-							placeholder="Встреча с фотографами | Скидка 20% на свет..."
+							placeholder="Абонемент на студию | Акция на свет..."
+							className="glass-input"
 						/>
 					</div>
 
@@ -213,6 +214,7 @@ export function BannerFormDialog({
 							value={form.subtitle}
 							onChange={(e) => set("subtitle", e.target.value)}
 							placeholder="Краткое описание, видное на слайде"
+							className="glass-input"
 						/>
 					</div>
 
@@ -239,6 +241,7 @@ export function BannerFormDialog({
 							type="date"
 							value={form.eventDate}
 							onChange={(e) => set("eventDate", e.target.value)}
+							className="glass-input"
 						/>
 					</div>
 
@@ -249,6 +252,7 @@ export function BannerFormDialog({
 								value={form.linkUrl}
 								onChange={(e) => set("linkUrl", e.target.value)}
 								placeholder="https://..."
+								className="glass-input"
 							/>
 						</div>
 						<div className="space-y-1.5">
@@ -257,6 +261,7 @@ export function BannerFormDialog({
 								value={form.linkLabel}
 								onChange={(e) => set("linkLabel", e.target.value)}
 								placeholder="Зарегистрироваться"
+								className="glass-input"
 							/>
 						</div>
 					</div>

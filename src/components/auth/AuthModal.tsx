@@ -42,9 +42,12 @@ export function AuthModal({ open, onOpenChange, intent }: AuthModalProps) {
 		setStep("success");
 		setTimeout(() => {
 			onOpenChange(false);
-			if (intent.type === "redirect") router.push(intent.url);
-			else if (intent.type === "callback") intent.fn();
-			router.refresh();
+			if (intent.type === "redirect") {
+				window.location.href = intent.url;
+			} else if (intent.type === "callback") {
+				intent.fn();
+				router.refresh();
+			}
 		}, 2000);
 	};
 
@@ -69,7 +72,6 @@ export function AuthModal({ open, onOpenChange, intent }: AuthModalProps) {
 								initial={{ opacity: 0, scale: 0.95 }}
 								animate={{ opacity: 1, scale: 1 }}
 								exit={{ opacity: 0 }}
-								// className="p-8 flex flex-col items-center justify-center py-12 px-8 text-center gap-4"
 								className="p-8 flex flex-col items-center justify-center text-center space-y-6"
 							>
 								<div className="relative">

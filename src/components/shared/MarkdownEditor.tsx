@@ -209,6 +209,7 @@ export function SimpleMarkdown({
 
 		lines.forEach((line, i) => {
 			const trimmed = line.trim();
+			const listMatch = trimmed.match(/^([-*+])\s+(.*)/);
 			if (trimmed.startsWith("# ")) {
 				flushList(i);
 				result.push(
@@ -239,21 +240,19 @@ export function SimpleMarkdown({
 						{parseLine(trimmed.slice(4), i, query)}
 					</h3>
 				);
-			} else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+			} else if (listMatch) {
 				currentList.push(
 					<li
 						key={i}
 						className="flex items-start gap-2.5 text-sm sm:text-base text-foreground/80 leading-relaxed"
 					>
 						<span className="mt-2 w-1.5 h-1.5 rounded-full bg-foreground/70 shrink-0" />
-						<span>{parseLine(trimmed.slice(2), i, query)}</span>
+						<span>{parseLine(listMatch[2] ?? "", i, query)}</span>
 					</li>
 				);
 			} else if (trimmed === "---" || trimmed === "***") {
 				flushList(i);
 				result.push(<hr key={i} className="border-foreground/5 my-4" />);
-			} else if (trimmed === "") {
-				flushList(i);
 			} else {
 				flushList(i);
 				result.push(
@@ -342,7 +341,7 @@ export function MarkdownEditor({
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
 					placeholder={placeholder ?? "Поддерживается форматирование..."}
-					className="font-mono text-xs p-4 rounded-2xl bg-foreground/1 border-foreground/10 focus-visible:ring-primary/20 resize-none leading-relaxed"
+					className="font-mono text-xs p-4 rounded-2xl bg-foreground/5 border-foreground/10 focus-visible:ring-primary/20 resize-none leading-relaxed glass-input"
 				/>
 			) : (
 				<div

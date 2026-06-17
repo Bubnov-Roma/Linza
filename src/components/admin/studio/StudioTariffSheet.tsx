@@ -294,7 +294,7 @@ export function StudioTariffSheet({
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									placeholder="Например: База, Интервью, Хромакей"
-									className="h-10"
+									className="h-10 glass-input"
 								/>
 							</div>
 
@@ -310,7 +310,7 @@ export function StudioTariffSheet({
 										value={pricePerHour}
 										onChange={(e) => setPricePerHour(e.target.value)}
 										placeholder="1500"
-										className="h-10 pr-8"
+										className="h-10 pr-8 glass-input"
 									/>
 									<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">
 										₽
@@ -327,7 +327,7 @@ export function StudioTariffSheet({
 									onChange={(e) => setDescription(e.target.value)}
 									placeholder="Что включает этот тариф в двух словах…"
 									rows={2}
-									className="resize-none text-sm"
+									className="resize-none text-sm glass-input"
 								/>
 							</div>
 
@@ -345,7 +345,7 @@ export function StudioTariffSheet({
 										"Постоянный свет 3 прибора\nИмпульсный свет\nЦиклорама"
 									}
 									rows={4}
-									className="resize-none text-sm font-mono"
+									className="resize-none text-sm font-mono glass-input"
 								/>
 							</div>
 						</div>

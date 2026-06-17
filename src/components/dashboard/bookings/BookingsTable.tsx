@@ -1,13 +1,17 @@
 "use client";
 
-import { TagChevronIcon } from "@phosphor-icons/react";
+import { PackageIcon, TagChevronIcon, XIcon } from "@phosphor-icons/react";
 import { differenceInHours, isWithinInterval, parseISO } from "date-fns";
-import { Package, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { BookingQuickDialog } from "@/components/dashboard/bookings/BookingQuickDialog";
 import { ClientTime } from "@/components/shared";
 import {
 	Button,
+	Card,
+	Dialog,
+	DialogTrigger,
+	Input,
 	Table,
 	TableBody,
 	TableCell,
@@ -22,7 +26,6 @@ import type {
 	DashboardBooking,
 } from "@/core/domain/entities/Booking";
 import { cn, fmtRub } from "@/lib/utils";
-import { BookingDetailDialog } from "./Bookingdetailsdialog";
 
 function getStatusLabel(status: string): string {
 	return BOOKING_STATUS_LABELS[status as BookingStatus] ?? status;
@@ -44,7 +47,6 @@ function asDashboardBooking(row: BookingRow): DashboardBooking {
 	};
 }
 
-// ─── Filter state ─────────────────────────────────────────────────────────────
 interface Filters {
 	search: string;
 	status: string;
@@ -52,13 +54,18 @@ interface Filters {
 	dateTo: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
+export function BookingsTable({
+	bookings,
+	initialStatus = "",
+}: {
+	bookings: BookingRow[];
+	initialStatus?: string;
+}) {
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
 	const [filters, setFilters] = useState<Filters>({
 		search: "",
-		status: "",
+		status: initialStatus,
 		dateFrom: "",
 		dateTo: "",
 	});
@@ -90,10 +97,8 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 	const hasActiveFilters =
 		filters.search || filters.status || filters.dateFrom || filters.dateTo;
 
-	// ── Filtered bookings ──────────────────────────────────────────────────────
 	const filtered = useMemo(() => {
 		return bookings.filter((b) => {
-			// Search: order ID prefix or any item title
 			if (filters.search) {
 				const q = filters.search.toLowerCase();
 				const idMatch = b.id.split("-")[0]?.toLowerCase().includes(q);
@@ -103,10 +108,8 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 				if (!idMatch && !titleMatch) return false;
 			}
 
-			// Status filter
 			if (filters.status && b.status !== filters.status) return false;
 
-			// Date range: booking start_date must fall within the selected range
 			if (filters.dateFrom || filters.dateTo) {
 				const start = b.startDate;
 				const from = filters.dateFrom
@@ -128,30 +131,22 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 		<div className="space-y-4">
 			{/* ── Search & filter bar ── */}
 			<div className="flex flex-col sm:flex-row gap-2">
-				{/* Search */}
 				<div className="relative flex-1">
-					<input
+					<Input
 						type="text"
 						placeholder="Поиск по № или названию"
 						value={filters.search}
 						onChange={(e) => setFilter("search", e.target.value)}
-						className={cn(
-							"w-full h-9 px-3 rounded-xl text-sm",
-							"bg-muted/30 border border-border",
-							"placeholder:text-muted-foreground/50",
-							"focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40",
-							"transition-all"
-						)}
+						className="w-full h-9 border border-border/80"
 					/>
 				</div>
 
-				{/* Status select */}
 				<select
 					value={filters.status}
 					onChange={(e) => setFilter("status", e.target.value)}
 					className={cn(
 						"h-9 px-3 rounded-xl text-sm font-medium",
-						"border border-border",
+						"border border-border/80",
 						"focus:outline-none focus:ring-2 focus:ring-primary/30",
 						"text-foreground cursor-pointer min-w-32",
 						!filters.status && "text-muted-foreground"
@@ -166,35 +161,22 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 				</select>
 
 				<div className="relative flex gap-2">
-					{/* Date from */}
-					<input
+					<Input
 						type="date"
 						value={filters.dateFrom}
 						onChange={(e) => setFilter("dateFrom", e.target.value)}
-						className={cn(
-							"h-9 px-3 rounded-xl text-sm",
-							"bg-muted/30 border border-border",
-							"focus:outline-none focus:ring-2 focus:ring-primary/30",
-							"text-foreground cursor-pointer"
-						)}
+						className="h-9 px-3 rounded-xl text-sm bg-muted/30 border border-border/80 text-foreground cursor-pointer"
 					/>
-					{/* Date to */}
-					<input
+					<Input
 						type="date"
 						value={filters.dateTo}
 						onChange={(e) => setFilter("dateTo", e.target.value)}
-						className={cn(
-							"h-9 px-3 rounded-xl text-sm",
-							"bg-muted/30 border border-border",
-							"focus:outline-none focus:ring-2 focus:ring-primary/30",
-							"text-foreground cursor-pointer"
-						)}
+						className="h-9 px-3 rounded-xl text-sm bg-muted/30 border border-border/80 text-foreground cursor-pointer"
 					/>
 				</div>
 
-				{/* Clear */}
 				<Button
-					variant="social"
+					variant="outline"
 					onClick={clearFilters}
 					disabled={!hasActiveFilters}
 				>
@@ -206,23 +188,23 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 			{hasActiveFilters && (
 				<div className="flex flex-wrap gap-1.5 text-xs">
 					{filters.search && (
-						<span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium border border-primary/20 flex items-center gap-1.5">
+						<span className="px-2.5 py-1 rounded-full bg-primary/foreground text-primary font-medium border border-primary/20 flex items-center gap-1.5">
 							«{filters.search}»
 							<button type="button" onClick={() => setFilter("search", "")}>
-								<X size={10} />
+								<XIcon size={10} />
 							</button>
 						</span>
 					)}
 					{filters.status && (
-						<span className="px-2.5 py-1 rounded-full bg-muted/40 text-foreground font-medium border border-border flex items-center gap-1.5">
+						<span className="px-2.5 py-1 rounded-full bg-muted-foreground/20 text-foreground font-medium border border-border flex items-center gap-1.5">
 							{getStatusLabel(filters.status)}
 							<button type="button" onClick={() => setFilter("status", "")}>
-								<X size={10} />
+								<XIcon size={10} />
 							</button>
 						</span>
 					)}
 					{(filters.dateFrom || filters.dateTo) && (
-						<span className="px-2.5 py-1 rounded-full bg-muted/40 text-foreground font-medium border border-border flex items-center gap-1.5">
+						<span className="px-2.5 py-1 rounded-full bg-muted-foreground/20 text-foreground font-medium border border-border flex items-center gap-1.5">
 							{filters.dateFrom || "…"} — {filters.dateTo || "…"}
 							<button
 								type="button"
@@ -231,7 +213,7 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 									setFilter("dateTo", "");
 								}}
 							>
-								<X size={10} />
+								<XIcon size={10} />
 							</button>
 						</span>
 					)}
@@ -242,11 +224,10 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 			)}
 
 			{/* ── Table ── */}
-			<div className="rounded-xl border border-border overflow-hidden">
+			<Card className="rounded-xl overflow-hidden">
 				<Table>
 					<TableHeader>
-						<TableRow className="hover:bg-transparent border-border bg-muted-foreground/30">
-							{/* Чекбокс "Выбрать все" */}
+						<TableRow className="bg-muted-foreground/30">
 							<TableHead className="w-10 px-4">
 								<input
 									type="checkbox"
@@ -285,104 +266,106 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 							const dashboardBooking = asDashboardBooking(booking);
 
 							return (
-								<BookingDetailDialog
-									key={booking.id}
-									booking={dashboardBooking}
-									hours={hours}
-								>
-									<TableRow
-										className={cn(
-											"border-border transition-colors cursor-pointer",
-											isSelected
-												? "bg-secondary/40 hover:bg-secondary"
-												: "hover:bg-muted-foreground/10"
-										)}
-									>
-										<TableCell
-											className="px-4"
-											onClick={(e) => e.stopPropagation()}
-										>
-											<input
-												type="checkbox"
-												className="accent-primary scale-110 cursor-pointer"
-												checked={isSelected}
-												onChange={() => toggleRow(booking.id)}
-											/>
-										</TableCell>
-										{/* Order ID */}
-										<TableCell className="py-4">
-											<div className="font-black text-sm tabular-nums">
-												{fmtRub(booking.totalAmount)}
-											</div>
-											{booking.promoCode && (
-												<div className="flex items-center gap-1 mt-0.5">
-													<TagChevronIcon
-														size={9}
-														className="text-green-500 shrink-0"
-													/>
-													<span className="text-[10px] font-mono text-green-600 font-semibold">
-														{booking.promoCode}
-													</span>
-												</div>
+								<Dialog key={booking.id}>
+									<DialogTrigger asChild>
+										<TableRow
+											className={cn(
+												"border-border/60 transition-colors cursor-pointer",
+												isSelected
+													? "bg-secondary/60 hover:bg-secondary"
+													: "hover:bg-muted-foreground/10"
 											)}
-										</TableCell>
+										>
+											{/* Чекбокс останавливает всплытие, чтобы при выборе не открывалось модальное окно */}
+											<TableCell
+												className="px-4"
+												onClick={(e) => e.stopPropagation()}
+											>
+												<input
+													type="checkbox"
+													className="accent-primary scale-110 cursor-pointer"
+													checked={isSelected}
+													onChange={() => toggleRow(booking.id)}
+												/>
+											</TableCell>
 
-										{/* Dates */}
-										<TableCell className="py-4 table-cell">
-											<div className="text-sm font-medium">
-												{
+											{/* Номер заказа */}
+											<TableCell className="py-4">
+												<div className="font-mono text-xs font-bold text-foreground">
+													№ {booking.id.split("-")[0]?.toUpperCase()}
+												</div>
+												{booking.promoCode && (
+													<div className="flex items-center gap-1 mt-0.5">
+														<TagChevronIcon
+															size={9}
+															className="text-green-500 shrink-0"
+														/>
+														<span className="text-[10px] font-mono text-green-600 font-semibold">
+															{booking.promoCode}
+														</span>
+													</div>
+												)}
+											</TableCell>
+
+											{/* Период */}
+											<TableCell className="py-4 table-cell">
+												<div className="text-sm font-medium">
 													<ClientTime
 														iso={booking.startDate}
 														fmt="datetime"
 														fallback="---"
 													/>
-												}
-												{" — "}
-												{
+													{" — "}
 													<ClientTime
 														iso={booking.endDate}
 														fmt="datetime"
 														fallback="---"
 													/>
-												}
-											</div>
-											<div className="text-[11px] text-muted-foreground mt-0.5">
-												{hours} ч.
-											</div>
-										</TableCell>
+												</div>
+												<div className="text-[11px] text-muted-foreground mt-0.5">
+													{hours} ч.
+												</div>
+											</TableCell>
 
-										{/* Items */}
-										<TableCell className="py-4 table-cell">
-											<div className="text-sm">
-												{booking.bookingItems.length} поз.
-											</div>
-											<div className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-40">
-												{booking.bookingItems[0]?.equipment.title}
-												{booking.bookingItems.length > 1 &&
-													` +${booking.bookingItems.length - 1}`}
-											</div>
-										</TableCell>
+											{/* Позиции */}
+											<TableCell className="py-4 table-cell">
+												<div className="text-sm">
+													{booking.bookingItems.length} поз.
+												</div>
+												<div className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-40">
+													{booking.bookingItems[0]?.equipment.title}
+													{booking.bookingItems.length > 1 &&
+														` +${booking.bookingItems.length - 1}`}
+												</div>
+											</TableCell>
 
-										{/* Status */}
-										<TableCell className="py-4">
-											<span
-												className={cn(
-													"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-													getStatusStyle(booking.status)
-												)}
-											>
-												{getStatusLabel(booking.status)}
-											</span>
-										</TableCell>
+											{/* Статус */}
+											<TableCell className="py-4">
+												<span
+													className={cn(
+														"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+														getStatusStyle(booking.status)
+													)}
+												>
+													{getStatusLabel(booking.status)}
+												</span>
+											</TableCell>
 
-										{/* Amount */}
-										<TableCell className="py-4">
-											<div className="font-black text-sm tabular-nums">
-												{fmtRub(booking.totalAmount)}
-											</div>
-										</TableCell>
-									</TableRow>
-								</BookingDetailDialog>
+											{/* Сумма */}
+											<TableCell className="py-4">
+												<div className="font-black text-sm tabular-nums">
+													{fmtRub(booking.totalAmount)}
+												</div>
+											</TableCell>
+										</TableRow>
+									</DialogTrigger>
+
+									<BookingQuickDialog
+										booking={{ ...dashboardBooking, kind: "equipment" }}
+										hours={hours}
+										href={`/dashboard/bookings/${booking.id}`}
+									/>
+								</Dialog>
 							);
 						})}
 					</TableBody>
@@ -390,32 +373,29 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
 
 				{filtered.length === 0 && (
 					<div className="py-16 text-center text-muted-foreground">
-						<Package size={28} className="mx-auto mb-3 opacity-20" />
+						<PackageIcon weight="duotone" size={32} className="mx-auto mb-3" />
 						{hasActiveFilters ? (
 							<>
-								<p className="text-sm font-medium">Ничего не найдено</p>
-								<button
-									type="button"
-									onClick={clearFilters}
-									className="mt-2 text-primary text-sm hover:underline"
-								>
+								<p className="text-xs text-muted-foreground font-light">
+									Ничего не найдено
+								</p>
+								<Button variant="ghost" onClick={clearFilters} className="mt-2">
 									Сбросить фильтры
-								</button>
+								</Button>
 							</>
 						) : (
 							<>
-								<p className="text-sm font-medium">Заказов пока нет</p>
-								<Link
-									href="/equipment"
-									className="text-primary text-sm hover:underline mt-2 inline-block"
-								>
-									Перейти в каталог
-								</Link>
+								<p className="text-xs text-muted-foreground font-light">
+									Заказов пока нет
+								</p>
+								<Button asChild variant="ghost" className="mt-2">
+									<Link href="/equipment">Перейти в каталог</Link>
+								</Button>
 							</>
 						)}
 					</div>
 				)}
-			</div>
+			</Card>
 		</div>
 	);
 }

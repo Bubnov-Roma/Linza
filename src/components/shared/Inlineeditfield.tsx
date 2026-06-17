@@ -30,7 +30,8 @@ interface InlineEditFieldProps {
 	/** Mode of the inline edit field */
 	mode?: "edit" | "create";
 	onChange?: (val: string) => void;
-	/** Функция для рендеринга кастомного инпута.
+	/**
+	 * Функция для рендеринга кастомного инпута.
 	 * Передает текущее значение черновика, функцию изменения и ссылку.
 	 */
 	renderInput?: (
@@ -40,16 +41,20 @@ interface InlineEditFieldProps {
 	) => React.ReactNode;
 	/** Icon for the action button */
 	actionIcon?: React.ReactNode;
+	glass?: boolean;
+	rows?: number;
 }
 
 /**
  * InlineEditField
  *
  * Two modes:
- *   • edit: Single-button behaviour with save/cancel based on dirty state
+ *   • edit:   Single-button behaviour with save/cancel based on dirty state
  *   • create: Always shows plus button to add new item
  *
  * Enter = save/add (if dirty/in create mode), Escape = cancel
+ *
+ * glass=true → эффект применяется к контейнеру целиком через .glass-input-group
  */
 export function InlineEditField({
 	value: savedValue,
@@ -65,6 +70,8 @@ export function InlineEditField({
 	mode = "edit",
 	renderInput,
 	actionIcon,
+	glass = true,
+	rows = 1,
 }: InlineEditFieldProps) {
 	const [draft, setDraft] = useState(savedValue);
 	const [saving, setSaving] = useState(false);
@@ -140,7 +147,11 @@ export function InlineEditField({
 	const showButton = isCreateMode ? draft.trim().length > 0 : isDirty || saving;
 
 	return (
-		<InputGroup className={cn("min-h-10 h-fit group", className)} error={false}>
+		<InputGroup
+			className={cn("group text-xs", className)}
+			error={false}
+			glass={glass}
+		>
 			{icon && <InputGroupAddon align="inline-start">{icon}</InputGroupAddon>}
 
 			{renderInput ? (
@@ -153,17 +164,18 @@ export function InlineEditField({
 					disabled={disabled || saving}
 					onChange={(e) => internalChange(e.target.value)}
 					onKeyDown={handleKeyDown}
+					rows={rows}
 					className="text-sm"
 				/>
 			)}
+
 			{showButton && (
 				<InputGroupAddon align="inline-end" className="h-full">
 					<InputGroupButton
 						size="icon-sm"
-						variant="default"
 						disabled={saving || (isCreateMode && !draft.trim())}
 						onClick={handleSave}
-						className={cn("transition-all rounded-2xl")}
+						className={cn("transition-all rounded-xl")}
 						title={
 							isCreateMode ? "Отправить" : isDirty ? "Сохранить" : "Отмена"
 						}

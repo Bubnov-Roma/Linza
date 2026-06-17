@@ -188,7 +188,7 @@ export function AdminNewThreadModal({
 									placeholder="Поиск по имени или email..."
 									value={searchQuery}
 									onChange={(e) => handleSearchChange(e.target.value)}
-									className="pl-9 h-9"
+									className="pl-9 h-9 glass-input"
 									autoFocus
 								/>
 
@@ -241,7 +241,7 @@ export function AdminNewThreadModal({
 							value={subject}
 							onChange={(e) => setSubject(e.target.value)}
 							disabled={isPending}
-							className="h-9"
+							className="h-9 glass-input"
 						/>
 					</div>
 
@@ -254,7 +254,7 @@ export function AdminNewThreadModal({
 							onChange={(e) => setMessage(e.target.value)}
 							disabled={isPending}
 							rows={4}
-							className="resize-none text-sm"
+							className="resize-none text-sm glass-input"
 							onKeyDown={(e) => {
 								if (e.key === "Enter" && e.ctrlKey) handleSubmit();
 							}}

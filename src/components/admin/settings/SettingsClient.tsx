@@ -107,6 +107,7 @@ export function SettingsClient({
 											workStart: Number(e.target.value),
 										})
 									}
+									className="glass-input"
 								/>
 							</div>
 							<div className="space-y-2 flex-1">
@@ -122,6 +123,7 @@ export function SettingsClient({
 											workEnd: Number(e.target.value),
 										})
 									}
+									className="glass-input"
 								/>
 							</div>
 						</CardContent>
@@ -168,6 +170,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, supportEmail: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 							<div className="space-y-2">
@@ -177,6 +180,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, phone: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 							<div className="space-y-2">
@@ -186,6 +190,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, telegram: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 							<div className="space-y-2">
@@ -195,6 +200,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, vk: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 							<div className="space-y-2">
@@ -204,6 +210,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, address: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 						</CardContent>
@@ -225,6 +232,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, companyName: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
@@ -235,6 +243,7 @@ export function SettingsClient({
 										onChange={(e) =>
 											setFormData({ ...formData, inn: e.target.value })
 										}
+										className="glass-input"
 									/>
 								</div>
 								<div className="space-y-2">
@@ -244,6 +253,7 @@ export function SettingsClient({
 										onChange={(e) =>
 											setFormData({ ...formData, ogrn: e.target.value })
 										}
+										className="glass-input"
 									/>
 								</div>
 							</div>
@@ -254,6 +264,7 @@ export function SettingsClient({
 									onChange={(e) =>
 										setFormData({ ...formData, legalAddress: e.target.value })
 									}
+									className="glass-input"
 								/>
 							</div>
 						</CardContent>

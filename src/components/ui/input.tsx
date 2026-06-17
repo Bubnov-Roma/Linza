@@ -9,7 +9,8 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 			data-slot="input"
 			className={cn(
 				// Layout & typography
-				"w-full min-w-0 h-12 rounded-xl px-3 py-1",
+				"w-full min-w-0 h-11 rounded-xl px-3 py-1 border border-transparent hover:border-foreground/10 transition-all duration-300 ease-out",
+				"focus:outline-none focus:ring-1 focus:ring-foreground/10 focus:shadow-lg focus-within:border-primary/50",
 				"text-base md:text-sm placeholder:text-muted-foreground",
 				"selection:bg-primary selection:text-primary-foreground",
 				// File input reset
@@ -18,8 +19,6 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 				"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
 				// Validation state
 				"aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-				// Base glass style — hover/focus handled in globals.css via CSS vars
-				"glass-input",
 				className
 			)}
 			{...props}

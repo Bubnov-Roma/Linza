@@ -315,6 +315,7 @@ export default function AdminDocumentsPage() {
 											value={name}
 											onChange={(e) => setName(e.target.value)}
 											placeholder="Договор аренды физ. лицо"
+											className="glass-input"
 										/>
 									</div>
 									<div className="space-y-1.5">
@@ -346,6 +347,7 @@ export default function AdminDocumentsPage() {
 											value={description}
 											onChange={(e) => setDescription(e.target.value)}
 											placeholder="Краткое описание шаблона ( опционально )"
+											className="glass-input"
 										/>
 									</div>
 								</div>

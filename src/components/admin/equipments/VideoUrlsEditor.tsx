@@ -43,7 +43,7 @@ export function VideoUrlsEditor({
 					}}
 					placeholder="Вставьте ссылку на видео..."
 					rows={4}
-					className="font-mono text-xs resize-none bg-muted/5 focus:bg-background transition-colors"
+					className="font-mono text-xs resize-none glass-input"
 				/>
 			</div>
 

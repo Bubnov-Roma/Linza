@@ -1,19 +1,20 @@
 "use client";
 
 import {
-	CaretCircleDownIcon,
-	CaretCircleUpIcon,
-	CaretDownIcon,
+	CalendarDotsIcon,
 	MinusIcon,
 	PackageIcon,
 	PlusIcon,
+	TrashIcon,
 } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NProgress from "nprogress";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import {
 	checkAvailabilityAction,
 	submitBookingAction,
@@ -45,7 +46,6 @@ export default function CheckoutPage() {
 	const requireAuth = useRequireAuth();
 	const router = useRouter();
 	const { items, addItem, removeOne, clearCart } = useCartStore();
-	// const { status } = useApplicationStatus();
 
 	const { workStart, workEnd } = useSiteSettingsStore();
 
@@ -66,22 +66,21 @@ export default function CheckoutPage() {
 	const [isChecking, setIsChecking] = useState(false);
 	const [busyIds, setBusyIds] = useState<string[]>([]);
 	const [bookingId, setBookingId] = useState<string | null>(null);
-	const [itemsExpanded, setItemsExpanded] = useState(false);
 	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
-	// -- Empty Cart -> top scroll -------------------------------------------
+	// -- Empty Cart -> top scroll
 	useEffect(() => {
 		if (items.length === 0) {
 			window.scrollTo({ top: 0, behavior: "smooth" });
 		}
 	}, [items.length]);
 
-	// ── Rental period ──────────────────────────────────────────────────────
+	// ── Rental period
 	const [period, setPeriod] = useState(() =>
 		getDefaultRentalPeriod(workStart, workEnd)
 	);
 
-	// ── Math ───────────────────────────────────────────────────────────────
+	// ── Math
 	const math = useMemo(() => {
 		const start = combineDateAndTime(period.startDate, period.startTime);
 		const end = combineDateAndTime(period.endDate, period.endTime);
@@ -115,7 +114,7 @@ export default function CheckoutPage() {
 		};
 	}, [period, items]);
 
-	// ── Availability check ─────────────────────────────────────────────────
+	// ── Availability check
 	useEffect(() => {
 		let cancelled = false;
 		async function check() {
@@ -154,16 +153,18 @@ export default function CheckoutPage() {
 		const freeCount = allIds.filter((id) => !busyIds.includes(id)).length;
 		return freeCount < i.quantity;
 	});
+
 	const busyItemCount = items.reduce((count, i) => {
 		const allIds = i.allUnitIds?.length ? i.allUnitIds : [i.equipment.id];
 		const freeCount = allIds.filter((id) => !busyIds.includes(id)).length;
 		const lackCount = Math.max(0, i.quantity - freeCount);
 		return count + lackCount;
 	}, 0);
+
 	const isCanBook =
 		math.totalRental > 0 && !hasAnyBusy && !!math.startFull && !!math.endFull;
 
-	// ── Submit ─────────────────────────────────────────────────────────────
+	// ── Submit
 	const doCreateBooking = async (): Promise<boolean> => {
 		if (!isCanBook || !math.startFull || !math.endFull) return false;
 		setIsSubmitting(true);
@@ -206,20 +207,13 @@ export default function CheckoutPage() {
 
 	const handleBookClick = () => {
 		if (!isCanBook) return;
-		requireAuth(
-			() => {
-				doCreateBooking();
-			},
-			{
-				type: "callback",
-				fn: () => {
-					doCreateBooking();
-				},
-			}
-		);
+		requireAuth(() => doCreateBooking(), {
+			type: "callback",
+			fn: () => doCreateBooking(),
+		});
 	};
 
-	// ── Success screen ─────────────────────────────────────────────────────
+	// ── Screen States
 	if (bookingId)
 		return (
 			<BookingSuccessScreen
@@ -228,24 +222,34 @@ export default function CheckoutPage() {
 			/>
 		);
 	if (!hydrated) return <CheckoutSkeleton />;
+
 	if (items.length === 0) {
 		return (
-			<div className="container mx-auto py-40 text-center space-y-6">
-				<h1 className="text-6xl font-black uppercase italic opacity-10">
-					Пусто
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				className="container mx-auto py-40 text-center space-y-6"
+			>
+				<PackageIcon
+					weight="duotone"
+					size={80}
+					className="mx-auto text-foreground/10 mb-4"
+				/>
+				<h1 className="text-4xl md:text-5xl font-black uppercase italic text-foreground/40">
+					Корзина пуста
 				</h1>
 				<Button
 					size="xl"
 					onClick={() => router.push("/equipment")}
-					className="px-8 py-4 rounded-2xl bg-primary text-primary-foreground font-black uppercase italic text-sm"
+					className="px-10 py-6 rounded-2xl bg-foreground text-background font-black uppercase tracking-wider text-sm shadow-xl"
 				>
-					В каталог
+					Перейти в каталог
 				</Button>
-			</div>
+			</motion.div>
 		);
 	}
 
-	// ── Duration label ─────────────────────────────────────────────────────
+	// ── Helpers
 	const days = Math.floor(math.hours / 24);
 	const remH = Math.round(math.hours % 24);
 	const durationParts: string[] = [];
@@ -253,291 +257,320 @@ export default function CheckoutPage() {
 	if (remH > 0) durationParts.push(`${remH} ч.`);
 	const durationLabel = durationParts.join(" ") || "—";
 
-	// ── Total items count ──────────────────────────────────────────────────
 	const totalQty = activeItems.reduce((s, i) => s + i.quantity, 0);
-
-	const Subtotal = () => {
-		const { finalPrice, discountAmount: disc } = applyPromoDiscount(
-			math.totalRental,
-			appliedPromo
-		);
-		return (
-			<div className="px-5 py-3.5 bg-foreground/3 space-y-3">
-				{/* Promo field */}
-				{math.totalRental > 0 && (
-					<PromoCodeField
-						appliedPromo={appliedPromo}
-						onApply={setAppliedPromo}
-						onRemove={() => setAppliedPromo(null)}
-						originalPrice={math.totalRental}
-					/>
-				)}
-				{/* Итого */}
-				<div className="flex items-center justify-between">
-					<div className="space-y-0.5">
-						<span className="text-xs font-bold uppercase text-muted-foreground/50">
-							Итого
-						</span>
-						{disc > 0 && (
-							<p className="text-xs text-muted-foreground line-through tabular-nums">
-								{fmtRub(Math.round(math.totalRental))}
-							</p>
-						)}
-					</div>
-					<span className="text-lg font-black italic text-primary tabular-nums">
-						{fmtRub(Math.round(finalPrice))}
-					</span>
-				</div>
-			</div>
-		);
-	};
+	const { finalPrice, discountAmount: disc } = applyPromoDiscount(
+		math.totalRental,
+		appliedPromo
+	);
 
 	return (
-		<div className="min-h-screen pb-28 md:pb-12">
-			<div className="container mx-auto px-4 lg:px-6 pt-8 max-w-2xl">
-				<h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none mb-8">
+		<div className="min-h-screen pb-28 md:pb-16 relative">
+			<div className="container mx-auto px-4 lg:px-6 pt-8 max-w-6xl">
+				<motion.h1
+					initial={{ opacity: 0, x: -20 }}
+					animate={{ opacity: 1, x: 0 }}
+					className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none mb-8"
+				>
 					Оформление
-				</h1>
+				</motion.h1>
 
-				<div className="space-y-3">
-					{/* ── 1. Rental period ── */}
-					<div className="card-surface p-5 rounded-[1.75rem] border border-foreground/8">
-						<p className="text-[10px] font-black uppercase italic tracking-widest opacity-40 mb-4">
-							Период аренды
-						</p>
-						<RentalPeriod value={period} onChange={setPeriod} />
-
-						{/* Duration hint */}
-						{math.hours > 0 && (
-							<p className="mt-3 text-[11px] text-muted-foreground/50 text-center font-medium">
-								{durationLabel}
-								{isChecking && (
-									<span className="ml-2 inline-flex items-center gap-1">
-										<span className="w-1 h-1 rounded-full bg-primary/50 animate-pulse" />
-										проверяем доступность…
+				{/* ── Двухколоночный Grid Layout ── */}
+				<div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 items-start">
+					{/* Левая колонка: Настройки + Товары */}
+					<div className="w-full lg:col-span-7 xl:col-span-8 space-y-6">
+						{/* Блок 1: Период аренды */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							className="bg-card/40 backdrop-blur-xl p-5 md:p-7 rounded-3xl border border-foreground/5 shadow-sm"
+						>
+							<div className="flex items-center justify-between mb-5">
+								<p className="text-[11px] font-black uppercase tracking-widest opacity-50 flex items-center gap-2">
+									<CalendarDotsIcon size={14} weight="duotone" /> Период аренды
+								</p>
+								{math.hours > 0 && (
+									<span className="text-xs font-bold text-muted-foreground bg-foreground/5 px-2.5 py-1 rounded-lg">
+										{durationLabel}
 									</span>
 								)}
-							</p>
-						)}
+							</div>
 
-						{/* Busy warning */}
-						{hasAnyBusy && (
-							<div className="mt-3 px-4 py-2.5 rounded-xl bg-red-500/8 border border-red-500/20 text-xs text-red-400 font-medium">
-								<p>
-									{`В выбранные даты ${formatPlural(busyItemCount, "items")} ${formatPlural(busyItemCount, "unavailable", false)}.`}
+							<RentalPeriod value={period} onChange={setPeriod} />
+
+							{/* Loader проверки */}
+							<div className="h-4 mt-3 flex items-center justify-center">
+								{isChecking && (
+									<motion.span
+										initial={{ opacity: 0 }}
+										animate={{ opacity: 1 }}
+										className="text-[11px] text-primary/70 font-medium flex items-center gap-1.5"
+									>
+										<span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+										проверяем доступность...
+									</motion.span>
+								)}
+							</div>
+						</motion.div>
+
+						{/* Блок 2: Список техники */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.1 }}
+							className="bg-card/40 backdrop-blur-xl rounded-3xl border border-foreground/5 shadow-sm overflow-hidden"
+						>
+							<div className="px-5 md:px-7 py-5 border-b border-foreground/5 flex items-center justify-between">
+								<p className="text-[11px] font-black uppercase tracking-widest opacity-50 flex items-center gap-2">
+									<PackageIcon size={14} weight="duotone" /> Состав заказа
 								</p>
-								<span>
-									Измените период аренды{" "}
-									{
-										<CaretCircleUpIcon
-											size={10}
-											className="inline fill-primary"
-										/>
-									}{" "}
-									или комплектацию заказа{" "}
-									{
-										<CaretCircleDownIcon
-											size={10}
-											className="inline fill-primary"
-										/>
-									}
+								<span className="text-xs font-bold text-muted-foreground">
+									{formatPlural(totalQty, "equipment")}
 								</span>
 							</div>
-						)}
+
+							<div className="divide-y divide-foreground/5">
+								<AnimatePresence mode="popLayout">
+									{activeItems.map((item) => {
+										const allIds = item.equipment.allUnitIds?.length
+											? item.equipment.allUnitIds
+											: [item.equipment.id];
+										const freeCount = allIds.filter(
+											(id) => !busyIds.includes(id)
+										).length;
+										const isBusy = freeCount < item.quantity;
+										const price = calculateItemPrice(
+											item.equipment,
+											math.hours
+										);
+
+										return (
+											<motion.div
+												layout
+												initial={{ opacity: 0, scale: 0.95 }}
+												animate={{ opacity: 1, scale: 1 }}
+												exit={{ opacity: 0, scale: 0.95, x: -20 }}
+												key={item.equipment.id}
+												className={cn(
+													"px-5 md:px-7 py-5 transition-colors",
+													isBusy && "bg-red-500/5"
+												)}
+											>
+												<div className="flex flex-col sm:flex-row sm:items-center gap-4">
+													{/* Картинка */}
+													<div className="relative w-26 h-16 rounded-xl overflow-hidden bg-foreground/5 shrink-0 shadow-sm border border-foreground/5">
+														{item.equipment.imageUrl ? (
+															<Image
+																src={item.equipment.imageUrl}
+																alt={item.equipment.title}
+																fill
+																sizes="100px"
+																className="object-cover"
+															/>
+														) : (
+															<PackageIcon
+																size={20}
+																className="absolute inset-0 m-auto text-muted-foreground/30"
+															/>
+														)}
+													</div>
+
+													{/* Инфо */}
+													<div className="flex-1 min-w-0">
+														<Link
+															href={`/equipment/item/${item.equipment.slug}`}
+															className="text-sm md:text-base font-bold leading-tight hover:text-primary transition-colors line-clamp-2"
+														>
+															{item.equipment.title}
+														</Link>
+														{isBusy ? (
+															<span className="inline-block mt-1.5 text-[10px] font-bold uppercase bg-red-500/10 text-red-500 px-2 py-0.5 rounded-md border border-red-500/20">
+																Недоступно на эти даты
+															</span>
+														) : (
+															<p className="mt-1 text-xs text-muted-foreground/60 font-medium font-mono">
+																{fmtRub(price)} / шт.
+															</p>
+														)}
+													</div>
+
+													{/* Контролы и цена */}
+													<div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 mt-2 sm:mt-0 shrink-0">
+														<div className="text-right hidden sm:block">
+															<p className="text-base font-black tabular-nums">
+																{fmtRub(price * item.quantity)}
+															</p>
+														</div>
+
+														<div className="flex items-center gap-1 bg-foreground/5 p-1 rounded-xl border border-foreground/5">
+															<button
+																type="button"
+																onClick={() => removeOne(item.equipment.id)}
+																className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-background shadow-sm transition-all text-foreground/70 hover:text-foreground"
+															>
+																{item.quantity === 1 ? (
+																	<TrashIcon size={14} weight="bold" />
+																) : (
+																	<MinusIcon size={12} weight="bold" />
+																)}
+															</button>
+															<span className="w-6 text-center text-sm font-black tabular-nums">
+																{item.quantity}
+															</span>
+															<button
+																type="button"
+																onClick={() => addItem(item.equipment)}
+																disabled={
+																	item.quantity >= item.equipment.availableCount
+																}
+																className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-background shadow-sm transition-all text-foreground/70 hover:text-foreground disabled:opacity-30 disabled:shadow-none"
+															>
+																<PlusIcon size={12} weight="bold" />
+															</button>
+														</div>
+														<div className="text-right sm:hidden">
+															<p className="text-base font-black tabular-nums">
+																{fmtRub(price * item.quantity)}
+															</p>
+														</div>
+													</div>
+												</div>
+											</motion.div>
+										);
+									})}
+								</AnimatePresence>
+							</div>
+						</motion.div>
 					</div>
 
-					{/* ── 2. Items accordion ── */}
-					<div className="card-surface rounded-[1.75rem] border border-foreground/8 overflow-hidden">
-						{/* Accordion header — always visible */}
-						<button
-							type="button"
-							onClick={() => setItemsExpanded((v) => !v)}
-							className="w-full flex items-center gap-4 p-5 hover:bg-foreground/5 transition-colors"
+					{/* Правая колонка: Итоги (Sticky) */}
+					<div className="w-full lg:col-span-5 xl:col-span-4 sticky top-22">
+						<motion.div
+							initial={{ opacity: 0, x: 20 }}
+							animate={{ opacity: 1, x: 0 }}
+							transition={{ delay: 0.2 }}
+							className="bg-card/60 backdrop-blur-2xl px-4 py-6 md-py-8 rounded-[2rem] border border-foreground/8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6"
 						>
-							<PackageIcon
-								size={14}
-								className="text-muted-foreground/40 shrink-0"
-							/>
-							<div className="flex-1 min-w-0 text-left">
-								<p className="text-[10px] font-black uppercase italic tracking-widest opacity-40 mb-0.5">
-									Список техники
-								</p>
-								<div className="flex items-baseline gap-3">
-									{formatPlural(totalQty, "equipment")}
-									<span className="text-muted-foreground/40 text-xs">·</span>
-									<span className="text-sm font-black text-primary">
-										{fmtRub(Math.round(math.totalRental))}
+							<h2 className="text-xl font-black italic uppercase tracking-tight border-b border-foreground/5 pb-4">
+								Ваш заказ
+							</h2>
+
+							<div className="space-y-3 text-sm font-medium">
+								<div className="flex justify-between text-muted-foreground">
+									<span>Аренда ({formatPlural(totalQty, "equipment")})</span>
+									<span className="text-foreground tabular-nums">
+										{fmtRub(math.totalRental)}
+									</span>
+								</div>
+								{disc > 0 && (
+									<div className="flex justify-between text-green-600 dark:text-green-400">
+										<span>Скидка по промокоду</span>
+										<span className="tabular-nums">− {fmtRub(disc)}</span>
+									</div>
+								)}
+								{math.totalDeposit > 0 && (
+									<div className="flex justify-between text-muted-foreground/60 text-xs">
+										<span>Залог (возвратный)</span>
+										<span className="tabular-nums">
+											{fmtRub(math.totalDeposit)}
+										</span>
+									</div>
+								)}
+							</div>
+
+							{math.totalRental > 0 && (
+								<div className="pt-2">
+									<PromoCodeField
+										appliedPromo={appliedPromo}
+										onApply={setAppliedPromo}
+										onRemove={() => setAppliedPromo(null)}
+										originalPrice={math.totalRental}
+									/>
+								</div>
+							)}
+
+							<div className="pt-4 border-t border-foreground/10 flex items-end justify-between">
+								<span className="text-sm font-bold uppercase text-muted-foreground">
+									Итого
+								</span>
+								<div className="text-right">
+									{disc > 0 && (
+										<p className="text-xs text-muted-foreground line-through tabular-nums mb-1">
+											{fmtRub(math.totalRental)}
+										</p>
+									)}
+									<span className="text-3xl font-black italic text-foreground tabular-nums leading-none">
+										{fmtRub(finalPrice)}
 									</span>
 								</div>
 							</div>
-							<CaretDownIcon
-								size={15}
-								className={cn(
-									"text-muted-foreground/40 transition-transform shrink-0",
-									itemsExpanded && "rotate-180"
-								)}
+
+							{/* Warnings */}
+							{hasAnyBusy && (
+								<div className="px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium leading-relaxed">
+									<p className="mb-1">
+										Выбранные даты заняты для {busyItemCount} позиций.
+									</p>
+									<p className="opacity-80">
+										Измените даты аренды или удалите недоступные позиции из
+										корзины.
+									</p>
+								</div>
+							)}
+
+							<BookingButton
+								onClick={handleBookClick}
+								disabled={!isCanBook}
+								loading={isSubmitting}
+								mode="new"
 							/>
-						</button>
 
-						{/* Expanded item list */}
-						{itemsExpanded && (
-							<div className="border-t border-foreground/8 animate-in slide-in-from-top-2 duration-200">
-								{activeItems.map((item) => {
-									const allIds = item.equipment.allUnitIds?.length
-										? item.equipment.allUnitIds
-										: [item.equipment.id];
-									const freeCount = allIds.filter(
-										(id) => !busyIds.includes(id)
-									).length;
-									const isBusy = freeCount < item.quantity;
-
-									// Позиция "занята" только если ВСЕ её единицы заняты
-									// (если хотя бы одна свободна — можно бронировать)
-									const price = calculateItemPrice(item.equipment, math.hours);
-									return (
-										<div
-											key={item.equipment.id}
-											className={cn(
-												"px-4 py-3.5 border-b border-foreground/5 last:border-0 space-y-2.5",
-												isBusy && "bg-red-500/5"
-											)}
-										>
-											{/* ── Ряд 1: картинка + название ── */}
-											<div className="flex items-center gap-3">
-												<div className="relative w-12 h-12 rounded-xl overflow-hidden bg-foreground/8 shrink-0">
-													{item.equipment.imageUrl ? (
-														<Image
-															src={item.equipment.imageUrl}
-															alt={item.equipment.title}
-															fill
-															sizes="48px"
-															className="object-cover"
-														/>
-													) : (
-														<PackageIcon
-															size={16}
-															className="absolute inset-0 m-auto text-muted-foreground/20"
-														/>
-													)}
-												</div>
-												<div className="flex-1 min-w-0">
-													<Link
-														href={`equipment/item/${item.equipment.slug}`}
-														className={cn(
-															"text-sm font-semibold leading-snug hover:border-b",
-															isBusy && "text-red-400"
-														)}
-													>
-														{item.equipment.title}
-													</Link>
-													{isBusy && (
-														<span className="inline-block mt-0.5 text-[10px] font-bold uppercase bg-red-500/15 text-red-400 px-1.5 py-0.5 rounded-full">
-															занято
-														</span>
-													)}
-												</div>
-											</div>
-
-											{/* ── Ряд 2: qty controls + цена ── */}
-											<div className="flex items-center justify-between gap-3 pl-0.5">
-												{/* Qty stepper */}
-												<div className="flex items-center gap-0 rounded-xl border border-foreground/12 overflow-hidden">
-													<button
-														type="button"
-														onClick={() => removeOne(item.equipment.id)}
-														className="w-9 h-9 flex items-center justify-center hover:bg-foreground/8 active:bg-foreground/15 transition-colors"
-													>
-														<MinusIcon size={12} />
-													</button>
-													<span className="w-8 text-center text-sm font-bold tabular-nums border-x border-foreground/8 h-9 flex items-center justify-center">
-														{item.quantity}
-													</span>
-													<button
-														type="button"
-														onClick={() => addItem(item.equipment)}
-														disabled={
-															item.quantity >= item.equipment.availableCount
-														}
-														className="w-9 h-9 flex items-center justify-center hover:bg-foreground/8 active:bg-foreground/15 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-													>
-														<PlusIcon size={12} />
-													</button>
-												</div>
-												{/* Line price */}
-												<div className="text-right">
-													<p className="text-sm font-black tabular-nums text-foreground">
-														{fmtRub(price * item.quantity)}
-													</p>
-													<p className="text-[11px] text-muted-foreground/40 font-mono">
-														{fmtRub(price)}/шт.
-													</p>
-												</div>
-											</div>
-										</div>
-									);
-								})}
-
-								{/* Subtotal row */}
-								<Subtotal />
-							</div>
-						)}
+							<p className="text-xs text-muted-foreground/60 text-center font-medium leading-relaxed px-4">
+								Выдача и возврат: {workStart}:00 — {workEnd}:00.
+								<br />
+								После оформления менеджер подтвердит заказ.
+							</p>
+						</motion.div>
 					</div>
-
-					{/* ── 3. Submit button ── */}
-
-					<BookingButton
-						onClick={handleBookClick}
-						disabled={!isCanBook}
-						loading={isSubmitting}
-						mode="new"
-					/>
-
-					{/* Fine print */}
-					<p className="text-[10px] text-muted-foreground/30 text-center font-medium">
-						Выдача и возврат: {10}:00 — {20}:00 · После заявки менеджер
-						подтвердит заказ
-					</p>
 				</div>
 			</div>
 		</div>
 	);
 }
 
-// ─── CheckoutSkeleton ─────────────────────────────────────────────────────────
+// ─── Скелетон, полностью совпадающий с новым Layout ────────────────────────
 function CheckoutSkeleton() {
 	return (
-		<div className="min-h-screen pb-52 md:pb-20 animate-pulse">
-			<div className="container mx-auto px-4 lg:px-6 pt-8">
-				<div className="mb-8">
-					<div className="h-10 w-52 rounded-xl bg-foreground/8" />
-				</div>
-				<div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-					{/* Левая */}
-					<div className="lg:col-span-3 rounded-[2rem] bg-foreground/5 border border-white/8 p-5 space-y-4">
-						<div className="flex gap-4">
-							<div className="h-3 w-24 rounded bg-foreground/8" />
-							<div className="h-3 w-28 rounded bg-foreground/8" />
+		<div className="min-h-screen pb-28 md:pb-16 animate-pulse relative">
+			<div className="container mx-auto px-4 lg:px-6 pt-8 max-w-6xl">
+				<div className="h-10 w-64 rounded-xl bg-foreground/5 mb-8" />
+
+				<div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 items-start">
+					{/* Left Column */}
+					<div className="w-full lg:col-span-7 xl:col-span-8 space-y-6">
+						<div className="bg-foreground/5 p-5 md:p-7 rounded-3xl h-40 border border-foreground/2" />
+						<div className="bg-foreground/5 p-5 md:p-7 rounded-3xl h-96 border border-foreground/2 flex flex-col gap-4">
+							<div className="h-4 w-32 bg-foreground/10 rounded mb-4" />
+							{[1, 2, 3].map((i) => (
+								<div key={i} className="flex gap-4 items-center">
+									<div className="w-26 h-16 rounded-xl bg-foreground/10" />
+									<div className="flex-1 space-y-2">
+										<div className="h-4 w-3/4 bg-foreground/10 rounded" />
+										<div className="h-3 w-1/4 bg-foreground/10 rounded" />
+									</div>
+								</div>
+							))}
 						</div>
-						<div className="rounded-xl bg-foreground/8 h-72 w-full" />
-						{[1, 2, 3].map((n) => (
-							<div key={n} className="flex items-center gap-3 py-2">
-								<div className="w-7 h-7 rounded-lg bg-foreground/10 shrink-0" />
-								<div className="flex-1 h-3 rounded bg-foreground/8" />
-								<div className="w-12 h-3 rounded bg-foreground/8" />
-							</div>
-						))}
 					</div>
-					{/* Правая */}
-					<div className="lg:col-span-2 rounded-[2rem] bg-foreground/5 border border-white/8 p-5 space-y-4">
-						<div className="h-3 w-14 rounded bg-foreground/8" />
-						{[1, 2].map((n) => (
-							<div key={n} className="flex justify-between">
-								<div className="h-3 w-24 rounded bg-foreground/8" />
-								<div className="h-3 w-16 rounded bg-foreground/8" />
+
+					{/* Right Column */}
+					<div className="w-full lg:col-span-5 xl:col-span-4">
+						<div className="bg-foreground/5 px-4 py-6 md:py-8 rounded-[2rem] h-112.5 border border-foreground/2 flex flex-col gap-6">
+							<div className="h-6 w-32 bg-foreground/10 rounded" />
+							<div className="space-y-3 flex-1 mt-4">
+								<div className="h-4 w-full bg-foreground/10 rounded" />
+								<div className="h-4 w-2/3 bg-foreground/10 rounded" />
 							</div>
-						))}
-						<div className="mt-8">
-							<div className="h-14 rounded-2xl bg-primary/15" />
+							<div className="h-16 w-full bg-primary/10 rounded-2xl" />
 						</div>
 					</div>
 				</div>

@@ -4,7 +4,6 @@ import {
 	ArrowsClockwiseIcon,
 	CircleNotchIcon,
 	DotsNineIcon,
-	FolderPlusIcon,
 	InfoIcon,
 	LinkIcon,
 	MagnifyingGlassIcon,
@@ -13,7 +12,6 @@ import {
 	StarIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -36,7 +34,7 @@ import {
 	CommentsBlock,
 	type UserComment,
 } from "@/components/admin/users/details-panel/CommentsBlock";
-import { MarkdownEditor } from "@/components/shared";
+import { InlineEditField, MarkdownEditor } from "@/components/shared";
 import {
 	Button,
 	Card,
@@ -130,7 +128,7 @@ function safeParseSpecs(text: string): Record<string, unknown> {
 interface RelatedEquipmentPickerProps {
 	value: string[]; // массив ID
 	onChange: (ids: string[]) => void;
-	excludeId?: string; // ID текущей позиции (чтобы не добавить саму себя)
+	excludeId?: string; // ID текущей позиции
 	isPending: boolean;
 }
 
@@ -194,7 +192,6 @@ export function RelatedEquipmentPicker({
 		}
 		startSearchTransition(async () => {
 			const data = await clientSearchEquipmentAction(debouncedQuery);
-			// Убираем из результатов текущую позицию и те, что уже добавлены
 			setResults(
 				data.filter((item) => item.id !== excludeId && !value.includes(item.id))
 			);
@@ -212,7 +209,7 @@ export function RelatedEquipmentPicker({
 
 		setSelectedItems(newSelected);
 		const newIds = newSelected.map((i) => i.id);
-		prevValueRef.current = newIds.join(","); // обновляем реф, чтобы useEffect не сработал по кругу
+		prevValueRef.current = newIds.join(",");
 		onChange(newIds);
 
 		setQuery("");
@@ -268,7 +265,7 @@ export function RelatedEquipmentPicker({
 		<div className="space-y-4">
 			{/* Search input */}
 			<div className="relative">
-				<InputGroup className="flex items-center gap-2 px-3 rounded-xl border border-white/10 bg-foreground/5 focus-within:border-primary/50 transition-colors">
+				<InputGroup className="flex items-center gap-2 px-3 rounded-2xl border border-white/10 bg-foreground/5 focus-within:border-primary/50 transition-colors">
 					<MagnifyingGlassIcon
 						size={13}
 						className="text-muted-foreground shrink-0"
@@ -493,7 +490,7 @@ export function RelatedEquipmentPicker({
 // 					rows={7}
 // 					value={textValue}
 // 					onChange={(e) => handleTextChange(e.target.value)}
-// 					className="text-xs resize-none"
+// 					className="text-xs resize-none glass-input"
 // 					placeholder={
 // 						"Произвольный текст с описанием характеристик...\n\nНапример:\nСенсор — Full Frame BSI CMOS\nРазрешение — 33 МП"
 // 					}
@@ -505,7 +502,7 @@ export function RelatedEquipmentPicker({
 // 					value={jsonValue}
 // 					onChange={(e) => handleJsonChange(e.target.value)}
 // 					className={cn(
-// 						"font-mono text-xs resize-none",
+// 						"font-mono text-xs resize-none glass-input",
 // 						hasJsonError &&
 // 							"border-amber-400/50 focus-visible:ring-amber-400/30"
 // 					)}
@@ -539,68 +536,6 @@ export function RelatedEquipmentPicker({
 // 		</div>
 // 	);
 // }
-
-// ─── InlineCategoryCreator ────────────────────────────────────────────────────
-
-function InlineCreator({
-	placeholder,
-	onConfirm,
-	onCancel,
-}: {
-	placeholder: string;
-	onConfirm: (name: string) => Promise<void>;
-	onCancel: () => void;
-}) {
-	const [value, setValue] = useState("");
-	const [pending, startTransition] = useTransition();
-
-	const handleConfirm = () => {
-		if (!value.trim()) return;
-		startTransition(async () => {
-			await onConfirm(value.trim());
-		});
-	};
-
-	return (
-		<div className="flex items-center gap-1.5 mt-1.5 p-2 bg-secondary/60 rounded-2xl shadow-primary">
-			<Input
-				autoFocus
-				value={value}
-				onChange={(e) => setValue(e.target.value)}
-				placeholder={placeholder}
-				className="h-7 text-xs flex-1"
-				onKeyDown={(e) => {
-					if (e.key === "Enter") {
-						e.preventDefault();
-						handleConfirm();
-					}
-					if (e.key === "Escape") onCancel();
-				}}
-			/>
-			<Button
-				size="sm"
-				variant="ghost"
-				className="h-7 w-7 p-0"
-				onClick={handleConfirm}
-				disabled={pending || !value.trim()}
-			>
-				{pending ? (
-					<CircleNotchIcon size={12} className="animate-spin" />
-				) : (
-					<FolderPlusIcon size={12} />
-				)}
-			</Button>
-			<Button
-				size="sm"
-				variant="ghost"
-				className="h-7 w-7 p-0 text-muted-foreground"
-				onClick={onCancel}
-			>
-				<X size={12} />
-			</Button>
-		</div>
-	);
-}
 
 // ─── CategorySubcategorySelector ─────────────────────────────────────────────
 
@@ -668,7 +603,8 @@ function CategorySubcategorySelector({
 	};
 
 	return (
-		<div className="grid md:grid-cols-2 gap-4">
+		<div className="grid md:grid-cols-2 gap-4 card-surface p-2">
+			{/* Селектор категорий */}
 			<div className="space-y-1.5">
 				<Label>Категория *</Label>
 				<Select
@@ -678,10 +614,10 @@ function CategorySubcategorySelector({
 						onSubcategoryChange("");
 					}}
 				>
-					<SelectTrigger className="w-full glass-input cursor-pointer">
+					<SelectTrigger className="w-full glass-input cursor-pointer rounded-2xl">
 						<SelectValue placeholder="Выберите категорию" />
 					</SelectTrigger>
-					<SelectContent>
+					<SelectContent className="rounded-2xl">
 						{localCategories.map((cat) => (
 							<SelectItem
 								key={cat.id}
@@ -695,23 +631,46 @@ function CategorySubcategorySelector({
 				</Select>
 
 				{showNewCategory ? (
-					<InlineCreator
-						placeholder="Название новой категории..."
-						onConfirm={handleCreateCategory}
-						onCancel={() => setShowNewCategory(false)}
-					/>
+					<div className="mt-1.5 flex gap-1 items-center">
+						<InlineEditField
+							mode="create"
+							value=""
+							onAdd={handleCreateCategory}
+							onCancel={() => setShowNewCategory(false)}
+							className="flex-1 glass-input border border-foreground/10 rounded-2xl h-11 items-center px-1 focus-within:ring-1 focus-within:ring-amber-500/50 focus-within:border-amber-500/50 transition-all"
+							renderInput={(draft, onChange, onKeyDown) => (
+								<Input
+									autoFocus
+									value={draft}
+									onChange={(e) => onChange(e.target.value)}
+									onKeyDown={onKeyDown}
+									placeholder="Добавьте название категории"
+									className="bg-transparent! border-none! shadow-none! ring-0! ring-offset-0! outline-none! focus:ring-0! focus-visible:ring-0! focus:bg-transparent! dark:bg-transparent! h-full text-xs flex-1"
+								/>
+							)}
+						/>
+						<Button
+							size="icon-sm"
+							variant="ghost"
+							className="h-11 w-11 p-0 text-muted-foreground shrink-0 rounded-full transition-colors"
+							onClick={() => setShowNewCategory(false)}
+						>
+							<XIcon size={14} />
+						</Button>
+					</div>
 				) : (
 					<Button
-						variant="link"
+						variant="outline"
+						size="md"
 						onClick={() => setShowNewCategory(true)}
-						className="flex w-full justify-start text-muted-foreground items-center gap-1 text-sm transition-colors mt-1"
+						className="h-11 flex w-full justify-start text-muted-foreground items-center gap-1 transition-colors mt-1 hover:text-foreground"
 					>
-						<PlusIcon size={11} />
 						Добавить новую категорию
 					</Button>
 				)}
 			</div>
 
+			{/* Селектор подкатегорий */}
 			<div className="space-y-1.5">
 				<Label>Подкатегория</Label>
 				<Select
@@ -719,7 +678,7 @@ function CategorySubcategorySelector({
 					onValueChange={(v) => onSubcategoryChange(v === "_none" ? "" : v)}
 					disabled={!categoryId}
 				>
-					<SelectTrigger className="w-full glass-input cursor-pointer dark:glass-input">
+					<SelectTrigger className="w-full glass-input cursor-pointer dark:glass-input rounded-2xl">
 						<SelectValue
 							placeholder={
 								!categoryId
@@ -742,18 +701,40 @@ function CategorySubcategorySelector({
 
 				{categoryId &&
 					(showNewSubcategory ? (
-						<InlineCreator
-							placeholder="Название новой подкатегории..."
-							onConfirm={handleCreateSubcategory}
-							onCancel={() => setShowNewSubcategory(false)}
-						/>
+						<div className="mt-1.5 flex gap-1 items-center">
+							<InlineEditField
+								mode="create"
+								value=""
+								onAdd={handleCreateSubcategory}
+								onCancel={() => setShowNewSubcategory(false)}
+								className="flex-1 glass-input border border-foreground/10 rounded-2xl h-11 items-center px-1"
+								renderInput={(draft, onChange, onKeyDown) => (
+									<Input
+										autoFocus
+										placeholder="Добавьте название подкатегории"
+										value={draft}
+										onChange={(e) => onChange(e.target.value)}
+										onKeyDown={onKeyDown}
+										className="bg-transparent border-none shadow-none focus:ring-0 focus:shadow-none focus:translate-y-0 hover:border-none hover:shadow-none hover:translate-y-0 h-full text-xs"
+									/>
+								)}
+							/>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								className="h-11 w-11 p-0 text-muted-foreground shrink-0 rounded-full transition-colors"
+								onClick={() => setShowNewSubcategory(false)}
+							>
+								<XIcon size={14} />
+							</Button>
+						</div>
 					) : (
 						<Button
-							variant="link"
+							variant="outline"
+							size="md"
 							onClick={() => setShowNewSubcategory(true)}
-							className="flex w-full justify-start text-muted-foreground items-center gap-1 text-sm  mt-1"
+							className="h-11 flex w-full justify-start text-muted-foreground items-center text-sm mt-1"
 						>
-							<PlusIcon size={11} />
 							Добавить новую подкатегорию
 						</Button>
 					))}
@@ -761,7 +742,6 @@ function CategorySubcategorySelector({
 		</div>
 	);
 }
-
 // ─── EquipmentSheet (main) ────────────────────────────────────────────────────
 
 type EquipmentFormState = DbEquipment & {
@@ -1003,10 +983,8 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 
 	return (
 		<Sheet open={open} onOpenChange={handleOpenChange}>
-			<SheetContent className="w-full sm:max-w-full md:w-[70vw] lg:w-[60vw] lg:max-w-6xl overflow-hidden flex flex-col border-l backdrop-blur bg-background/90 p-0">
-				<SheetHeader
-					className={cn("bg-muted-foreground/10 px-6 py-2 shrink-0")}
-				>
+			<SheetContent className="w-full sm:max-w-full md:w-[70vw] lg:w-[60vw] lg:max-w-6xl overflow-hidden flex flex-col backdrop-blur bg-background/50 p-0">
+				<SheetHeader className={cn("bg-background/50 px-6 py-2 shrink-0")}>
 					<div className="flex items-start justify-between gap-3">
 						<SheetTitle
 							className={cn("text-xl font-bold leading-tight items-baseline")}
@@ -1038,27 +1016,29 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 				</SheetHeader>
 
 				{/* ── TABS ── */}
-				<div className="flex border-b border-foreground/8 shrink-0 bg-background overflow-x-auto">
+				<div className="flex border-b border-foreground/8 shrink-0 overflow-x-auto">
 					{TABS.map(({ id, label, icon: Icon }) => (
 						<button
 							type="button"
 							key={id}
 							onClick={() => setTab(id)}
 							className={cn(
-								"flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
+								"cursor-pointer flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
 								tab === id
-									? "text-foreground border-primary bg-secondary/50"
-									: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/5"
+									? "text-foreground border-foreground"
+									: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/3"
 							)}
 						>
 							<Icon
 								size={14}
-								weight={tab === id ? "fill" : "regular"}
-								className={cn(tab === id && "fill-muted-foreground")}
+								weight={tab === id ? "duotone" : "bold"}
+								className={cn(
+									tab === id ? "text-foreground" : "text-muted-foreground"
+								)}
 							/>{" "}
 							{label}
 							{id === "notes" && comments.length > 0 && (
-								<span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-secondary text-foreground text-[10px] font-bold shadow-xs shadow-muted-foreground/60">
+								<span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-muted-foreground/20 text-foreground text-[10px] font-bold">
 									{comments.length}
 								</span>
 							)}
@@ -1189,6 +1169,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									value={formData.title}
 									onChange={(e) => set({ title: e.target.value })}
 									placeholder="Название техники"
+									className="glass-input"
 								/>
 							</div>
 
@@ -1199,9 +1180,10 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 									<Input
 										value={formData.inventoryNumber ?? ""}
 										placeholder="Уникальный инв. №"
-										className={
+										className={cn(
+											"glass-input",
 											inventoryError ? "border-red-500 pr-10" : "pr-10"
-										}
+										)}
 										onChange={(e) => {
 											const val = e.target.value;
 											set({ inventoryNumber: val });
@@ -1249,6 +1231,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 											"Описание в **markdown**...\n\n- пункт 1\n- пункт 2\n- пункт 3"
 										}
 										rows={7}
+										className="card-surface p-2"
 									/>
 									{/* <SpecsEditor
 										value={specText}
@@ -1263,6 +1246,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 										onChange={(v) => set({ kitDescription: v })}
 										placeholder={"- Камера\n- Зарядное устройство\n- Кейс"}
 										rows={5}
+										className="card-surface p-2"
 									/>
 									<div className="space-y-3">
 										<Label>Видеообзоры</Label>
@@ -1280,7 +1264,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 												"ссылки на YouTube, VK Video, RuTube\n\nhttps://youtube.com/watch?...\nhttps://vk.com/video...\nhttps://rutube.ru/video/..."
 											}
 											rows={4}
-											className="font-mono text-xs resize-none"
+											className="font-mono text-xs resize-none glass-input"
 										/>
 										{(formData.videoUrls ?? []).length > 0 && (
 											<p className="text-[11px] text-muted-foreground">
@@ -1291,7 +1275,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 								</div>
 							)}
 
-							<Card className="rounded-2xl px-1 py-2  bg-muted-foreground/10 w-full">
+							<Card className="rounded-xl px-2 py-2  bg-muted-foreground/10 w-full">
 								{/* AVAILABILITY / OWNERSHIP / PRICES / DEPOSIT / REPLACEMENT / STATUS  */}
 								<div className="flex flex-col sm:flex-row w-full justify-between gap-4">
 									{/* AVAILABILITY / OWNERSHIP */}
@@ -1446,7 +1430,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 													<Label>{label}</Label>
 													<Input
 														type="number"
-														className="h-9"
+														className="h-9 glass-input"
 														value={formData[key]}
 														onChange={(e) =>
 															set({
@@ -1473,7 +1457,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 													<Label>{label}</Label>
 													<Input
 														type="number"
-														className="h-9"
+														className="h-9 glass-input"
 														value={formData[key]}
 														onChange={(e) =>
 															set({
@@ -1501,6 +1485,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 										}
 										placeholder="Опишите дефекты если имеются"
 										rows={5}
+										className="glass-input"
 									/>
 								</div>
 							</Card>

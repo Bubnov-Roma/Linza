@@ -8,7 +8,6 @@ export function decryptApplicationDataForClient(
 ): ClientFormValues | null {
 	if (!data) return null;
 	try {
-		// Делаем глубокую копию, чтобы не мутировать исходный объект
 		const clone = JSON.parse(JSON.stringify(data));
 		const appData = clone.applicationData || {};
 		const personalData = appData.personalData || {};
@@ -22,10 +21,29 @@ export function decryptApplicationDataForClient(
 		let passport = appData.passport;
 		if (!passport || Object.keys(passport).length === 0) {
 			passport = personalData.passport || {};
-			appData.passport = passport; // Переносим на правильный уровень для Zod-схемы
+			appData.passport = passport;
 		}
 
-		// 3. Расшифровка
+		// 3. Нормализация issueDate (из старого issuedAt)
+		if (!passport.issueDate && passport.issuedAt) {
+			passport.issueDate = passport.issuedAt;
+		}
+
+		// 4. МИГРАЦИЯ: если данные хранятся как единая строка name → разбить на три поля
+		if (
+			personalData.name &&
+			!personalData.lastName &&
+			!personalData.firstName
+		) {
+			const parts = (personalData.name as string).trim().split(/\s+/);
+			personalData.lastName = parts[0] ?? "";
+			personalData.firstName = parts[1] ?? "";
+			personalData.middleName = parts.slice(2).join(" ") || undefined;
+			// Удаляем старое поле чтобы не путало форму
+			delete personalData.name;
+		}
+
+		// 5. Расшифровка
 		if (passport?.seriesAndNumber) {
 			passport.seriesAndNumber = decrypt(passport.seriesAndNumber);
 		}
@@ -39,9 +57,10 @@ export function decryptApplicationDataForClient(
 			personalData.snils = decrypt(personalData.snils);
 		}
 
-		// Подчищаем дубликаты старой структуры, чтобы не засорять стейт формы
+		// Чистим дубликаты старой структуры
 		delete personalData.birthDate;
 		delete personalData.passport;
+		delete passport.issuedAt;
 
 		clone.applicationData = appData;
 		return clone as ClientFormValues;

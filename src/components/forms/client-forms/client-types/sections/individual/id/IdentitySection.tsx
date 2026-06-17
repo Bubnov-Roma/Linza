@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { FioInput } from "@/components/forms/client-forms/client-types/sections/individual/id/FioInput";
+import { NameFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/id/NameFieldsGroup";
 import {
 	SectionColumn,
 	SectionWrapper,
@@ -100,11 +100,7 @@ export const IdentitySection = () => {
 				indicatorColor="bg-blue-500"
 				defaultOpen={true}
 			>
-				<FioInput
-					required
-					name="applicationData.personalData.name"
-					label="ФИО полностью"
-				/>
+				<NameFieldsGroup prefix="applicationData.personalData" />
 				<div className="grid grid-cols-2 gap-3">
 					<DateInput
 						required
@@ -141,7 +137,8 @@ export const IdentitySection = () => {
 					name="applicationData.passport.issuedBy"
 					label="Кем выдан"
 					placeholder="Наименование органа выдавшего документ"
-					rows={3}
+					rows={5}
+					className="mt-5"
 				/>
 			</AccordionColumn>
 		</SectionWrapper>

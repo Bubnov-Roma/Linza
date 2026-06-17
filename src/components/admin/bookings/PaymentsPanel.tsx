@@ -616,7 +616,7 @@ export function PaymentsPanel({
 								placeholder="Номер чека..."
 								value={newNote}
 								onChange={(e) => setNewNote(e.target.value)}
-								className="text-xs resize-none h-14"
+								className="text-xs resize-none h-14 glass-input"
 							/>
 						</div>
 

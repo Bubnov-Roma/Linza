@@ -7,8 +7,8 @@ import type {
 	AdminBookingItemSnippet,
 	PaymentMethod,
 } from "@/core/domain/entities/Booking";
-import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
+import { extractEnrichedUserData } from "@/utils";
 
 export default async function AdminBookingsPage() {
 	const rawBookings = await prisma.booking.findMany({

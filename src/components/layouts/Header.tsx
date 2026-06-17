@@ -6,17 +6,16 @@ import {
 	CaretRightIcon,
 	InfoIcon,
 	ListIcon,
-	MagnifyingGlassIcon,
 	MapPinIcon,
 	QuestionIcon,
 	ShoppingCartSimpleIcon,
 	SidebarSimpleIcon,
 	SquaresFourIcon,
-	XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useOnClickOutside } from "usehooks-ts";
+import { clientAutocompleteEquipmentAction } from "@/actions/autocomplete-actions";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
 import { Logo } from "@/components/icons/Logo";
 import { ThemeIconButton } from "@/components/layouts/ThemeToggle";
@@ -24,10 +23,10 @@ import { AdminNotificationsPanel } from "@/components/shared/AdminNotificationsP
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
 import {
 	Button,
-	Card,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	InlineSearchInput,
 	Sheet,
 	SheetContent,
 	SheetHeader,
@@ -90,10 +89,10 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 	return (
 		<header
 			className={cn(
-				"fixed top-0 left-0 right-0 z-5",
+				"fixed top-0 left-0 right-0 z-7",
 				!isCollapsed && "md:left-(--sidebar-width)",
-				"transition-[left] duration-300 ease-in-out border-b border-foreground/5 bg-background/60",
-				"flex h-16 items-center justify-between gap-4 px-4 md:px-6 md:backdrop-blur-lg group "
+				"transition-[left] duration-300 ease-in-out bg-background/60",
+				"flex h-16 items-center justify-between gap-4 px-4 md:px-6 md:backdrop-blur-lg group"
 			)}
 		>
 			{/* ── Mobile: Лого + Гамбургер меню ── */}
@@ -115,19 +114,23 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 					<SheetContent side="left" className="flex flex-col w-80 p-0">
 						<SheetHeader className="p-6 text-left">
 							<SheetTitle className="flex items-center gap-2">
-								<Card className="flex items-center group rounded-full w-max bg-black/60! dark:bg-white/60!  shadow-brand-glow/5">
-									<Link
-										href="/"
-										className="flex items-center group rounded-full w-max px-4 py-1 text-foreground/60"
+								<Link
+									href="/"
+									className={cn(
+										"flex items-center gap-3 transition-all duration-300 px-4 bg-primary shadow-lg shadow-primary/20 rounded-full h-10 z-5 backdrop-blur-2xl relative",
+										isCollapsed ? "w-10 justify-center px-0" : "w-fit min-w-0"
+									)}
+								>
+									<Logo className="max-h-5 w-4 text-primary-foreground shadow-lg shadow-primary pl-1" />
+									<span
+										className={cn(
+											"text-xl font-black tracking-tighter text-primary-foreground",
+											isCollapsed && "hidden"
+										)}
 									>
-										<div className="flex h-10 w-10 items-center justify-center transition-transform group-hover:scale-105">
-											<Logo size={20} className="text-foreground/60" />
-										</div>
-										<p className="text-2xl font-black tracking-tighter pr-2">
-											LINZA
-										</p>
-									</Link>
-								</Card>
+										LINZA
+									</span>
+								</Link>
 							</SheetTitle>
 						</SheetHeader>
 
@@ -255,12 +258,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 							</div>
 							{/* Группа 3: Оформление / Переключатель Темы */}
 							<div className="pt-2 border-t border-foreground/5">
-								<div className="flex items-center justify-start gap-2 py-3 px-1 rounded-xl bg-muted-foreground/5">
-									<ThemeIconButton weight="fill" />
-									<span className="text-sm font-medium text-foreground/80">
-										Тема оформления
-									</span>
-								</div>
+								<ThemeIconButton weight="fill" isSidebar />
 							</div>
 						</div>
 					</SheetContent>
@@ -290,47 +288,36 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 					className={cn(
 						"absolute backdrop-blur-3xl inset-x-0 top-0 transition-all duration-300 ease-in-out rounded-2xl pointer-events-none z-0",
 						isFocused
-							? "bg-white dark:bg-black shadow-2xl ring-1 ring-white/10"
-							: "h-11 bg-muted-foreground/15 shadow-md",
+							? "bg-white dark:bg-mist-800 shadow-xl ring-1 ring-white/10 backdrop-blur-3xl"
+							: "h-11 bg-muted-foreground/15",
 						isFocused && "h-125"
 					)}
 				/>
-				<div className="relative z-5 flex items-center h-11 px-4">
-					<MagnifyingGlassIcon
-						weight={isFocused ? "duotone" : "regular"}
-						className={cn(
-							"transition-colors shrink-0",
-							isFocused ? "text-primary" : "text-muted-foreground"
-						)}
-						size={18}
-					/>
-					<input
-						className="w-full bg-transparent border-none px-3 focus:outline-none text-sm placeholder:text-muted-foreground"
+				<div
+					className={cn(
+						"relative z-5 flex items-center h-11 hover:bg-white dark:dark:bg-mist-800 shadow-muted-foreground/20 transition-all duration-300 rounded-2xl active:shadow-none hover:focus:shadow-none hover:focus-within:shadow-none",
+						isFocused && "bg-white dark:bg-mist-800"
+					)}
+				>
+					<InlineSearchInput
+						value={searchState.query}
+						onChange={searchState.setQuery}
+						fetchSuggestion={clientAutocompleteEquipmentAction}
 						placeholder="Поиск техники..."
 						onFocus={() => setIsFocused(true)}
-						value={searchState.query}
-						onChange={(e) => searchState.setQuery(e.target.value)}
 						onKeyDown={(e) => {
 							if (e.key === "Escape") handleClose();
-							if (e.key === "Enter" && searchState.query.trim().length > 1)
+							if (e.key === "Enter" && searchState.query.trim().length > 1) {
 								addToHistory(searchState.query.trim());
+							}
 						}}
+						className="bg-transparent! ring-0! border-0! shadow-none! focus-within:border-0! p-0 min-h-full"
 					/>
-					{searchState.query && (
-						<button
-							type="button"
-							onClick={() => searchState.setQuery("")}
-							className="cursor-pointer p-1 hover:bg-foreground/20 rounded-full transition-colors"
-						>
-							<XIcon size={14} className="text-muted-foreground" />
-						</button>
-					)}
 				</div>
 
-				{/* выпадающая панель — ABSOLUTE, не влияет на ширину родителя */}
 				{isFocused && (
-					<div className="absolute inset-x-0 top-11 z-5 animate-in fade-in slide-in-from-top-1 duration-200">
-						<div className="h-px bg-transparent shadow-xs shadow-foreground/10 mt-2" />
+					<div className="absolute inset-x-0 top-11 z-25 animate-in fade-in slide-in-from-top-1 duration-200 ">
+						<div className="h-px bg-transparent shadow-xs shadow-foreground/10" />
 						<SearchPanel
 							categories={categories}
 							state={searchState}

@@ -125,7 +125,7 @@ function UploadTemplateForm({
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 					placeholder="Договор аренды физ. лицо"
-					className="h-8 text-xs"
+					className="h-8 text-xs glass-input"
 				/>
 			</div>
 
@@ -161,7 +161,7 @@ function UploadTemplateForm({
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
 					placeholder="Краткое описание шаблона..."
-					className="h-8 text-xs"
+					className="h-8 text-xs glass-input"
 				/>
 			</div>
 

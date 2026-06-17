@@ -16,6 +16,13 @@ export async function updateUserFieldAction(
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
 
+		if (field === "email" && value) {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(value) || value.length > 254) {
+				return { success: false, error: "Некорректный email" };
+			}
+		}
+
 		await prisma.user.update({
 			where: { id: session.user.id },
 			data: { [field]: value },
@@ -94,7 +101,6 @@ export async function updateClientSocialsAction(
 		if (!app) return { success: false, error: "Анкета не найдена" };
 
 		const currentData = (app.applicationData as Record<string, unknown>) || {};
-
 		const currentAppData =
 			(currentData.applicationData as Record<string, unknown>) || {};
 		const currentContacts =
@@ -124,28 +130,69 @@ export async function updateClientSocialsAction(
 	}
 }
 
-export async function updateUserPasswordAction(field: string, value: string) {
+/**
+ * Обновляет пароль пользователя.
+ *
+ * field === "password"           → просто хэшируем и сохраняем (первичная установка)
+ * field === "verifyAndChange"    → value = "oldPass|||newPass", сначала проверяем старый
+ */
+export async function updateUserPasswordAction(
+	field: "password" | "verifyAndChange",
+	value: string
+): Promise<{ success: boolean; error?: string }> {
 	const session = await auth();
 	if (!session?.user?.id) return { success: false, error: "Not authorized" };
 
 	try {
-		let dataToUpdate = {};
-
 		if (field === "password") {
+			// Первичная установка пароля (через invite или из профиля впервые)
+			if (value.length < 8) {
+				return { success: false, error: "Минимум 8 символов" };
+			}
 			const hashedPassword = await bcrypt.hash(value, 10);
-			dataToUpdate = { password: hashedPassword };
-		} else {
-			dataToUpdate = { [field]: value };
+			await prisma.user.update({
+				where: { id: session.user.id },
+				data: { password: hashedPassword },
+			});
+			return { success: true };
 		}
 
-		await prisma.user.update({
-			where: { id: session.user.id },
-			data: dataToUpdate,
-		});
+		if (field === "verifyAndChange") {
+			// Смена пароля: проверяем текущий перед сохранением нового
+			const [currentPass, newPass] = value.split("|||");
 
-		return { success: true };
+			if (!currentPass || !newPass) {
+				return { success: false, error: "Некорректные данные" };
+			}
+			if (newPass.length < 8) {
+				return { success: false, error: "Минимум 8 символов" };
+			}
+
+			const user = await prisma.user.findUnique({
+				where: { id: session.user.id },
+				select: { password: true },
+			});
+
+			if (!user?.password) {
+				return { success: false, error: "Пароль не установлен" };
+			}
+
+			const isValid = await bcrypt.compare(currentPass, user.password);
+			if (!isValid) {
+				return { success: false, error: "Неверный текущий пароль" };
+			}
+
+			const hashedPassword = await bcrypt.hash(newPass, 10);
+			await prisma.user.update({
+				where: { id: session.user.id },
+				data: { password: hashedPassword },
+			});
+			return { success: true };
+		}
+
+		return { success: false, error: "Неизвестный тип операции" };
 	} catch (error) {
-		console.error("Update error:", error);
-		return { success: false, error: "Ошибка при обновлении" };
+		console.error("Update password error:", error);
+		return { success: false, error: "Ошибка при обновлении пароля" };
 	}
 }

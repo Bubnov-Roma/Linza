@@ -8,6 +8,13 @@ interface StudioSectionProps {
 	isAdmin: boolean;
 }
 
+const STUDIO_FEATURES = [
+	"Просторная циклорама, топовый свет и огромный xромакей",
+	"Любое оборудование из каталога доступно прямо в зале",
+	"Готовые сетапы для подкастов, стримов, трансляций",
+	"Воркшопы, мастер-классы и открытые съёмки",
+];
+
 export const StudioSection = async ({
 	banners,
 	isAdmin,
@@ -17,34 +24,39 @@ export const StudioSection = async ({
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_540px] gap-8 items-center bg-muted/30 dark:bg-muted/5 rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface">
 				{/* Левая колонка — Текст и УТП студии */}
 				<div className="space-y-6 pt-1 md:pr-4">
-					<div className="space-y-4 xl:space-y-10">
+					<div className="space-y-4 xl:space-y-10 ">
 						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
-							Пространство для ваших съёмок в Самаре
+							Профессиональная студия в Самаре
 						</span>
-						<h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black leading-[0.85] uppercase italic text-foreground tracking-tighter">
+						<h2 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black leading-[0.85] uppercase italic text-foreground tracking-tighter">
 							STUDIO
-						</h1>
-						<h2 className="italic text-lg sm:text-xl md:text-2xl font-black text-muted-foreground tracking-wide mt-1">
-							Локации с профессиональным светом
 						</h2>
+						<h3 className="italic text-lg sm:text-xl md:text-2xl font-black text-muted-foreground tracking-wide mt-1">
+							Пространство для ваших съемок
+						</h3>
 					</div>
 
-					<p className="hidden md:block text-muted-foreground text-sm sm:text-base max-w-md leading-relaxed">
-						Современные интерьеры, просторная циклорама и съёмочные зоны с
-						топовым импульсным и постоянным светом. Любое оборудование из
-						каталога доступно прямо в зале.
-					</p>
+					<ul className="space-y-2 pt-1">
+						{STUDIO_FEATURES.map((f) => (
+							<li
+								key={f}
+								className="flex items-start gap-2 text-sm opacity-75 leading-snug"
+							>
+								<span className="mt-2 w-1 h-1 rounded-full bg-muted-foreground/60 shrink-0" />
+								{f}
+							</li>
+						))}
+					</ul>
 
-					{/* Быстрые ссылки в стиле Telegram-интерфейсов */}
 					<div className="flex flex-wrap gap-2 pt-2">
-						<Button asChild size="lg" className="rounded-xl font-bold flex-1">
+						<Button asChild size="lg" className="rounded-2xl font-bold flex-1">
 							<Link href="/studio">Забронировать зал</Link>
 						</Button>
 						<Button
 							asChild
 							size="lg"
 							variant="secondary"
-							className="rounded-xl font-bold flex-1"
+							className="rounded-2xl font-bold flex-1"
 						>
 							<Link href="/equipment">Подобрать технику</Link>
 						</Button>

@@ -153,13 +153,14 @@ export function ProfileTab({
 						onSave={(v) => handleFieldSave("passport.issuedBy", v)}
 						placeholder="Наименование органа выдавшего документ"
 					/>
-					<div className="grid grid-cols-1 sm:grid-cols-2">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<ProfileField
 							label="Адрес регистрации"
 							value={appData?.passport?.registrationAddress}
 							originalValue={getOriginalValue("passport.registrationAddress")}
 							onSave={(v) => handleFieldSave("passport.registrationAddress", v)}
 							placeholder="Адрес прописки указанный в паспорте"
+							rows={3}
 						/>
 						<ProfileField
 							label="Адрес проживания"
@@ -167,6 +168,7 @@ export function ProfileTab({
 							originalValue={getOriginalValue("address.residentialAddress")}
 							onSave={(v) => handleFieldSave("address.residentialAddress", v)}
 							placeholder="Адрес фактического места жительства"
+							rows={3}
 						/>
 					</div>
 				</div>

@@ -67,7 +67,7 @@ export function IconPicker({
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Поиск иконки..."
-						className="w-full h-7 px-2.5 rounded-lg text-xs bg-foreground/5 border border-foreground/10 outline-none focus:border-primary/40 transition-colors"
+						className="w-full h-7 px-2.5 rounded-lg text-xs bg-foreground/5 border border-foreground/10 outline-none focus:border-primary/40 transition-colors glass-input"
 					/>
 
 					{/* Сетка иконок */}

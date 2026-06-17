@@ -25,8 +25,7 @@ export function BookingButton({
 
 	const isBookingBlocked = status === "REJECTED" || status === "BLOCKED";
 
-	const label =
-		mode === "update" ? "Обновить заказ" : "Отправить заявку на бронирование";
+	const label = mode === "update" ? "Обновить заказ" : "Оформить заказ";
 
 	return isBookingBlocked ? (
 		<BlockedBanner status={status} />

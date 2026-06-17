@@ -107,9 +107,10 @@ export default function AdminFaqClient({
 					</p>
 				</div>
 				<Button
-					size="xl"
+					size="icon-xl"
 					onClick={() => setShowAdd((s) => !s)}
 					className="rounded-full"
+					title="Добавить вопрос"
 				>
 					<PlusIcon
 						size={14}
@@ -118,15 +119,12 @@ export default function AdminFaqClient({
 							showAdd && "rotate-135"
 						)}
 					/>
-					<span className="ml-2">
-						{showAdd ? "Отменить" : "Добавить вопрос"}
-					</span>
 				</Button>
 			</div>
 
 			{/* Форма добавления нового вопроса */}
 			{showAdd && (
-				<div className="p-6 rounded-2xl bg-foreground/3 border border-foreground/5 space-y-4 animate-in slide-in-from-top-2 duration-200">
+				<div className="p-6 rounded-2xl card-surface border border-foreground/5 space-y-4 animate-in slide-in-from-top-2 duration-200">
 					<div className="space-y-1">
 						<Label className="text-xs uppercase font-bold tracking-wider text-muted-foreground">
 							Вопрос
@@ -136,6 +134,7 @@ export default function AdminFaqClient({
 							onChange={(e) => setNewQ(e.target.value)}
 							placeholder="Например: Как оформить аренду оборудования?"
 							autoFocus
+							className="glass-input"
 						/>
 					</div>
 
@@ -145,7 +144,7 @@ export default function AdminFaqClient({
 							value={newA}
 							onChange={setNewA}
 							rows={4}
-							placeholder="Подробный ответ с поддержкой стилей..."
+							placeholder="Подробный ответ (поддерживает Markdown)"
 						/>
 					</div>
 

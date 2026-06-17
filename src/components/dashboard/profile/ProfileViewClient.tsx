@@ -5,7 +5,15 @@ import { ProfileSkeleton } from "@/components/dashboard/profile/ProfileSkeleton"
 import { ClientForm } from "@/components/forms";
 import { useApplicationStore } from "@/store";
 
-export const ProfileViewClient = () => {
+interface ProfileViewClientProps {
+	hasPassword: boolean;
+	userEmail: string;
+}
+
+export const ProfileViewClient = ({
+	hasPassword,
+	userEmail,
+}: ProfileViewClientProps) => {
 	const applicationData = useApplicationStore((state) => state.applicationData);
 	const status = useApplicationStore((state) => state.status);
 
@@ -18,7 +26,11 @@ export const ProfileViewClient = () => {
 			{status === "NO_APPLICATION" || status === "DRAFT" ? (
 				<ClientForm />
 			) : (
-				<ProfileDetails data={applicationData} />
+				<ProfileDetails
+					data={applicationData}
+					hasPassword={hasPassword}
+					userEmail={userEmail}
+				/>
 			)}
 		</div>
 	);

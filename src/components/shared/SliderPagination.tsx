@@ -24,7 +24,7 @@ export function SliderPagination({
 	};
 
 	return (
-		<div className="flex items-center justify-center gap-2 py-2 flex-wrap px-4 bg-background/30 rounded-full">
+		<div className="flex items-center justify-center gap-2 py-2 flex-wrap px-4 rounded-full">
 			{Array.from({ length: totalPages }).map((_, i) => {
 				const isActive = i === currentPage;
 				return (

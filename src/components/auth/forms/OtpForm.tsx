@@ -1,7 +1,6 @@
 "use client";
 
 import { OTPInput } from "input-otp";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +27,6 @@ export function OtpForm({
 	isModal = false,
 	title = "Введите код",
 }: OtpFormProps) {
-	const router = useRouter();
 	const [isSendingCode, setIsSendingCode] = useState(false);
 	const [isVerifying, setIsVerifying] = useState(false);
 	const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SEC);
@@ -59,8 +57,7 @@ export function OtpForm({
 				if (onSuccess) {
 					onSuccess();
 				} else {
-					router.push("/dashboard");
-					router.refresh();
+					window.location.href = "/dashboard";
 				}
 			}
 		} catch (err) {

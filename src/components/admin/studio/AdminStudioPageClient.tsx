@@ -46,9 +46,9 @@ export function AdminStudioPageClient({
 	}, []);
 
 	return (
-		<div className="flex flex-col h-full min-h-0">
+		<div className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
 			{/* ── Header ── */}
-			<div className="px-3 py-4 border-b border-foreground/5 flex items-start justify-between gap-4">
+			<div className="px-3 pt-4 flex items-start justify-between gap-4">
 				<div>
 					<div className="flex items-center gap-2.5">
 						<VideoIcon size={20} weight="duotone" />
@@ -77,11 +77,12 @@ export function AdminStudioPageClient({
 			</div>
 
 			{/* ── Tabs ── */}
-			<div className="flex border-b border-foreground/5 px-6">
+			<div className="flex">
 				{TABS.map(({ id, label, icon: Icon }) => (
-					<button
+					<Button
 						key={id}
 						type="button"
+						variant="ghost"
 						onClick={() => setActiveTab(id)}
 						className={cn(
 							"flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition-all relative shrink-0",
@@ -90,24 +91,24 @@ export function AdminStudioPageClient({
 								: "text-foreground/50 hover:text-foreground/80"
 						)}
 					>
-						<Icon size={15} weight={activeTab === id ? "fill" : "regular"} />
+						<Icon size={15} weight={activeTab === id ? "fill" : "duotone"} />
 						{label}
-						{id === "bookings" && pendingCount > 0 && (
+						{/* {id === "bookings" && pendingCount > 0 && (
 							<span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground px-1">
 								{pendingCount}
 							</span>
 						)}
 						{activeTab === id && (
 							<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground rounded-t-full" />
-						)}
-					</button>
+						)} */}
+					</Button>
 				))}
 			</div>
 
 			{/* ── Tab content ── */}
 			<div className="flex-1 min-h-0 overflow-auto">
 				{activeTab === "bookings" && (
-					<div className="p-2">
+					<div className="space-y-4 relative">
 						<StudioBookingTable tariffs={tariffs} isAdmin={isAdmin} />
 					</div>
 				)}

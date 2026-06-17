@@ -7,7 +7,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { updateFullApplicationDataAction } from "@/actions/client-application-actions";
 import { AddressFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/address/AddressFieldsGroup";
-import { FioInput } from "@/components/forms/client-forms/client-types/sections/individual/id/FioInput";
+import { NameFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/id/NameFieldsGroup";
 import {
 	DateInput,
 	FormCheckbox,
@@ -29,7 +29,6 @@ export function ApplicationDataEditor({
 	const [openSection, setOpenSection] = useState<string | null>("personal");
 	const [isSaving, setIsSaving] = useState(false);
 
-	// Инициализируем форму существующими данными
 	const methods = useForm<ClientFormValues>(
 		data
 			? {
@@ -48,7 +47,6 @@ export function ApplicationDataEditor({
 	const isSameAddress = methods.watch("applicationData.addresses.isSame");
 
 	const onSubmit = async (formValues: ClientFormValues) => {
-		// Если адреса совпадают, копируем регистрацию в факт
 		if (formValues.applicationData.addresses.isSame) {
 			formValues.applicationData.addresses.actual = {
 				...formValues.applicationData.addresses.registration,
@@ -60,8 +58,8 @@ export function ApplicationDataEditor({
 			const res = await updateFullApplicationDataAction(formValues);
 			if (res.success) {
 				toast.success("Данные успешно обновлены");
-				setFormDraft(formValues); // Оптимистичное обновление UI профиля
-				methods.reset(formValues); // Сбрасываем isDirty
+				setFormDraft(formValues);
+				methods.reset(formValues);
 			} else {
 				toast.error(res.error || "Ошибка сохранения");
 			}
@@ -93,11 +91,8 @@ export function ApplicationDataEditor({
 					}
 				>
 					<div className="p-5 space-y-4">
-						<FioInput
-							name="applicationData.personalData.name"
-							label="ФИО полностью"
-							required
-						/>
+						{/* Фамилия / Имя / Отчество */}
+						<NameFieldsGroup prefix="applicationData.personalData" />
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							<PhoneInput
 								name="applicationData.personalData.phone"
@@ -187,7 +182,6 @@ export function ApplicationDataEditor({
 					</div>
 				</AccordionSection>
 
-				{/* ── Предупреждение ── */}
 				<p
 					className={cn(
 						"text-xs text-muted-foreground/60 leading-relaxed text-center font-mono",
@@ -218,7 +212,6 @@ export function ApplicationDataEditor({
 	);
 }
 
-// Вспомогательный компонент аккордеона
 function AccordionSection({
 	icon,
 	title,

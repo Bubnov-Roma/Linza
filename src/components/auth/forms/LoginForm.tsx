@@ -6,7 +6,6 @@ import {
 	EyeIcon,
 	LockIcon,
 } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,8 +28,6 @@ export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 	);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const router = useRouter();
-
 	const handlePasswordLogin = async (e: React.SubmitEvent) => {
 		e.preventDefault();
 
@@ -49,7 +46,7 @@ export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 		setIsLoading(true);
 
 		try {
-			const res = await signIn("credentials", {
+			const res = await signIn("password", {
 				email,
 				password,
 				redirect: false,
@@ -64,8 +61,7 @@ export function LoginForm({ isModal, onSuccess }: LoginFormProps) {
 				onSuccess();
 			} else {
 				toast.success("С возвращением!");
-				router.push("/dashboard");
-				router.refresh();
+				window.location.href = "/dashboard";
 			}
 		} catch {
 			toast.error("Ошибка авторизации");

@@ -472,7 +472,7 @@ export default function EquipmentTable() {
 	};
 
 	return (
-		<div className="w-full space-y-2 relative">
+		<div className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
 			{/* Header */}
 			<div className="px-3 py-4 flex items-start justify-between gap-4">
 				<div className="flex items-center gap-2.5">
@@ -481,7 +481,7 @@ export default function EquipmentTable() {
 						Техника
 					</h1>
 					{selectedIds.size > 0 && (
-						<Badge className="h-8 pl-2 pr-1 gap-1 text-[10px] font-bold bg-primary text-primary-foreground rounded-md">
+						<Badge className="h-8 pr-0 gap-1 text-[10px] font-bold bg-secondary text-muted-foreground rounded-2xl">
 							<span>{formatPlural(selectedIds.size, "items")} </span>{" "}
 							<Tooltip>
 								<TooltipTrigger>
@@ -491,12 +491,12 @@ export default function EquipmentTable() {
 										size="icon"
 										onClick={() => handleDelete()}
 										disabled={isPending}
-										className="rounded-md p-1"
+										className="rounded-l-2xl rounded-r-lg p-2"
 									>
 										<TrashIcon size={4} />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
+								<TooltipContent side="bottom">
 									<p>Удалить</p>
 								</TooltipContent>
 							</Tooltip>
@@ -508,12 +508,12 @@ export default function EquipmentTable() {
 										size="icon"
 										onClick={handleExport}
 										disabled={isPending}
-										className="rounded-md p-1"
+										className="rounded-lg p-2"
 									>
 										<UploadSimpleIcon size={4} />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
+								<TooltipContent side="bottom">
 									<p>Экспортировать</p>
 								</TooltipContent>
 							</Tooltip>
@@ -525,12 +525,12 @@ export default function EquipmentTable() {
 										size="icon"
 										onClick={() => handleDuplicate()}
 										disabled={isPending}
-										className="rounded-md p-1"
+										className="rounded-r-2xl rounded-l-lg p-2"
 									>
 										<CopySimpleIcon size={4} />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
+								<TooltipContent side="bottom">
 									<p>Копировать</p>
 								</TooltipContent>
 							</Tooltip>
@@ -550,13 +550,14 @@ export default function EquipmentTable() {
 			</div>
 
 			{/* Toolbar Card */}
-			<Card className="p-2 mx-2">
+			<Card className="p-2 shadow-none!">
 				<CardContent className="px-0 space-y-3 justify-between">
 					<div className="flex flex-col lg:flex-row items-center gap-2 flex-wrap">
 						<div className="flex flex-col flex-1 w-full sm:max-w-sm">
 							<InlineSearchInput
 								value={search}
 								onChange={setSearchTerm}
+								className="glass-input"
 								placeholder="Название или инв. номер..."
 								fetchSuggestion={async (q) => {
 									const results = await getAutocompleteAction("equipment", q);

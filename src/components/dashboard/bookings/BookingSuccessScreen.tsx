@@ -1,6 +1,10 @@
 "use client";
 
-import { CheckCircle2, LayoutDashboard, Package } from "lucide-react";
+import {
+	CheckCircleIcon,
+	LayoutIcon,
+	PackageIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 
 // Replace with your actual Telegram bot link
@@ -21,23 +25,27 @@ export function BookingSuccessScreen({
 	const shortId = bookingId.split("-")[0]?.toUpperCase() ?? bookingId;
 
 	return (
-		<div className="min-h-[80vh] flex items-center justify-center px-4">
+		<div className="min-h-[80vh] flex items-center justify-center px-4 mt-2 md:mt-10">
 			<div className="w-full max-w-md space-y-6 animate-in fade-in zoom-in-95 duration-500">
 				{/* ── Icon ── */}
 				<div className="flex flex-col items-center gap-4 text-center">
 					<div className="relative">
-						<div className="absolute inset-0 blur-3xl bg-green-500/20 rounded-full scale-150" />
+						<div className="absolute inset-0 blur-3xl bg-green-500/20 rounded-full scale-150 drop-shadow-xl drop-shadow-green-500" />
 						<div className="relative bg-background rounded-full p-3 border border-green-500/20">
-							<CheckCircle2 size={56} className="text-green-500" />
+							<CheckCircleIcon
+								size={66}
+								className="text-green-500"
+								weight="duotone"
+							/>
 						</div>
 					</div>
 
 					<div className="space-y-2">
 						<h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter">
-							Заявка отправлена!
+							Заказ отправлен!
 						</h1>
 						<h2 className="text-muted-foreground text-sm leading-relaxed">
-							Заказ{" "}
+							Заказ на бронирование{" "}
 							<span className="font-bold text-foreground">№ {shortId}</span>{" "}
 							принят.
 						</h2>
@@ -50,7 +58,7 @@ export function BookingSuccessScreen({
 				{/* ── What's next hint ── */}
 				<div>
 					<p className="text-[10px] pl-8 font-bold uppercase tracking-widest text-muted-foreground/50">
-						Что дальше
+						Что будет дальше
 					</p>
 					<ol className="hidden md:flex flex-col items-start gap-4 px-5 py-4 rounded-2xl border border-foreground/5 bg-card/40 space-y-2 transition-colors group">
 						{[
@@ -62,7 +70,7 @@ export function BookingSuccessScreen({
 								key={`${step}` + `${i}`}
 								className="flex items-start gap-3 text-sm text-muted-foreground"
 							>
-								<span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">
+								<span className="shrink-0 w-5 h-5 rounded-full bg-foreground/10 text-muted-foreground text-[10px] font-bold flex items-center justify-center mt-0.5">
 									{i + 1}
 								</span>
 								{step}
@@ -97,9 +105,10 @@ export function BookingSuccessScreen({
 						href={redirectUrl}
 						className="flex flex-col items-center gap-2 px-4 py-4 rounded-2xl border border-foreground/10 bg-secondary/50 hover:bg-foreground/5 transition-colors text-center group"
 					>
-						<Package
+						<PackageIcon
+							weight="duotone"
 							size={20}
-							className="text-primary/70 group-hover:text-primary transition-colors"
+							className="text-muted-foreground group-hover:text-foreground not-odd:transition-colors"
 						/>
 						<span className="text-xs font-semibold">К заказу</span>
 					</Link>
@@ -108,7 +117,8 @@ export function BookingSuccessScreen({
 						href="/dashboard"
 						className="flex flex-col items-center gap-2 px-4 py-4 rounded-2xl border border-foreground/10 bg-secondary/50 hover:bg-foreground/5 transition-colors text-center group"
 					>
-						<LayoutDashboard
+						<LayoutIcon
+							weight="duotone"
 							size={20}
 							className="text-muted-foreground group-hover:text-foreground transition-colors"
 						/>

@@ -12,7 +12,7 @@ import { AddressFieldsGroup } from "@/components/forms/client-forms/client-types
 import { FinalBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/FinalBlock";
 import { ReferralsBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/ReferralsBlock";
 import { SocialsBlock } from "@/components/forms/client-forms/client-types/sections/individual/contacts/SocialsBlock";
-import { FioInput } from "@/components/forms/client-forms/client-types/sections/individual/id/FioInput";
+import { NameFieldsGroup } from "@/components/forms/client-forms/client-types/sections/individual/id/NameFieldsGroup";
 import { FormCheckbox } from "@/components/forms/shared";
 import { DateInput } from "@/components/forms/shared/DateInput";
 import { FormTextarea } from "@/components/forms/shared/FormTextarea";
@@ -100,24 +100,20 @@ export function MobileClientForm() {
 			title: "Личные данные",
 			dotColor: "bg-blue-500",
 			fields: [
-				"applicationData.personalData.name",
+				"applicationData.personalData.lastName",
+				"applicationData.personalData.firstName",
 				"applicationData.personalData.birth",
 				"applicationData.personalData.phone",
 			],
 			content: (
 				<div className="space-y-4">
-					<FioInput
-						required
-						name="applicationData.personalData.name"
-						label="ФИО полностью"
-					/>
+					<NameFieldsGroup prefix="applicationData.personalData" />
 					<div className="grid grid-cols-2 gap-3">
 						<DateInput
 							required
 							name="applicationData.personalData.birth"
 							label="Дата рождения"
 						/>
-
 						<PhoneInput
 							required
 							name="applicationData.personalData.phone"
@@ -225,10 +221,8 @@ export function MobileClientForm() {
 		},
 	];
 
-	// handleValueChange — было (values: string[]):
 	const handleValueChange = (value: string) => {
 		const wasOpen = openPanel;
-		// Валидируем секцию когда закрываем
 		if (wasOpen && wasOpen !== value) {
 			const sec = sections.find((s) => s.id === wasOpen);
 			if (sec) trigger(sec.fields as Parameters<typeof trigger>[0]);

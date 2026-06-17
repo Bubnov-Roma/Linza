@@ -2,7 +2,6 @@
 
 import {
 	EnvelopeSimpleIcon,
-	IdentificationCardIcon,
 	LinkIcon,
 	LockKeyIcon,
 	PhoneIcon,
@@ -22,11 +21,6 @@ import {
 	Button,
 	Input,
 	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Sheet,
 	SheetContent,
 	SheetHeader,
@@ -274,8 +268,12 @@ export function CreateUserSheet({
 				{/* Header */}
 				<SheetHeader className="p-6 pb-4 border-b border-foreground/10 shrink-0">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-							<UserPlusIcon size={20} weight="duotone" />
+						<div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
+							<UserPlusIcon
+								size={20}
+								weight="duotone"
+								className="text-foreground"
+							/>
 						</div>
 						<div>
 							<SheetTitle className="text-lg font-black">
@@ -392,10 +390,6 @@ export function CreateUserSheet({
 						// ── Form ──────────────────────────────────────────────────────
 						<>
 							<div className="p-3 rounded-xl bg-foreground/5 border border-foreground/10 text-xs text-muted-foreground flex gap-2">
-								<IdentificationCardIcon
-									size={14}
-									className="shrink-0 mt-0.5 text-primary"
-								/>
 								<p>
 									Заполните хотя бы одно поле: email, телефон или имя. Анкету
 									клиент сможет заполнить самостоятельно после входа.
@@ -413,7 +407,7 @@ export function CreateUserSheet({
 									<div className="relative">
 										<UserIcon
 											size={14}
-											className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+											className="z-1 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 										/>
 										<Input
 											value={name}
@@ -422,7 +416,7 @@ export function CreateUserSheet({
 												triggerDupCheck(email, phone, e.target.value);
 											}}
 											placeholder="Иван Петров"
-											className="pl-8 h-9"
+											className="pl-8 h-9 glass-input"
 										/>
 									</div>
 								</div>
@@ -435,7 +429,7 @@ export function CreateUserSheet({
 										<div className="relative">
 											<PhoneIcon
 												size={14}
-												className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+												className="z-1 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 											/>
 											<Input
 												value={phone}
@@ -445,7 +439,7 @@ export function CreateUserSheet({
 												}}
 												placeholder="+7 (000) 000-00-00"
 												type="tel"
-												className="pl-8 h-9"
+												className="pl-8 h-9 glass-input"
 											/>
 										</div>
 									</div>
@@ -456,7 +450,7 @@ export function CreateUserSheet({
 										<div className="relative">
 											<EnvelopeSimpleIcon
 												size={14}
-												className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+												className="z-1 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 											/>
 											<Input
 												value={email}
@@ -466,7 +460,7 @@ export function CreateUserSheet({
 												}}
 												placeholder="client@example.com"
 												type="email"
-												className="pl-8 h-9"
+												className="pl-8 h-9 glass-input"
 											/>
 										</div>
 									</div>
@@ -495,7 +489,7 @@ export function CreateUserSheet({
 							</section>
 
 							{/* Role */}
-							<section className="space-y-3">
+							{/* <section className="space-y-3">
 								<p className="text-xs font-bold uppercase text-muted-foreground tracking-wide">
 									Роль
 								</p>
@@ -512,7 +506,7 @@ export function CreateUserSheet({
 										<SelectItem value="MANAGER">Менеджер</SelectItem>
 									</SelectContent>
 								</Select>
-							</section>
+							</section> */}
 
 							{/* Password mode */}
 							<section className="space-y-3">
@@ -559,14 +553,14 @@ export function CreateUserSheet({
 										<div className="relative">
 											<LockKeyIcon
 												size={14}
-												className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+												className="z-1 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 											/>
 											<Input
 												value={manualPassword}
 												onChange={(e) => setManualPassword(e.target.value)}
 												placeholder="Минимум 8 символов"
 												type="text"
-												className="pl-8 h-9 font-mono"
+												className="pl-8 h-9 font-mono glass-input"
 											/>
 										</div>
 									</div>
@@ -574,7 +568,7 @@ export function CreateUserSheet({
 
 								{passwordMode === "invite" && (
 									<div className="p-3 bg-foreground/5 rounded-xl space-y-1.5">
-										<div className="flex items-center gap-2 text-primary">
+										<div className="flex items-center gap-2 text-foreground dark:text-primary">
 											<LinkIcon size={13} />
 											<p className="text-xs font-medium">
 												Одноразовая ссылка-приглашение
@@ -598,7 +592,7 @@ export function CreateUserSheet({
 									value={note}
 									onChange={(e) => setNote(e.target.value)}
 									placeholder="Откуда клиент, особые условия..."
-									className="h-9"
+									className="h-9 glass-input"
 								/>
 							</section>
 						</>

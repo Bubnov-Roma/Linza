@@ -7,7 +7,6 @@ import {
 	DotsThreeVerticalIcon,
 	EyeIcon,
 	FunnelIcon,
-	MagnifyingGlassIcon,
 	PlusIcon,
 	ProhibitIcon,
 	UploadSimpleIcon,
@@ -26,6 +25,7 @@ import {
 	getStudioBookingsAction,
 	updateStudioBookingStatusAction,
 } from "@/actions/admin-studio-actions";
+import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import {
 	Badge,
 	Button,
@@ -36,6 +36,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	InlineSearchInput,
 	Input,
 	Select,
 	SelectContent,
@@ -446,31 +447,24 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 	const isLoading = isFetching && !queryData;
 
 	return (
-		<div className="space-y-4 relative">
+		<>
 			{/* ── Controls ── */}
-			<Card className="p-2">
+			<Card className="p-2 shadow-none!">
 				<CardContent className="p-0 space-y-3">
 					<div className="flex flex-col sm:flex-row gap-3">
 						{/* Search */}
-						<div className="relative flex-1">
-							<MagnifyingGlassIcon className="z-1 absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-							<Input
-								placeholder="Клиент, email, телефон..."
-								className="pl-9 h-9"
+						<div className="flex-1 w-full sm:max-w-sm">
+							<InlineSearchInput
+								className="h-9 glass-input"
 								value={search}
-								onChange={(e) => setSearch(e.target.value)}
+								onChange={setSearch}
+								placeholder="Имя клиента или email"
+								fetchSuggestion={async (q) => {
+									const results = await getAutocompleteAction("users", q);
+									return results[0] || null;
+								}}
 							/>
-							{search && (
-								<button
-									type="button"
-									onClick={() => setSearch("")}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-								>
-									<XIcon size={12} />
-								</button>
-							)}
 						</div>
-
 						{/* Status filter */}
 						<div className="flex gap-3">
 							<Select
@@ -590,7 +584,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 								</p>
 								<Input
 									type="date"
-									className="h-8 text-xs w-36"
+									className="h-8 text-xs w-36 glass-input"
 									value={dateFrom}
 									onChange={(e) => setDateFrom(e.target.value)}
 								/>
@@ -599,7 +593,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 								<p className="text-xs text-muted-foreground font-medium">до</p>
 								<Input
 									type="date"
-									className="h-8 text-xs w-36"
+									className="h-8 text-xs w-36 glass-input"
 									value={dateTo}
 									onChange={(e) => setDateTo(e.target.value)}
 								/>
@@ -669,7 +663,7 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 			</div>
 
 			{/* ── Table ── */}
-			<Card className="overflow-hidden relative p-0">
+			<Card className="overflow-hidden rounded relative p-0">
 				{/* Loading bar */}
 				<div
 					className={cn(
@@ -927,6 +921,6 @@ export function StudioBookingTable({ tariffs }: StudioBookingTableProps) {
 					setCreateOpen(false);
 				}}
 			/>
-		</div>
+		</>
 	);
 }

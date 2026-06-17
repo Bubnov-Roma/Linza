@@ -5,6 +5,7 @@ import type {
 	RawEquipmentRow,
 } from "@/core/domain/entities/Equipment";
 import { prisma } from "@/lib/prisma";
+import { getSearchVariations } from "@/utils";
 import { groupEquipmentRows } from "@/utils/group-equipment";
 
 export async function getEquipmentForCartAction(
@@ -84,13 +85,14 @@ export async function clientSearchEquipmentAction(
 ): Promise<GroupedEquipment[]> {
 	if (!query || query.length < 2) return [];
 
+	const variations = getSearchVariations(query);
+
 	const data = await prisma.equipment.findMany({
 		where: {
 			isAvailable: true,
-			title: {
-				contains: query,
-				mode: "insensitive",
-			},
+			OR: variations.map((v) => ({
+				title: { contains: v, mode: "insensitive" },
+			})),
 		},
 		take: 10,
 		include: {

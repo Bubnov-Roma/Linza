@@ -72,14 +72,14 @@ export function SubcategoryRow({
 						<Input
 							value={editName}
 							onChange={(e) => setEditName(e.target.value)}
-							className="h-7 text-sm"
+							className="h-7 text-sm glass-input"
 							autoFocus
 						/>
 						<Input
 							value={editNotes}
 							onChange={(e) => setEditNotes(e.target.value)}
 							placeholder="Заметка..."
-							className="h-7 text-xs"
+							className="h-7 text-xs glass-input"
 						/>
 					</div>
 				) : (

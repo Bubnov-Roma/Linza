@@ -2,16 +2,17 @@
 
 import {
 	CameraIcon,
+	ChatsIcon,
 	FilmSlateIcon,
 	HeadsetIcon,
+	HouseIcon,
 	MagnifyingGlassIcon,
 	PackageIcon,
 	SquaresFourIcon,
 	UserIcon,
-	VideoIcon,
 } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { CatalogDrawer } from "@/components/layouts/MobileNavBar/CatalogDrawer";
 import { NavTab } from "@/components/layouts/MobileNavBar/NavTab";
@@ -23,7 +24,7 @@ import { UserMenu } from "@/components/layouts/UserMenu";
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useAdminNotificationsStore } from "@/store";
-import { MobileSearch } from "./MobileSearch";
+import { MobileSearch, type MobileSearchHandle } from "./MobileSearch";
 
 interface MobileNavBarProps {
 	categories: DbCategory[];
@@ -37,6 +38,7 @@ export function MobileNavBar({
 	support,
 }: MobileNavBarProps) {
 	const pathname = usePathname();
+	const mobileSearchRef = useRef<MobileSearchHandle>(null);
 
 	// Состояния открытия шторок/модалок
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -47,7 +49,13 @@ export function MobileNavBar({
 	// Подписка на уведомления из стора (для админа)
 	const pendingBookings = useAdminNotificationsStore((s) => s.pendingBookings);
 	const pendingApps = useAdminNotificationsStore((s) => s.pendingApps);
+	const pendingSupport = useAdminNotificationsStore((s) => s.pendingChats);
 	const pendingStudio = useAdminNotificationsStore((s) => s.pendingStudio);
+
+	const handleOpenSearch = () => {
+		setSearchOpen(true);
+		mobileSearchRef.current?.focus();
+	};
 
 	return (
 		<>
@@ -58,10 +66,9 @@ export function MobileNavBar({
 						<UserMenu isAdmin={isAdmin} variant="mobile" />
 					</div>
 
-					{/* ДИНАМИЧЕСКИЙ НАБОР ТАБОВ */}
 					{isAdmin ? (
 						<>
-							{/* НАВИГАЦИЯ АДМИНИСТРАТОРА */}
+							{/* НАВИГАЦИЯ АДМИНА */}
 							<NavTab
 								title="Заказы"
 								icon={PackageIcon}
@@ -70,18 +77,25 @@ export function MobileNavBar({
 								badge={pendingBookings > 0 ? pendingBookings : ""}
 							/>
 							<NavTab
-								title="Студия"
-								icon={VideoIcon}
-								href="/admin/studio"
-								isActive={pathname.startsWith("/admin/studio")}
-								badge={pendingStudio > 0 ? pendingStudio : ""}
-							/>
-							<NavTab
 								title="Клиенты"
 								icon={UserIcon}
 								href="/admin/users"
 								isActive={pathname.startsWith("/admin/users")}
 								badge={pendingApps > 0 ? pendingApps : ""}
+							/>
+							<NavTab
+								title="Чаты"
+								icon={ChatsIcon}
+								href="/admin/support"
+								isActive={pathname.startsWith("/admin/support")}
+								badge={pendingSupport > 0 ? pendingSupport : ""}
+							/>
+							<NavTab
+								title="Студия"
+								icon={FilmSlateIcon}
+								href="/admin/studio"
+								isActive={pathname.startsWith("/admin/studio")}
+								badge={pendingStudio > 0 ? pendingStudio : ""}
 							/>
 							<NavTab
 								title="Техника"
@@ -95,7 +109,7 @@ export function MobileNavBar({
 							{/* НАВИГАЦИЯ КЛИЕНТА */}
 							<NavTab
 								title="Главная"
-								icon={PackageIcon}
+								icon={HouseIcon}
 								href="/"
 								isActive={pathname === "/"}
 							/>
@@ -106,16 +120,16 @@ export function MobileNavBar({
 								onClick={() => setCatalogOpen(true)}
 							/>
 							<NavTab
-								title="Поиск"
-								icon={MagnifyingGlassIcon}
-								isActive={searchOpen}
-								onClick={() => setSearchOpen(true)}
-							/>
-							<NavTab
 								title="Студия"
 								icon={FilmSlateIcon}
 								href="/studio"
 								isActive={pathname.startsWith("/studio")}
+							/>
+							<NavTab
+								title="Поиск"
+								icon={MagnifyingGlassIcon}
+								isActive={searchOpen}
+								onClick={handleOpenSearch}
 							/>
 							<NavTab
 								title="Связь"

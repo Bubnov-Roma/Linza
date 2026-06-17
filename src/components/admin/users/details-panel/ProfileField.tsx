@@ -22,6 +22,7 @@ interface ProfileFieldProps {
 	className?: string;
 	type?: React.InputHTMLAttributes<HTMLInputElement>["type"];
 	isCrypto?: boolean;
+	rows?: number;
 }
 
 export function ProfileField({
@@ -33,6 +34,7 @@ export function ProfileField({
 	className,
 	type,
 	isCrypto = false,
+	rows = 1,
 }: ProfileFieldProps) {
 	const [copied, setCopied] = useState(false);
 	const hasChanges =
@@ -105,6 +107,7 @@ export function ProfileField({
 				placeholder={placeholder ?? ""}
 				onSave={onSave}
 				type={type}
+				rows={rows}
 			/>
 		</div>
 	);

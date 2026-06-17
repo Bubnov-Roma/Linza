@@ -236,7 +236,6 @@ export async function deleteSetAction(setId: string): Promise<void> {
 	});
 }
 
-// ── Группировка для корректных счетчиков ──
 export async function fetchGroupedEquipmentMapAction(): Promise<
 	[string, GroupedEquipment][]
 > {
@@ -255,4 +254,16 @@ export async function fetchGroupedEquipmentMapAction(): Promise<
 		}
 	}
 	return entries;
+}
+export async function fetchEquipmentByIdsAction(
+	ids: string[]
+): Promise<GroupedEquipment[]> {
+	if (!ids || ids.length === 0) return [];
+
+	const data = await prisma.equipment.findMany({
+		where: { id: { in: ids } },
+		include: { equipmentImageLinks: { include: { image: true } } },
+	});
+
+	return groupEquipmentRows(data as unknown as DbEquipmentWithImages[]);
 }

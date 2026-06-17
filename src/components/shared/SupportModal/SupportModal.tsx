@@ -121,7 +121,7 @@ export function SupportModal({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md" showCloseButton={false}>
+			<DialogContent className="sm:max-w-md bg-card/80" showCloseButton={false}>
 				<DialogHeader>
 					<DialogTitle className="flex align-start pb-4">
 						{isNewThread
@@ -144,7 +144,7 @@ export function SupportModal({
 								value={newSubject}
 								onChange={(e) => setNewSubject(e.target.value)}
 								disabled={isPending}
-								className="h-9 text-sm rounded-xl"
+								className="h-9 text-sm rounded-xl glass-input"
 							/>
 
 							{/* Сообщение */}
@@ -154,7 +154,7 @@ export function SupportModal({
 								onChange={(e) => setNewMessage(e.target.value)}
 								disabled={isPending}
 								rows={5}
-								className="resize-none text-sm rounded-xl"
+								className="resize-none text-sm rounded-xl glass-input"
 							/>
 
 							{/** Контакт */}
@@ -165,7 +165,7 @@ export function SupportModal({
 									value={contactInfo}
 									onChange={(e) => setContactInfo(e.target.value)}
 									disabled={isPending}
-									className="h-9 rounded-xl text-sm"
+									className="h-9 rounded-xl text-sm glass-input"
 								/>
 								<p className="flex justify-end text-[10px] text-muted-foreground pt-2">
 									{isContactRequired
@@ -187,7 +187,7 @@ export function SupportModal({
 								onChange={(e) => setReplyMessage(e.target.value)}
 								disabled={isPending}
 								rows={3}
-								className="resize-none text-sm"
+								className="resize-none text-sm glass-input"
 							/>
 						</>
 					)}

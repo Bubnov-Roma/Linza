@@ -109,7 +109,7 @@ function PromoForm({
 						value={form.code}
 						onChange={(e) => set("code", e.target.value.toUpperCase())}
 						disabled={isPending}
-						className="uppercase"
+						className="uppercase glass-input"
 					/>
 				</div>
 				<div className="space-y-1.5">
@@ -124,6 +124,7 @@ function PromoForm({
 						value={form.value}
 						onChange={(e) => set("value", e.target.value)}
 						disabled={isPending}
+						className="glass-input"
 					/>
 				</div>
 			</div>
@@ -153,6 +154,7 @@ function PromoForm({
 						value={form.usageLimit}
 						onChange={(e) => set("usageLimit", e.target.value)}
 						disabled={isPending}
+						className="glass-input"
 					/>
 				</div>
 			</div>
@@ -164,6 +166,7 @@ function PromoForm({
 					value={form.description}
 					onChange={(e) => set("description", e.target.value)}
 					disabled={isPending}
+					className="glass-input"
 				/>
 			</div>
 			{/* Лимит + Даты */}
@@ -175,6 +178,7 @@ function PromoForm({
 						value={form.validFrom}
 						onChange={(e) => set("validFrom", e.target.value)}
 						disabled={isPending}
+						className="glass-input"
 					/>
 				</div>
 				<div className="space-y-1.5">
@@ -184,6 +188,7 @@ function PromoForm({
 						value={form.validUntil}
 						onChange={(e) => set("validUntil", e.target.value)}
 						disabled={isPending}
+						className="glass-input"
 					/>
 				</div>
 			</div>

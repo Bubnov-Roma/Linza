@@ -5,10 +5,13 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { decrypt, encrypt } from "@/lib/crypto";
-import { extractEnrichedUserData } from "@/lib/extract-enriched-user-data";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
-import { cleanUndefined, getSearchVariations } from "@/utils";
+import {
+	cleanUndefined,
+	extractEnrichedUserData,
+	getSearchVariations,
+} from "@/utils";
 
 // ─── Типы ─────────────────────────────────────────────────────────────────────
 

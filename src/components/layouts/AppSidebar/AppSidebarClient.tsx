@@ -11,6 +11,7 @@ import {
 	QuestionIcon,
 	SidebarSimpleIcon,
 	SquaresFourIcon,
+	StackIcon,
 	TelegramLogoIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
@@ -537,9 +538,15 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 														"w-full flex items-center justify-between pr-4 select-none cursor-pointer"
 													)}
 												>
-													<div className="flex items-center min-w-0 flex-1">
+													<div className="flex items-center min-w-0 w-full gap-4 flex-1">
+														<div className="w-6 flex items-center justify-center shrink-0">
+															<RenderIcon
+																icon={SquaresFourIcon}
+																isActive={pathname.startsWith("/equipment")}
+															/>
+														</div>
 														<span className="font-medium text-base truncate text-left">
-															Каталог техники
+															Каталог
 														</span>
 													</div>
 													<CaretRightIcon
@@ -560,17 +567,19 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 														>
 															<Link
 																href="/equipment"
-																className="flex items-center w-full pl-4"
+																className="flex items-center w-full"
 															>
-																<div className="w-6 flex items-center justify-center shrink-0">
-																	<RenderIcon
-																		icon={SquaresFourIcon}
-																		isActive={pathname.startsWith("/equipment")}
-																	/>
+																<div className="flex items-center min-w-0 flex-1">
+																	<div className="flex items-center justify-center shrink-0 w-6">
+																		<RenderIcon
+																			icon={StackIcon}
+																			isActive={isAllEquipment}
+																		/>
+																	</div>
+																	<span className="font-medium text-base truncate ml-3 text-left">
+																		Вcя техника
+																	</span>
 																</div>
-																<span className="font-medium text-sm truncate flex-1 text-left text-muted-foreground hover:text-foreground">
-																	Весь каталог
-																</span>
 															</Link>
 														</SidebarMenuButton>
 													</SidebarMenuItem>
@@ -727,7 +736,7 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 										</CollapsibleTrigger>
 
 										<CollapsibleContent className="space-y-0.5 mt-1">
-											<ul className="space-y-0.5 list-none p-0 m-0 w-full pl-4 border-l ml-3 border-muted-foreground/10">
+											<ul className="space-y-0.5 list-none p-0 m-0 w-full border-l ml-3 border-muted-foreground/10">
 												{supportChannels.map((channel) => (
 													<SidebarMenuItem key={channel.id}>
 														{channel.isLink ? (

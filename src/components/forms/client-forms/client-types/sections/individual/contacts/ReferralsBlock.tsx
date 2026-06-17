@@ -40,7 +40,7 @@ export const ReferralsBlock = () => {
 	return (
 		<div className="space-y-0">
 			<div>
-				<div className="flex w-full gap-4">
+				<div className="flex w-full gap-4 justify-between">
 					<Label required>Как вы о нас узнали?</Label>
 					<Select
 						value={referralSource ?? ""}

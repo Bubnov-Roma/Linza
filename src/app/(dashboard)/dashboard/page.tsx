@@ -1,17 +1,9 @@
-import {
-	BoxArrowDownIcon,
-	BoxArrowUpIcon,
-	PackageIcon,
-	XSquareIcon,
-} from "@phosphor-icons/react/dist/ssr";
 import { ApplicationStatus, BookingStatus } from "@prisma/client";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { ClientStudioBookingRow } from "@/actions/client-studio-actions";
 import { auth } from "@/auth";
-import { BookingPreviewList } from "@/components/dashboard/bookings/BookingPreviewList";
+import { UnifiedBookingsDashboard } from "@/components/dashboard/bookings/UnifiedBookingsDashboard";
 import { VerificationBanner } from "@/components/forms/verification/VerificationBanner";
-import { ClientTime } from "@/components/shared";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import type { DashboardBooking } from "@/core/domain/entities/Booking";
 import { prisma } from "@/lib/prisma";
 
@@ -21,14 +13,33 @@ export default async function DashboardPage() {
 
 	if (!user?.id) redirect("/auth");
 
+	// Группировка статусов для точного совпадения с табами
+	const upcomingStatuses = [
+		BookingStatus.PENDING_REVIEW,
+		BookingStatus.WAIT_PAYMENT,
+		BookingStatus.READY_TO_RENT,
+	];
+	const activeStatuses = [BookingStatus.ACTIVE];
+	const completedStatuses = [BookingStatus.COMPLETED];
+	const cancelledStatuses = [BookingStatus.CANCELLED, BookingStatus.EXPIRED];
+
 	const [
 		application,
 		bookingsRaw,
-		totalBookings,
-		activeBookings,
-		completedBookings,
-		cancelledBookings,
+		studioBookingsRaw,
 		spendingData,
+		// Счетчики для Техники (Equipment)
+		eqTotal,
+		eqUpcoming,
+		eqActive,
+		eqCompleted,
+		eqCancelled,
+		// Счетчики для Студии (Studio)
+		stTotal,
+		stUpcoming,
+		stActive,
+		stCompleted,
+		stCancelled,
 	] = await Promise.all([
 		prisma.clientApplication.findUnique({
 			where: { userId: user.id },
@@ -37,7 +48,7 @@ export default async function DashboardPage() {
 		prisma.booking.findMany({
 			where: { userId: user.id },
 			orderBy: { createdAt: "desc" },
-			take: 10,
+			take: 30,
 			include: {
 				bookingItems: {
 					include: {
@@ -55,28 +66,46 @@ export default async function DashboardPage() {
 				},
 			},
 		}),
-		prisma.booking.count({ where: { userId: user.id } }),
-		prisma.booking.count({
-			where: {
-				userId: user.id,
-				status: {
-					in: [
-						BookingStatus.PENDING_REVIEW,
-						BookingStatus.READY_TO_RENT,
-						BookingStatus.ACTIVE,
-					],
-				},
+		prisma.studioBooking.findMany({
+			where: { userId: user.id },
+			orderBy: { createdAt: "desc" },
+			take: 30,
+			include: {
+				tariff: { select: { name: true } },
+				items: { select: { id: true } },
 			},
-		}),
-		prisma.booking.count({
-			where: { userId: user.id, status: BookingStatus.COMPLETED },
-		}),
-		prisma.booking.count({
-			where: { userId: user.id, status: BookingStatus.CANCELLED },
 		}),
 		prisma.booking.aggregate({
 			where: { userId: user.id, status: BookingStatus.COMPLETED },
 			_sum: { totalAmount: true },
+		}),
+		// Запросы количества для техники
+		prisma.booking.count({ where: { userId: user.id } }),
+		prisma.booking.count({
+			where: { userId: user.id, status: { in: upcomingStatuses } },
+		}),
+		prisma.booking.count({
+			where: { userId: user.id, status: { in: activeStatuses } },
+		}),
+		prisma.booking.count({
+			where: { userId: user.id, status: { in: completedStatuses } },
+		}),
+		prisma.booking.count({
+			where: { userId: user.id, status: { in: cancelledStatuses } },
+		}),
+		// Запросы количества для студии
+		prisma.studioBooking.count({ where: { userId: user.id } }),
+		prisma.studioBooking.count({
+			where: { userId: user.id, status: { in: upcomingStatuses } },
+		}),
+		prisma.studioBooking.count({
+			where: { userId: user.id, status: { in: activeStatuses } },
+		}),
+		prisma.studioBooking.count({
+			where: { userId: user.id, status: { in: completedStatuses } },
+		}),
+		prisma.studioBooking.count({
+			where: { userId: user.id, status: { in: cancelledStatuses } },
 		}),
 	]);
 
@@ -87,12 +116,12 @@ export default async function DashboardPage() {
 
 	const totalSpent = spendingData._sum.totalAmount ?? 0;
 
+	// Резолв картинок техники (оставляем твою логику fallback-изображений)
 	const titlesWithoutImage = bookingsRaw
 		.flatMap((b) => b.bookingItems)
 		.filter((item) => !item.equipment.equipmentImageLinks[0]?.image?.url)
 		.map((item) => item.equipment.title);
 
-	// Если есть такие — подтягиваем картинки из других экземпляров
 	let fallbackImages = new Map<string, string>();
 	if (titlesWithoutImage.length > 0) {
 		const { getEquipmentImagesByTitles } = await import(
@@ -115,21 +144,34 @@ export default async function DashboardPage() {
 		})),
 	}));
 
+	const studioBookings: ClientStudioBookingRow[] = studioBookingsRaw.map(
+		(b) => ({
+			id: b.id,
+			tariffName: b.tariff.name,
+			tariffPriceAtBooking: b.tariffPriceAtBooking,
+			startDate: b.startDate,
+			endDate: b.endDate,
+			durationHours: b.durationHours,
+			totalAmount: b.totalAmount,
+			status: b.status,
+			itemsCount: b.items.length,
+			createdAt: b.createdAt,
+		})
+	);
+
+	// Объединяем результаты подсчетов техники и студии
 	const stats = {
-		totalBookings,
-		activeBookings,
-		completedBookings,
-		cancelledBookings,
+		totalBookings: eqTotal + stTotal,
+		upcomingBookings: eqUpcoming + stUpcoming,
+		activeBookings: eqActive + stActive,
+		completedBookings: eqCompleted + stCompleted,
+		cancelledBookings: eqCancelled + stCancelled,
 		totalSpent,
 	};
 
-	const upcoming = bookings
-		.filter((b) => new Date(b.endDate) > new Date() && b.status !== "CANCELLED")
-		.slice(0, 2);
-
 	const firstName =
 		user.nickname ||
-		user.name?.trim().split(/\s+/)[0] ||
+		user.name?.trim().split(/\s+/)[1] ||
 		user.email?.split("@")[0] ||
 		"Пользователь";
 
@@ -140,126 +182,17 @@ export default async function DashboardPage() {
 				<h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground/90">
 					Привет, {firstName}!
 				</h1>
-				<p className="text-muted-foreground mt-1 pl-2 text-sm ">
-					персональный кабинет управления заказами
+				<p className="text-muted-foreground mt-1 pl-2 text-sm">
+					кабинет управления заказами
 				</p>
 			</div>
-
 			{showBanner && <VerificationBanner />}
 
-			{/* Stats */}
-			<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-				<StatCard
-					title="Всего"
-					value={stats.totalBookings}
-					icon={<PackageIcon size={18} />}
-				/>
-				<StatCard
-					title="Активных"
-					value={stats.activeBookings}
-					icon={<BoxArrowUpIcon size={18} />}
-				/>
-				<StatCard
-					title="Завершённых"
-					value={stats.completedBookings}
-					icon={<BoxArrowDownIcon size={18} />}
-				/>
-				<StatCard
-					title="Отменённых"
-					value={stats.cancelledBookings}
-					icon={<XSquareIcon size={18} />}
-				/>
-			</div>
-
-			<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-				<Card className="lg:col-span-2">
-					<CardHeader className="flex flex-row items-center justify-between pb-0 px-4 sm:px-6 pt-4 sm:pt-5">
-						<CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-							Последние заказы
-						</CardTitle>
-						<Link
-							href="/dashboard/bookings"
-							className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
-						>
-							Все заказы →
-						</Link>
-					</CardHeader>
-					<CardContent className="p-0 mt-1">
-						<BookingPreviewList bookings={bookings} />
-					</CardContent>
-				</Card>
-
-				{/* ── Sidebar ── */}
-				<div className="space-y-6">
-					<Card>
-						<CardHeader className="pb-2">
-							<CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-								Предстоящие аренды
-							</CardTitle>
-						</CardHeader>
-						{upcoming.length > 0 && (
-							<div className="space-y-2">
-								{upcoming.map((booking) => (
-									<Link
-										href={`/dashboard/bookings/${booking.id}`}
-										key={booking.id}
-										className="rounded-xl bg-card/40 w-full block p-3 hover:bg-muted-foreground/20 transition-colors"
-									>
-										<div className="flex items-start justify-between gap-2">
-											<div className="min-w-0">
-												<p className="font-bold text-sm truncate">
-													{booking.bookingItems[0]?.equipment.title ?? "Заказ"}
-												</p>
-												<div className="flex text-[11px] text-muted-foreground mt-0.5 gap-1">
-													<ClientTime
-														iso={booking.startDate}
-														fmt="datetime"
-														fallback="---"
-													/>
-													<span className="opacity-40">{" → "}</span>
-													<ClientTime
-														iso={booking.endDate}
-														fmt="datetime"
-														fallback="---"
-													/>
-												</div>
-											</div>
-										</div>
-									</Link>
-								))}
-							</div>
-						)}
-					</Card>
-				</div>
-			</div>
+			<UnifiedBookingsDashboard
+				equipmentBookings={bookings}
+				studioBookings={studioBookings}
+				stats={stats}
+			/>
 		</div>
-	);
-}
-
-function StatCard({
-	title,
-	value,
-	icon,
-}: {
-	title: string;
-	value: string | number;
-	icon: React.ReactNode;
-}) {
-	return (
-		<Card className="relative overflow-hidden group">
-			<CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
-				<CardTitle className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground/80 transition-colors uppercase tracking-wider">
-					{title}
-				</CardTitle>
-				<div className="text-foreground/25 group-hover:text-primary/60 transition-all duration-300">
-					{icon}
-				</div>
-			</CardHeader>
-			<CardContent className="pb-4 px-4">
-				<div className="text-2xl sm:text-3xl font-bold text-foreground/80 tracking-tight">
-					{value}
-				</div>
-			</CardContent>
-		</Card>
 	);
 }

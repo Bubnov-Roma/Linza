@@ -61,12 +61,29 @@ export const socialMediaObjectSchema = z.object({
 		),
 });
 
+// ── personalData: три отдельных поля вместо единой строки name ───────────────
 const personalDataSchema = z.object({
-	name: z.string().min(6, "Введите полное ФИО"),
+	lastName: z.string().min(2, "Введите фамилию"),
+	firstName: z.string().min(2, "Введите имя"),
+	middleName: z.string().optional(),
 	birth: dateSchema,
 	email: emailSchema,
 	phone: phoneSchema,
 });
+
+// Вспомогательный тип для получения полного ФИО из personalData
+export type PersonalData = z.infer<typeof personalDataSchema>;
+
+/** Собирает полное ФИО из трёх полей */
+export function buildFullName(pd: {
+	lastName?: string;
+	firstName?: string;
+	middleName?: string;
+}): string {
+	return [pd.lastName, pd.firstName, pd.middleName]
+		.filter((s) => typeof s === "string" && s.trim() !== "")
+		.join(" ");
+}
 
 const passportSchema = z.object({
 	seriesAndNumber: z
@@ -179,7 +196,7 @@ export const individualClientSchema = z.object({
 	agreements: promoAndAgreementsSchema.optional(),
 });
 
-// ── INDIVIDUAL PARTNER — placeholder, not in main union ───────────────────────
+// ── INDIVIDUAL PARTNER ────────────────────────────────────────────────────────
 export const individualPartnerSchema = individualClientSchema.extend({
 	clientType: z.literal("individual_partner"),
 	isPartner: z.literal(true),
@@ -229,7 +246,7 @@ export const legalClientSchema = z.object({
 	agreements: promoAndAgreementsSchema,
 });
 
-// ── LEGAL PARTNER — placeholder, not in main union ────────────────────────────
+// ── LEGAL PARTNER ─────────────────────────────────────────────────────────────
 export const legalPartnerSchema = legalClientSchema.extend({
 	clientType: z.literal("legal_partner"),
 	isPartner: z.literal(true),
@@ -241,7 +258,7 @@ export const legalPartnerSchema = legalClientSchema.extend({
 	}),
 });
 
-// ── Active union: individual only (legal added back when LegalClientForm is built) ─
+// ── Active union ──────────────────────────────────────────────────────────────
 export const clientFormSchema = individualClientSchema;
 
 export type SocialsList = z.infer<typeof individualContactsSchema>["socials"];

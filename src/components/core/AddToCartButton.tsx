@@ -293,14 +293,14 @@ export function AddToCartButton({
 				onClick={handleRemove}
 				variant="ghost"
 				size="icon"
-				className={cn("rounded-full w-12", s.text)}
+				className={cn("rounded-full flex flex-1 min-w-12", s.text)}
 			>
 				<MinusIcon size={18} className="text-foreground" />
 			</Button>
 
 			<span
 				className={cn(
-					"flex items-center justify-center flex-1 font-black text-foreground leading-none px-0.5",
+					"flex items-center justify-center font-black text-foreground leading-none px-0.5",
 					s.text
 				)}
 			>
@@ -315,7 +315,7 @@ export function AddToCartButton({
 				onClick={handleAdd}
 				disabled={quantity >= (item.availableCount || 99)}
 				className={cn(
-					"rounded-2xl w-12",
+					"rounded-2xl flex flex-1 min-w-12",
 					s.text,
 					quantity >= (item.availableCount || 99) && "cursor-not-allowed"
 				)}

@@ -435,7 +435,7 @@ function ClientBlock({
 						setSelected(null);
 					}}
 					placeholder="Имя, email или телефон..."
-					className="pl-8 h-8 text-xs"
+					className="pl-8 h-8 text-xs glass-input"
 				/>
 			</div>
 			{results.length > 0 && !selected && (
@@ -720,7 +720,7 @@ function TariffEquipmentBlock({
 					type="number"
 					value={tariffPrice}
 					onChange={(e) => setTariffPrice(Number(e.target.value))}
-					className="h-8 text-xs"
+					className="h-8 text-xs glass-input"
 				/>
 				<p className="text-[10px] text-muted-foreground">
 					Тариф: {booking.tariffName} · {booking.durationHours} ч ={" "}
@@ -769,7 +769,7 @@ function TariffEquipmentBlock({
 								onChange={(e) =>
 									updatePrice(d.equipmentId, Number(e.target.value))
 								}
-								className="h-7 text-xs"
+								className="h-7 text-xs glass-input"
 							/>
 						</div>
 					</div>
@@ -786,7 +786,7 @@ function TariffEquipmentBlock({
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					placeholder="Добавить технику..."
-					className="pl-8 h-8 text-xs"
+					className="pl-8 h-8 text-xs glass-input"
 				/>
 			</div>
 			{searchResults.length > 0 && (

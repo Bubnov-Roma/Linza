@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { XIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
@@ -92,41 +93,55 @@ export function CategoryFilter({
 	};
 
 	const loading = isPending || isPendingInternal;
-
-	// "Все категории" всегда первый пункт
-	const allCategories: Array<{ id: string; slug: string; name: string }> = [
+	const allCategories = [
 		{ id: "all", slug: "all", name: "Все категории" },
 		...categories,
 	];
 
 	return (
-		<div className="space-y-1">
+		<div
+			className={
+				"relative space-y-0.5 p-1 overflow-hidden transition-all duration-300"
+			}
+		>
 			{/* Category row */}
-			<div className="w-full flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar">
-				<div className="tabs-group no-scrollbar">
+			<div className="w-full flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar tabs-group">
+				<div className="no-scrollbar flex items-center gap-1">
 					{allCategories.map((cat) => {
 						const isActive = optimisticCategory === cat.slug;
-						const hasSubs =
-							cat.slug !== "all" &&
-							(categories.find((c) => c.slug === cat.slug)?.subcategories
-								?.length ?? 0) > 0;
-						const isExpanded = expandedCategory === cat.slug;
 
 						return (
 							<Button
 								key={cat.slug}
 								isActive={isActive}
-								variant="tab"
+								variant="ghost"
 								onClick={() => handleCategoryClick(cat.slug)}
-								className={cn("relative", loading && isActive && "opacity-70")}
+								className={cn(
+									"relative flex items-center gap-1 whitespace-nowrap shrink-0 rounded-2xl transition-all font-bold uppercase tracking-[0.12em]",
+									"h-8 px-3 text-[11px]",
+									loading && isActive && "opacity-50",
+									isActive
+										? "bg-foreground/7 dark:bg-primary/15 text-foreground"
+										: "text-muted-foreground hover:text-foreground"
+								)}
 							>
 								{cat.name}
-								{hasSubs && (
-									<ChevronRight
-										size={11}
+								{isActive && expandedCategory && subcategories.length > 0 && (
+									<div
+										className={`absolute brightness-110 bottom-0 left-5 right-5 rounded-full h-0.5 ${isActive ? "bg-primary shadow-[0_0_10px_white]" : "bg-white/20"}`}
+										style={{
+											transform: isActive ? "scale(1)" : "scale(0.1)",
+											transition:
+												"transform 0.2s ease-in-out, color 0.1s ease-in-out",
+										}}
+									/>
+								)}
+								{isActive && (
+									<XIcon
+										size={12}
 										className={cn(
-											"transition-transform duration-200 opacity-60",
-											isExpanded && "rotate-90"
+											"transition-transform duration-200",
+											expandedCategory ? "rotate-0" : "rotate-45"
 										)}
 									/>
 								)}
@@ -137,41 +152,77 @@ export function CategoryFilter({
 			</div>
 
 			{/* Subcategory row */}
-			{expandedCategory && subcategories.length > 0 && (
-				<div className="w-full flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar animate-in fade-in slide-in-from-top-1 duration-200">
-					<div className="no-scrollbar tabs-group">
-						{subcategories.map((sub) => {
-							const isActive = optimisticSubcategory === sub.slug;
-							return (
-								<Button
-									key={sub.slug}
-									isActive={isActive}
-									variant="tab"
-									onClick={() =>
-										handleSubcategoryClick(expandedCategory, sub.slug)
-									}
-									className={cn(
-										"relative",
-										loading && isActive && "opacity-70",
-										isActive && "snap-center shrink-0"
-									)}
-								>
-									{sub.name}
-								</Button>
-							);
-						})}
-					</div>
-				</div>
-			)}
+			<AnimatePresence>
+				{expandedCategory && subcategories.length > 0 && (
+					<motion.div
+						initial={{ height: 0, opacity: 0, marginTop: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0, marginTop: 0 }}
+						className="w-full overflow-hidden"
+					>
+						<div className="w-full flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar tabs-group">
+							<div className="no-scrollbar flex items-center gap-1">
+								{subcategories.map((sub) => {
+									const isActive = optimisticSubcategory === sub.slug;
+									return (
+										<Button
+											key={sub.slug}
+											isActive={isActive}
+											variant="ghost"
+											onClick={() =>
+												handleSubcategoryClick(expandedCategory, sub.slug)
+											}
+											className={cn(
+												"relative text-[10px] transition-all uppercase tracking-widest font-medium text-foreground/80 shrink-0",
+												loading && isActive && "opacity-50",
+												isActive
+													? "snap-center bg-foreground/7 dark:bg-primary/15 text-foreground"
+													: "text-muted-foreground hover:text-foreground"
+											)}
+										>
+											{sub.name}
+											<div
+												className={`absolute brightness-110 bottom-0 left-5 right-5 rounded-full h-0.5 ${isActive ? "bg-primary shadow-[0_0_10px_white]" : "bg-white/20"}`}
+												style={{
+													transform: isActive ? "scale(1)" : "scale(0.1)",
+													transition:
+														"transform 0.2s ease-in-out, color 0.1s ease-in-out",
+												}}
+											/>
+										</Button>
+									);
+								})}
+							</div>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
-			{loading && (
-				<div className="h-0.5 w-full overflow-hidden rounded-full bg-foreground/5">
-					<div
-						className="h-full bg-primary/40 rounded-full"
-						style={{ width: "40%", animation: "slide 1s ease-in-out infinite" }}
-					/>
-				</div>
-			)}
+			{/* Integrated Progress Bar */}
+			<AnimatePresence>
+				{loading && (
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						className={cn(
+							"absolute insert-x-0 top-1 left-5 right-5 h-0.5 bg-primary/10 overflow-hidden"
+						)}
+					>
+						<motion.div
+							className="h-full bg-primary rounded-full"
+							initial={{ x: "-100%" }}
+							animate={{ x: "200%" }}
+							transition={{
+								repeat: Infinity,
+								duration: 1.2,
+								ease: "easeInOut",
+							}}
+							style={{ width: "40%" }}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

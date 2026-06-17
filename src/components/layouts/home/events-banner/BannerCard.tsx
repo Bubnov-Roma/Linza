@@ -83,14 +83,14 @@ export function BannerCard({
 			)}
 
 			{/* ── Цветная полоска слева ── */}
-			{!isStudio && (
+			{/* {!isStudio && (
 				<div
 					className={cn(
 						"absolute left-0 top-0 bottom-0 w-0.5 z-10",
 						config.accent
 					)}
 				/>
-			)}
+			)} */}
 
 			{/* ── Кликабельный контент ── */}
 			<button
@@ -125,7 +125,7 @@ export function BannerCard({
 						)}
 					</div>
 
-					<div className="flex-1 flex flex-col justify-center pb-1 gap-1.5 min-w-0">
+					<div className="flex-1 flex flex-col justify-center pb-1 pl-3 gap-1.5 min-w-0">
 						<h3
 							className={cn(
 								"text-2xl md:text-3xl font-black tracking-tight leading-snug italic text-white wrap-break-word"

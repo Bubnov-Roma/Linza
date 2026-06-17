@@ -32,7 +32,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
 				)}
 			/>
 			{/* 3. Контентная часть (z-10, чтобы быть выше шума) */}
-			<div className="relative flex flex-col h-full rounded-2xl gap-2">
+			<div className="relative flex flex-col h-full w-full rounded-2xl gap-2">
 				{props.children}
 			</div>
 		</div>

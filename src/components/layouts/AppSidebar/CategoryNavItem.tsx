@@ -65,7 +65,6 @@ export function CategoryNavItem({
 							href={catHref}
 							className="flex flex-col items-center justify-center gap-1 w-full h-full active:scale-95 active:shadow-none group/btn"
 						>
-							{/* Унифицированная пилюля-подсветка для иконки категории */}
 							<div
 								className={cn(
 									"flex items-center justify-center shrink-0 transition-all duration-300 text-muted-foreground group-hover/btn:text-foreground w-12 h-7 rounded-full group-hover/btn:bg-foreground/10 group-hover/btn:scale-110",
@@ -127,7 +126,7 @@ export function CategoryNavItem({
 									asChild
 									isActive={inCat && !currentSubcategory}
 									className={cn(
-										"h-10 rounded-xl pl-4 text-sm transition-colors",
+										"h-10 rounded-xl text-sm transition-colors",
 										inCat && !currentSubcategory
 											? "bg-primary/10 text-primary font-semibold"
 											: "text-muted-foreground hover:text-foreground hover:bg-foreground/10"
@@ -147,7 +146,7 @@ export function CategoryNavItem({
 											asChild
 											isActive={subActive}
 											className={cn(
-												"h-10 rounded-xl pl-4 text-sm transition-colors",
+												"h-10 rounded-xl text-sm transition-colors",
 												subActive
 													? "bg-primary/10 text-primary font-semibold"
 													: "text-muted-foreground hover:text-foreground hover:bg-foreground/10"

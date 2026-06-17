@@ -5,7 +5,6 @@ import {
 	CaretLeftIcon,
 	CaretRightIcon,
 	ClockIcon,
-	CornersOutIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
@@ -23,17 +22,21 @@ import {
 	Badge,
 	Button,
 	Card,
-	Dialog,
-	DialogContent,
 	DialogTitle,
 	Drawer,
 	DrawerContent,
 } from "@/components/ui";
+// Импортируем компоненты карусели и тип её API из Shadcn UI
+import {
+	Carousel,
+	type CarouselApi,
+	CarouselContent,
+	CarouselItem,
+} from "@/components/ui/carousel";
 import { EVENT_CONFIG } from "@/constants";
 import { useIsMobile } from "@/hooks";
 import { cn } from "@/lib/utils";
 
-// ── Основной компонент BannerModal ───────────────────────────────────────────
 export function BannerModal({
 	banner,
 	onClose,
@@ -42,9 +45,12 @@ export function BannerModal({
 	onClose: () => void;
 }) {
 	const isMobile = useIsMobile();
-	const [activeIndex, setActiveIndex] = useState(0);
 	const [mounted, setMounted] = useState(false);
 	const [isFullView, setIsFullView] = useState(false);
+
+	// Состояния для работы с Shadcn Carousel
+	const [api, setApi] = useState<CarouselApi>();
+	const [activeIndex, setActiveIndex] = useState(0);
 
 	const config =
 		EVENT_CONFIG[banner.type as keyof typeof EVENT_CONFIG] ?? EVENT_CONFIG.info;
@@ -72,82 +78,87 @@ export function BannerModal({
 	}, [banner]);
 
 	const hasGallery = mediaItems.length > 1;
-	const activeMedia = mediaItems[activeIndex];
 
-	// Клавиатурная навигация
+	// Синхронизация внутреннего состояния Embla с реактивным стейтом активного индекса
+	useEffect(() => {
+		if (!api) return;
+
+		setActiveIndex(api.selectedScrollSnap());
+
+		api.on("select", () => {
+			setActiveIndex(api.selectedScrollSnap());
+		});
+	}, [api]);
+
+	// Клавиатурная навигация глобально для модалки
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				if (isFullView) setIsFullView(false);
 				else onClose();
 			}
-			if (hasGallery && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-				setActiveIndex((i) =>
-					e.key === "ArrowLeft"
-						? (i - 1 + mediaItems.length) % mediaItems.length
-						: (i + 1) % mediaItems.length
-				);
+			if (hasGallery && api) {
+				if (e.key === "ArrowLeft") api.scrollPrev();
+				if (e.key === "ArrowRight") api.scrollNext();
 			}
 		};
 		window.addEventListener("keydown", handler);
 		return () => window.removeEventListener("keydown", handler);
-	}, [onClose, isFullView, hasGallery, mediaItems.length]);
+	}, [onClose, isFullView, hasGallery, api]);
 
 	if (!mounted) return null;
 
-	const nextSlide = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		setActiveIndex((i) => (i + 1) % mediaItems.length);
-	};
-
-	const prevSlide = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		setActiveIndex((i) => (i - 1 + mediaItems.length) % mediaItems.length);
-	};
-
 	// ── Общий контент модального окна ─────────────────────────────────────
 	const renderContent = () => (
-		<>
-			{activeMedia && (
+		<div className="bg-card/60">
+			{mediaItems.length > 0 && (
 				<div className="relative group/media">
-					<Card
-						className="cursor-zoom-in border-none bg-transparent shadow-none"
-						onClick={() =>
-							!activeMedia.url.includes("youtube") && setIsFullView(true)
-						}
-					>
-						<MediaBlock url={activeMedia.url} alt={banner.title} />
-					</Card>
+					{/* Контейнер карусели Shadcn с поддержкой бесконечного цикла (loop: true) */}
+					<Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
+						<CarouselContent>
+							{mediaItems.map((item, index) => (
+								<CarouselItem key={index} className="basis-full">
+									<Card
+										className="border-none bg-transparent shadow-none!"
+										onClick={() =>
+											!item.url.includes("youtube") && setIsFullView(true)
+										}
+									>
+										<MediaBlock url={item.url} alt={banner.title} />
+									</Card>
+								</CarouselItem>
+							))}
+						</CarouselContent>
+					</Carousel>
 
-					{/* Индикатор возможности расширения */}
-					{!activeMedia.url.includes("youtube") && (
-						<div className="absolute top-4 right-4 opacity-0 group-hover/media:opacity-100 transition-opacity pointer-events-none">
-							<div className="bg-black/40 backdrop-blur-md p-2 rounded-full text-white">
-								<CornersOutIcon size={20} />
-							</div>
-						</div>
-					)}
-
+					{/* Стрелки навигации и пагинация поверх карусели */}
 					{hasGallery && (
 						<>
 							<Button
 								variant="ghost"
-								onClick={prevSlide}
-								className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center backdrop-blur-sm shadow-lg cursor-pointer z-10"
+								onClick={(e) => {
+									e.stopPropagation();
+									api?.scrollPrev();
+								}}
+								className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/10 text-white/60 hover:bg-black/40 hover:text-white flex items-center justify-center backdrop-blur-xs shadow-lg cursor-pointer z-10"
 							>
 								<CaretLeftIcon size={20} weight="bold" />
 							</Button>
 							<Button
 								variant="ghost"
-								onClick={nextSlide}
-								className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center backdrop-blur-sm shadow-lg cursor-pointer z-10"
+								onClick={(e) => {
+									e.stopPropagation();
+									api?.scrollNext();
+								}}
+								className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/10 text-white/60 hover:bg-black/40 hover:text-white flex items-center justify-center backdrop-blur-xs shadow-lg cursor-pointer z-10"
 							>
 								<CaretRightIcon size={20} weight="bold" />
 							</Button>
+
 							<SliderPagination
 								totalPages={mediaItems.length}
 								currentPage={activeIndex}
-								onPageClick={setActiveIndex}
+								onPageClick={(index) => api?.scrollTo(index)}
 							/>
 						</>
 					)}
@@ -191,7 +202,7 @@ export function BannerModal({
 								asChild
 								variant="outline"
 								className={cn(
-									"flex  shadow-primary/30 w-full items-center gap-2 px-6 py-3 rounded-full text-red-400 text-sm font-bold shadow-2xl",
+									"flex shadow-primary/30 w-full items-center gap-2 px-6 py-3 rounded-full text-red-400 text-sm font-bold shadow-2xl",
 									config.shadow,
 									config.badge
 								)}
@@ -235,96 +246,44 @@ export function BannerModal({
 			>
 				<XIcon size={18} weight="bold" />
 			</Button>
-		</>
-	);
-
-	const fullscreenDialog = (
-		<Dialog open={isFullView} onOpenChange={setIsFullView}>
-			<DialogContent
-				className="max-w-none w-100vw h-screen p-0 m-0 bg-black/95 border-none rounded-none flex items-center justify-center z-150 shadow-none [&>button]:hidden outline-none pointer-events-auto"
-				overlayClassName="z-[100] backdrop-blur-md bg-black/40"
-				onClick={() => setIsFullView(false)}
-			>
-				<DialogTitle className="hidden">Просмотр медиа</DialogTitle>
-				{activeMedia && (
-					<div className="relative w-full h-full flex items-center justify-center p-4 md:p-10 cursor-zoom-out">
-						<MediaBlock
-							url={activeMedia.url}
-							alt={banner.title}
-							isFull={true}
-						/>
-
-						{hasGallery && (
-							<div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 pointer-events-none">
-								<Button
-									onClick={prevSlide}
-									className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white pointer-events-auto backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl"
-								>
-									<CaretLeftIcon size={24} weight="bold" />
-								</Button>
-								<Button
-									onClick={nextSlide}
-									className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white pointer-events-auto backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl"
-								>
-									<CaretRightIcon size={24} weight="bold" />
-								</Button>
-							</div>
-						)}
-
-						<Button
-							className="absolute bottom-4 right-4 h-12 w-12 rounded-full bg-white/5 hover:bg-white/20 text-white backdrop-blur-md z-50 flex items-center justify-center border border-white/5 shadow-xl"
-							onClick={() => setIsFullView(false)}
-						>
-							<XIcon size={24} />
-						</Button>
-
-						<div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-xs font-mono bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">
-							{activeIndex + 1} / {mediaItems.length}
-						</div>
-					</div>
-				)}
-			</DialogContent>
-		</Dialog>
+		</div>
 	);
 
 	if (isMobile) {
 		return (
-			<>
-				<Drawer open onOpenChange={(open) => !open && onClose()}>
-					<DrawerContent className="max-h-[96vh] rounded-t-[32px] overflow-hidden flex flex-col">
-						<DialogTitle className="hidden" />
-						<div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain">
-							{renderContent()}
-						</div>
-					</DrawerContent>
-				</Drawer>
-				{fullscreenDialog}
-			</>
+			<Drawer open onOpenChange={(open) => !open && onClose()}>
+				<DrawerContent className="max-h-[96vh] rounded-t-[32px] overflow-hidden flex flex-col">
+					<DialogTitle className="hidden" />
+					<div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain">
+						{renderContent()}
+					</div>
+				</DrawerContent>
+			</Drawer>
 		);
 	}
 
 	return createPortal(
-		<>
+		/* Внешний оверлей — делаем его motion.div и плавно гасим opacity */
+		<motion.div
+			initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+			animate={{ opacity: 1, backdropFilter: "blur(10px)" }}
+			exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+			transition={{ duration: 0.2, ease: "easeInOut" }}
+			className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-background/40"
+			onClick={onClose}
+		>
+			{/* Внутреннее окно модалки */}
 			<motion.div
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
-				exit={{ opacity: 0 }}
-				className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-				onClick={onClose}
+				initial={{ opacity: 0, y: 25, scale: 0.98 }}
+				animate={{ opacity: 1, y: 0, scale: 1 }}
+				exit={{ opacity: 0, y: 15, scale: 0.98 }}
+				transition={{ duration: 0.2, ease: "easeOut" }}
+				onClick={(e) => e.stopPropagation()}
+				className="relative w-full bg-card/80 max-w-3xl max-h-[85vh] overflow-y-auto rounded-[32px] shadow-2xl no-scrollbar border border-foreground/5 mx-auto"
 			>
-				<motion.div
-					initial={{ opacity: 0, y: 20, scale: 0.98 }}
-					animate={{ opacity: 1, y: 0, scale: 1 }}
-					exit={{ opacity: 0, scale: 0.98 }}
-					transition={{ type: "spring", stiffness: 400, damping: 30 }}
-					onClick={(e) => e.stopPropagation()}
-					className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[32px] bg-background shadow-2xl no-scrollbar border border-foreground/5"
-				>
-					{renderContent()}
-				</motion.div>
+				{renderContent()}
 			</motion.div>
-			{fullscreenDialog}
-		</>,
+		</motion.div>,
 		document.body
 	);
 }

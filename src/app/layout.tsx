@@ -167,7 +167,7 @@ export default async function RootLayout({
 				<meta name="yandex-verification" content="921d31c22c2388b2" />
 			</head>
 			<body suppressHydrationWarning>
-				<NextTopLoader color="#3b82f6" showSpinner={false} />
+				<NextTopLoader color="#ffd106" showSpinner={false} />
 				<RootProvider session={session} defaultOpen={defaultOpen}>
 					{isAdmin && (
 						<AdminNotificationsPoller

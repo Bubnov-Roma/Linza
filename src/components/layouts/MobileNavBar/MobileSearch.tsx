@@ -1,10 +1,11 @@
 "use client";
 
-import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { clientAutocompleteEquipmentAction } from "@/actions/autocomplete-actions";
 import { SearchFilters } from "@/components/core/search/SearchFilters";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
-import { Button } from "@/components/ui";
+import { Button, InlineSearchInput } from "@/components/ui";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { useSearchState } from "@/hooks";
 import { useSearchHistory } from "@/hooks/use-search-history";
@@ -32,10 +33,47 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 		}));
 
 		useEffect(() => {
-			if (!isOpen) reset();
-			document.body.style.overflow = isOpen ? "hidden" : "";
+			if (!isOpen) {
+				reset();
+				return;
+			}
+
+			// 1. Блокируем стандартный overflow и убираем bouncing эффект
+			const originalOverflow = document.body.style.overflow;
+			const originalOverscroll = document.body.style.overscrollBehavior;
+
+			document.body.style.overflow = "hidden";
+			document.body.style.overscrollBehavior = "none";
+
+			// requestAnimationFrame дает браузеру отрендерить появление оверлея,
+			// после чего плавно вешает фокус и поднимает клавиатуру
+			const focusTimeout = setTimeout(() => {
+				inputRef.current?.focus();
+				// Дополнительный трюк для iOS: имитируем клик, если фокус не встал
+				inputRef.current?.click();
+			}, 150); // 150мс — оптимально, чтобы успела начаться анимация клип-паса
+			// ------------------------------
+
+			// 2. Жесткая блокировка touch-скролла для iOS на внешних элементах
+			const preventTouchScroll = (e: TouchEvent) => {
+				const target = e.target as HTMLElement;
+				if (target.closest("[data-slot='search-panel-scroll']")) {
+					return;
+				}
+				if (e.touches.length === 1) {
+					e.preventDefault();
+				}
+			};
+
+			document.addEventListener("touchmove", preventTouchScroll, {
+				passive: false,
+			});
+
 			return () => {
-				document.body.style.overflow = "";
+				document.body.style.overflow = originalOverflow;
+				document.body.style.overscrollBehavior = originalOverscroll;
+				document.removeEventListener("touchmove", preventTouchScroll);
+				clearTimeout(focusTimeout); // Не забываем очищать таймаут
 			};
 		}, [isOpen, reset]);
 
@@ -48,7 +86,7 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 			<div
 				aria-hidden={!isOpen}
 				className={cn(
-					"fixed inset-x-0 top-0 bottom-0 z-55 flex flex-col bg-background/60 backdrop-blur-2xl",
+					"fixed inset-x-0 top-0 h-dvh z-55 flex flex-col bg-background/60 backdrop-blur-2xl",
 					"transition-[clip-path,opacity] duration-300 ease-[cubic-bezier(0.34,1.06,0.64,1)]",
 					isOpen
 						? "pointer-events-auto opacity-100"
@@ -64,34 +102,15 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 				<div className="shrink-0 flex flex-col w-full backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-muted-foreground/10 border-b border-foreground/5">
 					<div className="mx-3 mb-2 flex items-center gap-2">
 						{/* Поле ввода */}
-						<div
-							className={cn(
-								"flex-1 flex items-center gap-3 bg-white dark:bg-black rounded-2xl px-4 h-12 shadow-xs transition-all"
-							)}
-						>
-							<MagnifyingGlassIcon
-								size={16}
-								className="text-primary shrink-0"
-							/>
-							<input
+						<div className="flex-1 bg-white dark:bg-black rounded-2xl h-12 shadow-xs transition-all overflow-hidden flex items-center">
+							<InlineSearchInput
 								ref={inputRef}
-								type="text"
-								inputMode="search"
-								style={{ fontSize: "16px" }}
-								className="flex-1 bg-transparent border-none focus:outline-none placeholder:text-muted-foreground text-foreground w-0 min-w-0"
-								placeholder="Поиск техники..."
 								value={state.query}
-								onChange={(e) => state.setQuery(e.target.value)}
+								onChange={state.setQuery}
+								fetchSuggestion={clientAutocompleteEquipmentAction}
+								placeholder="Поиск техники..."
+								className="bg-transparent border-none shadow-none h-full"
 							/>
-							{state.query && (
-								<button
-									type="button"
-									onClick={() => state.setQuery("")}
-									className="p-1 bg-foreground/5 rounded-full shrink-0 active:scale-90 transition-transform"
-								>
-									<XIcon size={13} className="text-muted-foreground" />
-								</button>
-							)}
 						</div>
 
 						{/* Кнопка закрытия всего поиска (Поверх MobileSearch) */}
@@ -107,7 +126,7 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 
 					{/* Фильтры */}
 					{state.query.trim().length > 1 && (
-						<div className="px-1 py-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150 bg-muted-foreground/13 snap-center">
+						<div className="px-1 py-2 w-full overflow-hidden animate-in slide-in-from-top-1 duration-150 snap-center">
 							<SearchFilters
 								categories={categories}
 								category={state.category}
@@ -122,13 +141,18 @@ export const MobileSearch = forwardRef<MobileSearchHandle, MobileSearchProps>(
 				</div>
 
 				{/* Результаты поиска */}
-				<SearchPanel
-					state={state}
-					categories={categories}
-					variant="mobile"
-					onClose={handleClose}
-					className="flex-1 min-h-0 overflow-y-auto"
-				/>
+				<div
+					data-slot="search-panel-scroll"
+					className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+				>
+					<SearchPanel
+						state={state}
+						categories={categories}
+						variant="mobile"
+						onClose={handleClose}
+						className="h-full"
+					/>
+				</div>
 			</div>
 		);
 	}

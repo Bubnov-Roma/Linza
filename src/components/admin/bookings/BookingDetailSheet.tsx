@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	ArrowClockwiseIcon,
 	BellIcon,
 	CalendarIcon,
 	CheckIcon,
@@ -21,6 +20,8 @@ import {
 	UserIcon,
 	XIcon,
 } from "@phosphor-icons/react";
+import Image from "next/image";
+import Link from "next/link";
 import {
 	useCallback,
 	useEffect,
@@ -58,6 +59,10 @@ import {
 	refundToBalanceAction,
 	removeBookingLabelAction,
 } from "@/actions/audit-and-balance-actions";
+import {
+	InlinePaymentChanger,
+	InlineStatusChanger,
+} from "@/components/admin/bookings/BookingInlineChanger";
 import { DocumentsPanel } from "@/components/admin/bookings/documents/DocumentsPanel";
 import { PaymentsPanel } from "@/components/admin/bookings/PaymentsPanel";
 import { LabelsBlock } from "@/components/admin/users/details-panel/LabelsBlock";
@@ -66,7 +71,6 @@ import {
 	type RentalPeriodValue,
 } from "@/components/shared/RentalPeriod";
 import {
-	Badge,
 	Button,
 	Input,
 	Label,
@@ -81,7 +85,6 @@ import {
 	SheetTitle,
 } from "@/components/ui";
 import {
-	ALL_BOOKING_STATUSES,
 	BOOKING_STATUS_CONFIG,
 	EDITABLE_ITEMS_STATUSES,
 	EDITABLE_PERIOD_STATUSES,
@@ -142,23 +145,6 @@ function periodFromBooking(
 }
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: BookingStatus }) {
-	const cfg = BOOKING_STATUS_CONFIG[status] ?? {
-		label: status,
-		color: "bg-foreground/8 text-foreground/50",
-		dot: "bg-foreground/30",
-	};
-	return (
-		<Badge
-			variant="outline"
-			className={cn("text-[10px] gap-1.5 border font-semibold", cfg.color)}
-		>
-			<span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />
-			{cfg.label}
-		</Badge>
-	);
-}
 
 function SectionTitle({
 	icon: Icon,
@@ -364,11 +350,6 @@ function PeriodBlock({
 					</div>
 				)}
 			</div>
-			{booking.status === "READY_TO_RENT" && (
-				<p className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-					После сохранения статус вернётся в «Ожидает проверки».
-				</p>
-			)}
 			<div className="flex gap-2">
 				<Button
 					variant="outline"
@@ -469,19 +450,33 @@ function ClientBlock({
 				>
 					Клиент
 				</SectionTitle>
-				<div className="flex items-center gap-3">
-					<div className="w-9 h-9 rounded-full bg-foreground/8 flex items-center justify-center shrink-0">
-						<UserIcon size={16} className="text-muted-foreground" />
+				<Link
+					href={`/admin/users?userId=${booking.clientId}`}
+					onClick={(e) => e.stopPropagation()}
+					className="flex items-center gap-3 group/client w-fit"
+				>
+					<div className="w-9 h-9 rounded-full bg-foreground/8 flex items-center justify-center shrink-0 overflow-hidden">
+						{booking.clientImage ? (
+							<Image
+								width={64}
+								height={64}
+								src={booking.clientImage}
+								alt={booking.clientName ?? ""}
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							<UserIcon size={16} className="text-muted-foreground" />
+						)}
 					</div>
 					<div>
-						<p className="font-semibold text-sm">
+						<p className="font-semibold text-sm group-hover/client:underline transition-all">
 							{booking.clientName || "Без имени"}
 						</p>
 						<p className="text-xs text-muted-foreground">
 							{booking.clientEmail || "—"}
 						</p>
 					</div>
-				</div>
+				</Link>
 			</div>
 		);
 
@@ -503,7 +498,7 @@ function ClientBlock({
 						setSelected(null);
 					}}
 					placeholder="Имя, email или телефон..."
-					className="pl-8 h-8 text-xs"
+					className="pl-8 h-8 text-xs glass-input"
 				/>
 			</div>
 			{results.length > 0 && !selected && (
@@ -769,7 +764,7 @@ function ItemsBlock({
 					icon={PackageIcon}
 					action={
 						canEdit ? (
-							<EditBtn onClick={() => setEditing(true)} label="Редактировать" />
+							<EditBtn onClick={() => setEditing(true)} label="Изменить" />
 						) : undefined
 					}
 				>
@@ -873,7 +868,7 @@ function ItemsBlock({
 									onChange={(e) =>
 										updatePrice(d.equipmentId, Number(e.target.value))
 									}
-									className="h-7 text-xs"
+									className="h-7 text-xs glass-input"
 								/>
 							</div>
 						</div>
@@ -897,7 +892,7 @@ function ItemsBlock({
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					placeholder="Добавить технику..."
-					className="pl-8 h-8 text-xs"
+					className="pl-8 h-8 text-xs glass-input"
 				/>
 			</div>
 			{results.length > 0 && (
@@ -1063,10 +1058,7 @@ function PricingBlock({
 					icon={CurrencyRubIcon}
 					action={
 						canEdit ? (
-							<EditBtn
-								onClick={() => setEditing(true)}
-								label="Корректировать"
-							/>
+							<EditBtn onClick={() => setEditing(true)} label="Изменить" />
 						) : undefined
 					}
 				>
@@ -1189,7 +1181,7 @@ function PricingBlock({
 							value={adjValue}
 							onChange={(e) => setAdjValue(e.target.value)}
 							placeholder={adjType === "percent" ? "10" : "500"}
-							className="h-7 text-xs"
+							className="h-7 text-xs glass-input"
 							onKeyDown={(e) => e.key === "Enter" && addAdj()}
 						/>
 					</div>
@@ -1203,7 +1195,7 @@ function PricingBlock({
 							value={adjPromo}
 							onChange={(e) => setAdjPromo(e.target.value.toUpperCase())}
 							placeholder="PROMO2024"
-							className="h-7 text-xs font-mono uppercase"
+							className="h-7 text-xs font-mono uppercase glass-input"
 						/>
 					</div>
 				)}
@@ -1215,7 +1207,7 @@ function PricingBlock({
 						value={adjDesc}
 						onChange={(e) => setAdjDesc(e.target.value)}
 						placeholder="Комментарий..."
-						className="h-7 text-xs"
+						className="h-7 text-xs glass-input"
 					/>
 				</div>
 				<Button
@@ -1313,7 +1305,7 @@ function BalanceSection({
 					value={applyAmount}
 					onChange={(e) => setApplyAmount(e.target.value)}
 					placeholder={`до ${fmtRub(balance)}`}
-					className="h-7 text-xs flex-1"
+					className="h-7 text-xs flex-1 glass-input"
 					max={Math.min(balance, booking.totalAmount)}
 				/>
 				<Button
@@ -1420,7 +1412,7 @@ export function BookingDetailSheet({
 	onPeriodUpdate,
 	onBookingUpdate,
 }: BookingDetailSheetProps) {
-	const [isPending, startTransition] = useTransition();
+	const [_isPending, startTransition] = useTransition();
 	const [labels, setLabels] = useState<BookingLabel[]>([]);
 	const [comments, setComments] = useState<BookingComment[]>([]);
 	const [audit, setAudit] = useState<AuditLogEntry[]>([]);
@@ -1583,7 +1575,7 @@ export function BookingDetailSheet({
 				className="w-full sm:max-w-2xl flex flex-col p-0 gap-0 overflow-hidden"
 			>
 				{/* Header */}
-				<SheetHeader className="px-6 py-4 border-b border-foreground/8 shrink-0">
+				<SheetHeader className="px-6 py-4 shrink-0">
 					<div className="flex items-start justify-start gap-3">
 						<div>
 							<SheetTitle className="text-base font-bold">
@@ -1599,7 +1591,30 @@ export function BookingDetailSheet({
 								})}
 							</p>
 						</div>
-						<StatusBadge status={localBooking.status} />
+						<div className="flex items-center gap-2 mt-1">
+							<InlineStatusChanger
+								bookingId={localBooking.id}
+								status={localBooking.status}
+								onChanged={(s) => {
+									const updated = { ...localBooking, status: s };
+									setLocalBooking(updated);
+									onBookingUpdate?.(updated);
+								}}
+							/>
+							<InlinePaymentChanger
+								status={localBooking.paymentStatus || "UNPAID"}
+								onChanged={(paymentStatus, bookingStatus) => {
+									const updated = {
+										...localBooking,
+										paymentStatus,
+										status: bookingStatus,
+									};
+									setLocalBooking(updated);
+									onBookingUpdate?.(updated);
+								}}
+								bookingId={booking?.id || ""}
+							/>
+						</div>
 					</div>
 					{labels.length > 0 && (
 						<div className="flex flex-wrap gap-1 mt-2">
@@ -1627,21 +1642,28 @@ export function BookingDetailSheet({
 					)}
 				</SheetHeader>
 
-				{/* Tabs */}
-				<div className="flex border-b border-foreground/8 shrink-0 bg-background overflow-x-auto">
+				{/* ── TABS ── */}
+				<div className="flex border-b border-foreground/8 shrink-0 overflow-x-auto">
 					{TABS.map(({ id, label, icon: Icon }) => (
 						<button
 							key={id}
 							type="button"
 							onClick={() => setActiveTab(id)}
 							className={cn(
-								"flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 text-[11px] font-bold transition-colors border-b-2 -mb-px whitespace-nowrap px-2",
+								"cursor-pointer flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
 								activeTab === id
-									? "text-primary border-primary"
-									: "text-muted-foreground border-transparent hover:text-foreground"
+									? "text-foreground border-foreground"
+									: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/3"
 							)}
 						>
-							<Icon size={11} /> {label}
+							<Icon
+								size={14}
+								weight={activeTab === id ? "duotone" : "bold"}
+								className={cn(
+									activeTab === id ? "text-foreground" : "text-muted-foreground"
+								)}
+							/>{" "}
+							{label}
 						</button>
 					))}
 				</div>
@@ -1650,34 +1672,6 @@ export function BookingDetailSheet({
 				<div className="flex-1 overflow-y-auto">
 					{activeTab === "info" && (
 						<div className="divide-y divide-foreground/5">
-							{/* Status */}
-							<div className="px-6 py-4">
-								<SectionTitle icon={ArrowClockwiseIcon}>
-									Статус заказа
-								</SectionTitle>
-								<Select
-									value={localBooking.status}
-									onValueChange={(v) =>
-										handleForceStatusChange(v as BookingStatus)
-									}
-									disabled={isPending}
-								>
-									<SelectTrigger className="h-9 text-sm">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{ALL_BOOKING_STATUSES.map((s) => (
-											<SelectItem key={s} value={s}>
-												<span className="flex items-center gap-2">
-													{BOOKING_STATUS_CONFIG[s]?.label ?? s}
-												</span>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							{/* 2.2 */}
 							<ClientBlock
 								booking={localBooking}
 								onSaved={(id, name, email) => {
@@ -1693,7 +1687,6 @@ export function BookingDetailSheet({
 								addAudit={addAudit}
 							/>
 
-							{/* 2.1 */}
 							<PeriodBlock
 								booking={localBooking}
 								onSaved={(start, end, total) => {
@@ -1702,10 +1695,6 @@ export function BookingDetailSheet({
 										startDate: start,
 										endDate: end,
 										totalAmount: total,
-										status:
-											localBooking.status === "READY_TO_RENT"
-												? "PENDING_REVIEW"
-												: localBooking.status,
 									};
 									setLocalBooking(updated);
 									onBookingUpdate?.(updated);
@@ -1719,7 +1708,6 @@ export function BookingDetailSheet({
 								}}
 							/>
 
-							{/* 2.3 */}
 							<ItemsBlock
 								booking={localBooking}
 								onSaved={(items, total, deposit) => {
@@ -1738,7 +1726,6 @@ export function BookingDetailSheet({
 								addAudit={addAudit}
 							/>
 
-							{/* 2.4 */}
 							<PricingBlock
 								booking={localBooking}
 								onSaved={(total) => {

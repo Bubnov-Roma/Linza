@@ -1,16 +1,21 @@
-import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { BookingsTable } from "@/components/dashboard/bookings/BookingsTable";
 import { DashboardBreadcrumb } from "@/components/dashboard/DashboardBreadcrumb";
+import { BackButton } from "@/components/shared";
 import { prisma } from "@/lib/prisma";
 
-export default async function BookingsPage() {
+interface Props {
+	searchParams: Promise<{ status?: string }>;
+}
+
+export default async function BookingsPage({ searchParams }: Props) {
 	const session = await auth();
 	const userId = session?.user?.id;
 
 	if (!userId) return redirect("/auth");
+
+	const { status } = await searchParams;
 
 	const bookings = await prisma.booking.findMany({
 		where: { userId },
@@ -38,13 +43,8 @@ export default async function BookingsPage() {
 				<DashboardBreadcrumb items={[{ label: "Мои заказы" }]} />
 				{/* Header */}
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-					<div className="flex items-center gap-4">
-						<Link
-							href="/dashboard"
-							className="w-10 h-10 rounded-xl border border-foreground/10 flex items-center justify-center hover:bg-foreground/5 transition-all shrink-0"
-						>
-							<CaretLeftIcon size={18} />
-						</Link>
+					<div className="flex items-center">
+						<BackButton fallback="/dashboard" />
 						<div>
 							<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
 								История аренды
@@ -55,7 +55,7 @@ export default async function BookingsPage() {
 						</div>
 					</div>
 				</div>
-				<BookingsTable bookings={bookings} />
+				<BookingsTable bookings={bookings} initialStatus={status ?? ""} />
 			</div>
 		</div>
 	);

@@ -146,7 +146,7 @@ function CancelStudioBookingDialog({
 							placeholder="Опишите причину отмены..."
 							autoFocus
 							rows={3}
-							className="w-full rounded-xl resize-none"
+							className="w-full rounded-xl resize-none glass-input"
 						/>
 					)}
 				</div>

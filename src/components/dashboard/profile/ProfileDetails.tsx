@@ -25,7 +25,6 @@ import {
 	updateClientSocialsAction,
 	updateUserAvatarAction,
 	updateUserFieldAction,
-	updateUserPasswordAction,
 } from "@/actions/user-actions";
 import { ApplicationDataEditor } from "@/components/dashboard/profile/ApplicationDataEditor";
 import { VerificationBadge } from "@/components/forms";
@@ -51,12 +50,24 @@ import {
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { ClientFormValues } from "@/schemas";
+import { emailSchema } from "@/schemas";
 import { useApplicationStore } from "@/store";
 import { getClientDisplayData } from "@/utils/client-data.utils";
+import { PasswordSection } from "./PasswordSection";
 
 type ProfileTab = "profile" | "settings" | "update_data";
 
-export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
+interface ProfileDetailsProps {
+	data: ClientFormValues | null;
+	hasPassword: boolean;
+	userEmail: string;
+}
+
+export function ProfileDetails({
+	data,
+	hasPassword,
+	userEmail,
+}: ProfileDetailsProps) {
 	const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
 	const [showAvatarUploader, setShowAvatarUploader] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -91,18 +102,14 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 				method: "POST",
 				body: formData,
 			});
-
 			if (!res.ok) throw new Error("Upload failed");
-
 			const { url } = await res.json();
 
 			await updateUserAvatarAction(url);
-			await refreshProfile({ image: url }); // Обновляем сессию NextAuth
-
+			await refreshProfile({ image: url });
 			toast.success("Аватар обновлён");
 			setShowAvatarUploader(false);
-		} catch (error) {
-			console.error("Avatar upload error:", error);
+		} catch {
 			toast.error("Не удалось загрузить аватар");
 		} finally {
 			setUploading(false);
@@ -116,11 +123,9 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 			await deleteImageAction("avatar", avatarUrl);
 			await updateUserAvatarAction(null);
 			await refreshProfile({ image: null });
-
 			toast.success("Аватар удалён");
 			setShowAvatarUploader(false);
-		} catch (error) {
-			console.error("Avatar delete error:", error);
+		} catch {
 			toast.error("Не удалось удалить аватар");
 		} finally {
 			setUploading(false);
@@ -133,9 +138,8 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 		try {
 			const res = await scheduleAccountDeletionAction();
 			if (!res.success) throw new Error(res.error);
-
 			toast.info(
-				"Аккаунт будет удалён через 7 дней. Войдите снова для отмены."
+				"Аккаунт будет удалён через 7 дней. Для отмены удаления войдите снова"
 			);
 			await signOut({ callbackUrl: "/auth" });
 		} catch {
@@ -165,7 +169,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 								</div>
 							)}
 						</div>
-						{/* biome-ignore lint/a11y/useSemanticElements: Nested buttons are illegal in HTML, so we use a div with ARIA roles */}
+						{/* biome-ignore lint/a11y/useSemanticElements: nested buttons */}
 						<div
 							role="button"
 							tabIndex={0}
@@ -188,7 +192,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 								<div className="w-full h-full flex flex-row sm:flex-col gap-1 justify-between items-center my-auto">
 									<Button
 										variant="brand"
-										className="flex border text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-12 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
+										className="flex border text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-12 sm:items-center gap-1 sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
 									>
 										<ImageIcon size={14} />
 										<span className="text-[10px] font-bold uppercase tracking-wider">
@@ -202,7 +206,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 											handleAvatarDelete();
 										}}
 										disabled={uploading}
-										className="flex border text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 group/btn sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
+										className="flex border text-foreground/70 hover:text-foreground flex-col w-20 h-20 sm:h-10 sm:items-center gap-1 sm:w-full bg-background/40 dark:bg-foreground/30 hover:bg-foreground/20 rounded-2xl"
 									>
 										<TrashIcon size={14} />
 										<span className="text-[10px] font-bold uppercase tracking-wider">
@@ -232,7 +236,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 							</p>
 						)}
 						<p className="text-sm text-muted-foreground mt-0.5 truncate">
-							{user?.email}
+							{userEmail}
 						</p>
 					</div>
 				</div>
@@ -261,7 +265,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 				)}
 			</div>
 
-			{/* ── Tabs ───────────────────────────────────────────────────────── */}
+			{/* ── Tabs ─────────────────────────────────────────────────────── */}
 			<div className="flex w-full items-center justify-between">
 				<div className="tabs-group">
 					{tabs.map(({ id, label }) => (
@@ -283,14 +287,14 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 				<VerificationBadge isClientPartner={displayData?.isPartner ?? false} />
 			</div>
 
-			{/* ── Profile tab ────────────────────────────────────────────────── */}
+			{/* ── Profile tab ──────────────────────────────────────────────── */}
 			{activeTab === "profile" && (
 				<div className="space-y-4 animate-in fade-in duration-200">
 					<SectionCard title="Контакты">
 						<DetailRow
 							icon={<EnvelopeIcon size={14} />}
 							label="Email"
-							value={user?.email || ""}
+							value={userEmail}
 						/>
 						<DetailRow
 							icon={<PhoneIcon size={14} />}
@@ -324,7 +328,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 				</div>
 			)}
 
-			{/* ── Settings tab ───────────────────────────────────────────────── */}
+			{/* ── Settings tab ─────────────────────────────────────────────── */}
 			{activeTab === "settings" && (
 				<div className="space-y-4 animate-in fade-in duration-200">
 					<SectionCard icon={<MonitorIcon size={14} />} title="Тема интерфейса">
@@ -332,6 +336,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 							<ThemeCard />
 						</div>
 					</SectionCard>
+
 					{/* Nickname */}
 					<SectionCard icon={<UserIcon size={14} />} title="Никнейм">
 						<div className="px-5 py-4">
@@ -341,7 +346,6 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 								onSave={async (val) => {
 									await updateUserFieldAction("nickname", val);
 									await refreshProfile({ nickname: val });
-									// Если никнейм очищен — фолбэк на ФИО из анкеты, потом на имя из провайдера
 									const trimmed = val.trim();
 									const fallbackName =
 										getClientDisplayData(applicationData)?.name ||
@@ -360,6 +364,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 							Отображается вместо полного имени по всему сайту
 						</p>
 					</SectionCard>
+
 					{/* Email change */}
 					<SectionCard
 						title="Email-адрес"
@@ -371,12 +376,16 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 								placeholder="Новый email"
 								type="email"
 								onSave={async (val) => {
-									if (!val.includes("@")) throw new Error("Некорректный email");
-									await updateUserFieldAction("email", val);
-									await refreshProfile({ email: val });
-									toast.success(
-										"Email обновлен. Потребуется подтверждение при следующем входе."
-									);
+									const result = emailSchema.safeParse(val);
+									if (!result.success) {
+										throw new Error(
+											result.error.issues[0]?.message ?? "Некорректный email"
+										);
+									}
+									const res = await updateUserFieldAction("email", result.data);
+									if (!res.success) throw new Error(res.error);
+									await refreshProfile({ email: result.data });
+									toast.success("Email обновлён");
 								}}
 								onCancel={() => {}}
 							/>
@@ -385,6 +394,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 							Запасной email для доступа к профилю
 						</p>
 					</SectionCard>
+
 					{/* Extra phone */}
 					<SectionCard icon={<PhoneIcon size={14} />} title="Доп. телефон">
 						<div className="px-5 py-4">
@@ -408,33 +418,24 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 							На случай, если основной номер будет недоступен.
 						</p>
 					</SectionCard>
-					{/* Password Settings */}
+
+					{/* Безопасность */}
 					<SectionCard icon={<LockIcon size={14} />} title="Безопасность">
 						<div className="px-5 py-4">
-							<InlineEditField
-								value=""
-								type="password"
-								placeholder="Постоянный пароль"
-								onSave={async (val) => {
-									// Валидация на фронте (минимум 8 символов)
-									if (val.length < 8) throw new Error("Минимум 8 символов");
-
-									// Вызов серверного действия для хеширования и сохранения
-									const res = await updateUserPasswordAction("password", val);
-									if (!res.success) throw new Error(res.error);
-
-									toast.success("Пароль успешно установлен");
-								}}
-								onCancel={() => {}}
+							<PasswordSection
+								hasPassword={hasPassword}
+								userEmail={userEmail}
 							/>
 						</div>
 						<p className="px-5 pb-3 text-[11px] text-muted-foreground/40">
-							Для входа в систему без использования почтовой ссылки.
+							{hasPassword
+								? "Используется для входа без одноразового кода"
+								: "Установите пароль для входа без одноразового кода"}
 						</p>
 					</SectionCard>
-					{/* Logout */}
+
 					<SignOutButton />
-					{/* Update application data — only for verified clients */}
+
 					{(status === "APPROVED" || status === "STANDARD") && (
 						<button
 							type="button"
@@ -448,7 +449,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 							<span className="text-md font-medium">Обновить данные</span>
 						</button>
 					)}
-					{/* Delete */}
+
 					<button
 						type="button"
 						onClick={() => setShowDeleteDialog(true)}
@@ -460,7 +461,7 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 				</div>
 			)}
 
-			{/* ── Update data tab ─────────────────────────────────────────────── */}
+			{/* ── Update data tab ──────────────────────────────────────────── */}
 			{activeTab === "update_data" && (
 				<div className="space-y-4 animate-in fade-in duration-200">
 					<div className="card-surface">
@@ -474,14 +475,14 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 					<Button
 						variant="ghost"
 						onClick={() => setActiveTab("settings")}
-						className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+						className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
 					>
 						<ArrowLeftIcon size={14} /> Вернуться к общим настройкам
 					</Button>
 				</div>
 			)}
 
-			{/* ── Delete dialog ── */}
+			{/* ── Delete dialog ──────────────────────────────────────────────*/}
 			<AlertDialog
 				open={showDeleteDialog}
 				onOpenChange={(o) => {
@@ -510,11 +511,10 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 								<strong className="font-black font-mono text-red-500 px-2">
 									3 дня
 								</strong>{" "}
-								чтобы отменить удаление — просто войдите снова.
+								чтобы отменить — просто войдите снова.
 							</span>
 							<span className="text-destructive block py-2">
 								По истечении срока все данные уничтожаются безвозвратно.
-								Повторная регистрация потребует нового анкетирования.
 							</span>
 							<span className="pt-3 block">
 								<span className="text-xs text-muted-foreground pb-2 block">
@@ -552,12 +552,13 @@ export function ProfileDetails({ data }: { data: ClientFormValues | null }) {
 
 type SocialEntry = { url: string };
 
-interface ProfileSocialsCardProps {
+function ProfileSocialsCard({
+	data,
+	onUpdated,
+}: {
 	data: ClientFormValues | null;
 	onUpdated: () => Promise<null>;
-}
-
-function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
+}) {
 	const { user } = useAuth();
 	const displayData = getClientDisplayData(data);
 	const [socials, setSocials] = useState<SocialEntry[]>(
@@ -572,7 +573,6 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 		try {
 			const res = await updateClientSocialsAction(updated);
 			if (!res.success) throw new Error(res.error);
-
 			setSocials(updated);
 			await onUpdated();
 		} catch {
@@ -600,36 +600,34 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 		setAdding(false);
 	};
 
-	if (!data) return null; // no application yet — nothing to show
+	if (!data) return null;
 
 	return (
 		<SectionCard title="Соцсети и мессенджеры">
-			{socials.map((s, i) => {
-				return (
-					<div
-						key={`social-${i}-${s.url}`}
-						className="px-5 py-3 border-b border-foreground/5 last:border-b-0  gap-2 flex items-center"
-					>
-						<InlineEditField
-							value={s.url}
-							placeholder="@username или https://..."
-							onSave={(val) => handleUpdate(i, val)}
-							onCancel={() => {}}
-						/>
-						{socials.length > 1 && (
-							<Button
-								variant="ghost"
-								size="icon-lg"
-								onClick={() => handleDelete(i)}
-								disabled={saving}
-								className="ml-auto rounded-2xl flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
-							>
-								<TrashIcon size={12} />
-							</Button>
-						)}
-					</div>
-				);
-			})}
+			{socials.map((s, i) => (
+				<div
+					key={`social-${i}-${s.url}`}
+					className="px-5 py-3 border-b border-foreground/5 last:border-b-0 gap-2 flex items-center"
+				>
+					<InlineEditField
+						value={s.url}
+						placeholder="@username или https://..."
+						onSave={(val) => handleUpdate(i, val)}
+						onCancel={() => {}}
+					/>
+					{socials.length > 1 && (
+						<Button
+							variant="ghost"
+							size="icon-lg"
+							onClick={() => handleDelete(i)}
+							disabled={saving}
+							className="ml-auto rounded-2xl flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+						>
+							<TrashIcon size={12} />
+						</Button>
+					)}
+				</div>
+			))}
 
 			{adding ? (
 				<div className="px-5 py-3">
@@ -661,8 +659,6 @@ function ProfileSocialsCard({ data, onUpdated }: ProfileSocialsCardProps) {
 		</SectionCard>
 	);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 function SectionCard({
 	title,

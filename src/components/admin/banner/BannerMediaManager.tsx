@@ -431,6 +431,7 @@ export function BannerMediaManager({
 										value={externalPhotoUrl}
 										onChange={(e) => setExternalPhotoUrl(e.target.value)}
 										placeholder="https://i.ibb.co/XYZ/image.png"
+										className="glass-input"
 									/>
 									<p className="text-[10px] text-muted-foreground/60">
 										Ссылка должна вести напрямую на изображение (jpg, png,
@@ -484,6 +485,7 @@ export function BannerMediaManager({
 										value={videoUrl}
 										onChange={(e) => setVideoUrl(e.target.value)}
 										placeholder="vk.com/wall... или <div id='vk_post_'></div>..."
+										className="glass-input"
 									/>
 								</div>
 
@@ -525,6 +527,7 @@ export function BannerMediaManager({
 										value={videoThumbnail}
 										onChange={(e) => setVideoThumbnail(e.target.value)}
 										placeholder="https://i.ibb.co/... (jpg, png, webp)"
+										className="glass-input"
 									/>
 								</div>
 

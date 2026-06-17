@@ -153,3 +153,129 @@ export async function setPasswordAction(
 		};
 	}
 }
+
+/**
+ * Отправляет OTP-код сброса пароля на email авторизованного пользователя.
+ * Капча не нужна — пользователь уже в системе.
+ * Rate-limit: 3 запроса / 10 мин на userId + 3 / 10 мин на IP.
+ */
+export async function sendPasswordResetOtpAction(): Promise<{
+	success?: boolean;
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id || !session.user.email) {
+			return { error: "Не авторизован" };
+		}
+
+		const { id: userId, email } = session.user;
+
+		// Rate-limit по userId
+		if (!allow(`pwd-reset-user:${userId}`, 3, 10 * 60_000)) {
+			return { error: "Слишком много запросов. Попробуйте через 10 минут." };
+		}
+
+		// Rate-limit по IP
+		const headersList = await headers();
+		const ip =
+			headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+			headersList.get("x-real-ip") ??
+			"unknown";
+
+		if (!allow(`pwd-reset-ip:${ip}`, 5, 10 * 60_000)) {
+			return { error: "Слишком много запросов с вашего IP. Попробуйте позже." };
+		}
+
+		// Генерируем 6-значный код, храним с префиксом чтобы не конфликтовать
+		// с обычными OTP-токенами авторизации для того же email
+		const code = Math.floor(100000 + Math.random() * 900000).toString();
+		const identifier = `pwd-reset:${email}`;
+		const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
+
+		await prisma.verificationToken.deleteMany({ where: { identifier } });
+		await prisma.verificationToken.create({
+			data: { identifier, token: code, expires },
+		});
+
+		await transporter.sendMail({
+			from: `"Linza" <${process.env.EMAIL_FROM}>`,
+			to: email,
+			subject: "Сброс пароля Linza",
+			html: `
+        <div style="font-family: sans-serif; padding: 20px; max-width: 400px;">
+          <h2>Сброс пароля</h2>
+          <p>Вы запросили сброс пароля. Введите этот код для подтверждения:</p>
+          <h1 style="letter-spacing: 8px; color: #3b82f6; font-size: 36px;">${code}</h1>
+          <p style="color: #888; font-size: 13px;">
+            Код действителен 10 минут.<br>
+            Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.
+            Ваш пароль останется без изменений.
+          </p>
+        </div>
+      `,
+		});
+
+		transporter.close();
+		return { success: true };
+	} catch (error) {
+		console.error("Ошибка отправки OTP сброса пароля:", error);
+		return { error: "Не удалось отправить код. Попробуйте позже." };
+	}
+}
+
+/**
+ * Проверяет OTP и сохраняет новый пароль.
+ * Токен удаляется сразу после проверки (одноразовый).
+ */
+export async function resetPasswordWithOtpAction(
+	code: string,
+	newPassword: string
+): Promise<{ success?: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id || !session.user.email) {
+			return { error: "Не авторизован" };
+		}
+
+		const { id: userId, email } = session.user;
+
+		if (newPassword.length < 8) {
+			return { error: "Пароль должен содержать минимум 8 символов" };
+		}
+
+		const identifier = `pwd-reset:${email}`;
+
+		const tokenRecord = await prisma.verificationToken.findFirst({
+			where: { identifier, token: code },
+		});
+
+		if (!tokenRecord) {
+			return { error: "Неверный код" };
+		}
+
+		if (tokenRecord.expires < new Date()) {
+			// Чистим просроченный токен
+			await prisma.verificationToken.deleteMany({ where: { identifier } });
+			return { error: "Код истёк. Запросите новый." };
+		}
+
+		const hash = await bcrypt.hash(newPassword, 10);
+
+		// Транзакция: удаляем токен и сохраняем пароль атомарно
+		await prisma.$transaction([
+			prisma.verificationToken.delete({
+				where: { identifier_token: { identifier, token: code } },
+			}),
+			prisma.user.update({
+				where: { id: userId },
+				data: { password: hash },
+			}),
+		]);
+
+		return { success: true };
+	} catch (error) {
+		console.error("Ошибка сброса пароля:", error);
+		return { error: "Ошибка сохранения пароля. Попробуйте снова." };
+	}
+}

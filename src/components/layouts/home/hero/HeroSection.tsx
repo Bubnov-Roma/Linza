@@ -11,9 +11,9 @@ interface HeroSectionProps {
 export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 	return (
 		<section className="container mx-auto pt-4 md:pt-10 px-4">
-			<div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_540px] gap-8 items-center bg-muted/30 dark:bg-muted/5 rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface">
+			<div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_540px] gap-4 md:gap-8 items-center rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface">
 				{/* Левая колонка — Текст и УТП */}
-				<div className="space-y-6 md:pr-4">
+				<div className="md:space-y-6 lg:space-y-8 md:pr-4 p-2 md:p-0">
 					<div className="space-y-4 xl:space-y-10">
 						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
 							Прокат фото- видеооборудования в Самаре
@@ -32,17 +32,17 @@ export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 					</p>
 
 					{/* Быстрые ссылки под УТП в стиле Telegram-интерфейсов */}
-					<div className="flex flex-wrap gap-2 pt-2">
-						<Button asChild size="lg" className="rounded-xl font-bold flex-1">
+					<div className="hidden md:flex flex-wrap gap-2 pt-2">
+						<Button asChild size="lg" className="rounded-2xl font-bold flex-1">
 							<Link href="/equipment">Смотреть каталог</Link>
 						</Button>
 						<Button
 							asChild
 							size="lg"
 							variant="secondary"
-							className="rounded-xl font-bold flex-1"
+							className="rounded-2xl font-bold flex-1"
 						>
-							<Link href="/studio">Смотреть студию</Link>
+							<Link href="/studio">Забронировать студию</Link>
 						</Button>
 					</div>
 				</div>
@@ -67,6 +67,19 @@ export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 							</Button>
 						</div>
 					) : null}
+				</div>
+				<div className="flex md:hidden flex-wrap gap-2 pt-2">
+					<Button asChild size="lg" className="rounded-2xl font-bold flex-1">
+						<Link href="/equipment">Смотреть каталог</Link>
+					</Button>
+					<Button
+						asChild
+						size="lg"
+						variant="secondary"
+						className="rounded-2xl font-bold flex-1"
+					>
+						<Link href="/studio">Забронировать студию</Link>
+					</Button>
 				</div>
 			</div>
 		</section>

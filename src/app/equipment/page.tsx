@@ -47,6 +47,11 @@ export async function generateMetadata({
 	const queryString = urlParams.toString();
 	const queryPath = queryString ? `?${queryString}` : "";
 
+	const ogImage =
+		currentSubcategory?.imageUrl ||
+		currentCategory?.imageUrl ||
+		"https://linzarental.ru/og-image.png";
+
 	return {
 		title,
 		description,
@@ -57,6 +62,13 @@ export async function generateMetadata({
 			title,
 			description,
 			url: `https://linzarental.ru/equipment${queryPath}`,
+			images: [
+				{
+					url: ogImage,
+					width: 1200,
+					height: 630,
+				},
+			],
 		},
 	};
 }

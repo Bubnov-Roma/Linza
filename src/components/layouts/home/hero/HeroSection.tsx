@@ -10,29 +10,31 @@ interface HeroSectionProps {
 
 export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 	return (
-		<section className="container mx-auto pt-4 md:pt-10 px-4">
-			<div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_540px] gap-4 md:gap-8 items-center rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface">
+		<section className="w-full pt-4 md:pt-10 px-4">
+			<div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,480px)] xl:grid-cols-[1fr_minmax(0,540px)] gap-4 md:gap-8 items-center rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface transition-all duration-300">
 				{/* Левая колонка — Текст и УТП */}
-				<div className="md:space-y-6 lg:space-y-8 md:pr-4 p-2 md:p-0">
+				<div className="md:space-y-6 lg:space-y-8 md:pr-4 px-2 pt-2 md:p-0">
 					<div className="space-y-4 xl:space-y-10">
 						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
 							Прокат фото- видеооборудования в Самаре
 						</span>
-						<h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black leading-[0.85] uppercase italic text-foreground tracking-tighter">
-							LINZA
-						</h1>
-						<h2 className="italic text-lg sm:text-xl md:text-2xl font-black text-muted-foreground tracking-wide mt-1">
-							Готовые решения для вашей съёмки
-						</h2>
+						<div className="flex max-[477px]:flex-row flex-col max-[477px]:gap-4 gap-2 max-[477px]:items-center items-start">
+							<h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black leading-[0.85] uppercase italic text-foreground tracking-tighter">
+								LINZA
+							</h1>
+							<h2 className="italic max-[477px]:text-sm text-lg sm:text-xl md:text-2xl font-black text-muted-foreground tracking-wide mt-0.5">
+								Готовые решения для вашей съёмки
+							</h2>
+						</div>
 					</div>
 
-					<p className="hidden md:block text-muted-foreground text-sm sm:text-base max-w-md leading-relaxed">
+					<p className="hidden md:block text-muted-foreground text-sm sm:text-base max-w-md leading-relaxed py-3">
 						Более 500 позиций фототехники и видеооборудования от проверенных
 						брендов + студия с готовыми сетапами.
 					</p>
 
 					{/* Быстрые ссылки под УТП в стиле Telegram-интерфейсов */}
-					<div className="hidden md:flex flex-wrap gap-2 pt-2">
+					<div className="hidden md:flex flex-wrap gap-2 pt-2 lg:pt-4">
 						<Button asChild size="lg" className="rounded-2xl font-bold flex-1">
 							<Link href="/equipment">Смотреть каталог</Link>
 						</Button>

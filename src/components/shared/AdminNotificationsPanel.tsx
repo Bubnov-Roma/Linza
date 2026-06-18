@@ -13,7 +13,7 @@ import {
 	getAdminNotificationsAction,
 	markAllNotificationsReadAction,
 	markNotificationsReadAction,
-} from "@/actions/admin-notification-actions";
+} from "@/actions/notification-actions";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,

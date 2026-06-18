@@ -7,7 +7,7 @@ import {
 	type Role,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { createAdminNotification } from "@/actions/admin-notification-actions";
+import { createAdminNotification } from "@/actions/notification-actions";
 import { auth } from "@/auth";
 import { encrypt } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";

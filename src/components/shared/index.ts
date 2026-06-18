@@ -1,5 +1,4 @@
 export * from "./AdminNotificationsPoller";
-export * from "./ApplicationStatusBadge";
 export * from "./BackButton";
 export * from "./BasePhoneInput";
 export * from "./booking/BlockedBanner";

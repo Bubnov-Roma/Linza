@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { pollAdminNotificationsAction } from "@/actions/admin-notification-actions";
+import { pollAdminNotificationsAction } from "@/actions/notification-actions";
 import {
 	getNotificationHref,
 	NOTIFICATION_LABELS,

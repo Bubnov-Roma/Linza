@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { createAdminNotification } from "@/actions/admin-notification-actions";
+import { createAdminNotification } from "@/actions/notification-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 

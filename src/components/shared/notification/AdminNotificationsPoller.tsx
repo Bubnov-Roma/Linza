@@ -8,7 +8,10 @@ import {
 	NOTIFICATION_LABELS,
 	POLL_INTERVAL,
 } from "@/constants";
-import { getSoundProfile, playNotificationSound } from "@/lib/use-admin-sound";
+import {
+	getSoundProfile,
+	playNotificationSound,
+} from "@/lib/use-notification-sound";
 import { useAdminNotificationsStore } from "@/store/use-admin-notifications.store";
 import type { AdminNotificationType } from "@/types";
 
@@ -26,7 +29,7 @@ interface Props {
 /**
  * Единый невизуальный поллер для всех admin-уведомлений.
  * Заменяет:
- *   - старый AdminNotificationsPoller (4 отдельных action-вызова)
+ *   - 4 отдельных action-вызова
  *   - use-admin-booking-polling (дублировал счётчик bookings)
  *
  * Монтируется один раз в root layout только для ADMIN/MANAGER.

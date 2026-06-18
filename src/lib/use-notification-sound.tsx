@@ -1,5 +1,6 @@
 "use client";
 
+import type { ClientNotificationEvent, ClientSoundSettings } from "@/store";
 import type { AdminNotificationType, SoundProfile } from "@/types";
 
 // ─── Параметры звука для каждого профиля ─────────────────────────────────────
@@ -115,4 +116,11 @@ export function getSoundProfile(
 	settings: Record<AdminNotificationType, SoundProfile>
 ): SoundProfile {
 	return settings[type] ?? "subtle";
+}
+
+export function getClientSoundProfile(
+	event: ClientNotificationEvent,
+	settings: ClientSoundSettings
+): SoundProfile {
+	return settings[event] ?? "subtle";
 }

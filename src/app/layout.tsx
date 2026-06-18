@@ -15,7 +15,7 @@ import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
 import {
 	AdminNotificationsPoller,
-	ClientChatsBridge,
+	ClientNotificationsPoller,
 } from "@/components/shared";
 import CookieBanner from "@/components/shared/CookieBanner";
 import { YandexMetrika } from "@/components/shared/YandexMetrika";
@@ -178,7 +178,7 @@ export default async function RootLayout({
 						/>
 					)}
 					{!isAdmin && user?.id && (
-						<ClientChatsBridge initialCount={clientUnreadChats} />
+						<ClientNotificationsPoller initialUnreadChats={clientUnreadChats} />
 					)}
 					<ApplicationInitializer
 						userId={session?.user?.id ?? null}

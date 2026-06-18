@@ -21,7 +21,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui";
 import { DEFAULT_SOUND_SETTINGS, NOTIFICATION_LABELS } from "@/constants";
-import { previewNotificationSound } from "@/lib/use-admin-sound";
+import { previewNotificationSound } from "@/lib/use-notification-sound";
 import { cn } from "@/lib/utils";
 import { useAdminNotificationsStore } from "@/store/use-admin-notifications.store";
 import type { AdminNotificationType, SoundProfile } from "@/types";

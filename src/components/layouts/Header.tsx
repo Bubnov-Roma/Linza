@@ -19,7 +19,7 @@ import { clientAutocompleteEquipmentAction } from "@/actions/autocomplete-action
 import { SearchPanel } from "@/components/core/search/SearchPanel";
 import { Logo } from "@/components/icons/Logo";
 import { ThemeIconButton } from "@/components/layouts/ThemeToggle";
-import { AdminNotificationsPanel } from "@/components/shared/AdminNotificationsPanel";
+import { AdminNotificationsPanel } from "@/components/shared/notification";
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
 import {
 	Button,

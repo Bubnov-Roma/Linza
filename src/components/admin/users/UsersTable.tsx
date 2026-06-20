@@ -737,6 +737,7 @@ export default function UsersTable({
 												status={user.application?.status}
 												onUpdate={() => refreshData()}
 												app={user.application}
+												userId={user.id}
 											/>
 										</TableCell>
 

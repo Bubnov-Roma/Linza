@@ -79,7 +79,7 @@ export function FavoriteSetEditor({
 		placeholderData: (prev) => prev,
 	});
 
-	// 🌟 РЕШЕНИЕ ПРОБЛЕМЫ: Вычисляем ID позиций из сета, которых нет в избранном
+	// Вычисляем ID позиций из сета, которых нет в избранном
 	const missingEquipmentIds = useMemo(() => {
 		if (!existingSet?.items) return [];
 		const favoriteIds = new Set(favorites.map((f) => f.equipmentId));
@@ -88,7 +88,7 @@ export function FavoriteSetEditor({
 			.filter((id) => !favoriteIds.has(id));
 	}, [existingSet, favorites]);
 
-	// 🌟 РЕШЕНИЕ ПРОБЛЕМЫ: Подгружаем данные о позициях каталога, которых нет в избранном
+	// Подгружаем данные о позициях каталога, которых нет в избранном
 	const { data: missingEquipment = [], isLoading: isMissingLoading } = useQuery(
 		{
 			queryKey: ["set-editor-missing-equipment", missingEquipmentIds],

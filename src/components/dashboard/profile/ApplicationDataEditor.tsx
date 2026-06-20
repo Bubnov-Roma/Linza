@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { type ClientFormValues, individualClientSchema } from "@/schemas";
-import { useApplicationStore } from "@/store";
+import { useApplicationStore } from "@/store/use-application.store";
 
 export function ApplicationDataEditor({
 	data,

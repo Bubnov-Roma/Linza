@@ -6,9 +6,14 @@ import { AppSidebarClient } from "./AppSidebarClient";
 interface Props {
 	isAdmin: boolean;
 	categories: DbCategory[];
+	initialUnreadChats?: number;
 }
 
-export async function AppSidebar({ isAdmin, categories }: Props) {
+export async function AppSidebar({
+	isAdmin,
+	categories,
+	initialUnreadChats,
+}: Props) {
 	const supportInfo = await getSupportInfo();
 
 	return (
@@ -17,6 +22,7 @@ export async function AppSidebar({ isAdmin, categories }: Props) {
 				isAdmin={isAdmin}
 				categories={categories}
 				supportInfo={supportInfo}
+				initialUnreadChats={initialUnreadChats}
 			/>
 			<SidebarRail />
 		</Sidebar>

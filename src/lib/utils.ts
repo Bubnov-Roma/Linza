@@ -83,9 +83,25 @@ export type Fmt =
 	| "datetime"
 	| "full"
 	| "full-datetime"
-	| "date-numeric";
+	| "date-numeric"
+	| "relative";
 
-export function clientTimeFormat(date: Date, fmt: Fmt): string {
+export function clientTimeFormat(date: Date, fmt: Fmt = "time") {
+	if (fmt === "relative") {
+		const now = new Date();
+		const diff = now.getTime() - date.getTime();
+		const minutes = Math.floor(diff / 60000);
+		const hours = Math.floor(diff / 3600000);
+		const days = Math.floor(diff / 86400000);
+
+		// Math.max(0, minutes) спасет, если время на сервере/клиенте немного разъехалось в минус
+		if (minutes < 1) return "олько что";
+		if (minutes < 60) return `${Math.max(0, minutes)}м назад`;
+		if (hours < 24) return `${hours}ч назад`;
+		if (days < 7) return `${days}д назад`;
+
+		return date.toLocaleDateString("ru-RU");
+	}
 	const timeOpts: Intl.DateTimeFormatOptions = {
 		hour: "2-digit",
 		minute: "2-digit",

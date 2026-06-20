@@ -14,7 +14,7 @@ import {
 import { UniversalClientForm } from "@/components/forms/client-forms/client-types/UniversalClientForm";
 import { Card } from "@/components/ui/card";
 import { type ClientFormValues, clientFormSchema } from "@/schemas";
-import { useApplicationStore } from "@/store";
+import { useApplicationStore } from "@/store/use-application.store";
 
 export const ClientForm = () => {
 	const submitSuccess = useApplicationStore((s) => s.submitSuccess);

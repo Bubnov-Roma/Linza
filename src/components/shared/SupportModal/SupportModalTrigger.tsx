@@ -33,7 +33,7 @@ export function SupportModalTrigger({
 					onClick={() => setOpen(true)}
 					variant="outline"
 					size="xl"
-					className={cn("rounded-full p-1", className)}
+					className={cn("rounded-full", className)}
 				>
 					<QuestionIcon
 						size={26}

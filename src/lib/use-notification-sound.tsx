@@ -1,6 +1,9 @@
 "use client";
 
-import type { ClientNotificationEvent, ClientSoundSettings } from "@/store";
+import type {
+	ClientNotificationEvent,
+	ClientSoundSettings,
+} from "@/store/use-client-notifications.store";
 import type { AdminNotificationType, SoundProfile } from "@/types";
 
 // ─── Параметры звука для каждого профиля ─────────────────────────────────────

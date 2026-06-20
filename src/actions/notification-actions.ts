@@ -26,6 +26,7 @@ export interface ClientNotificationResult {
 	applicationStatusChanged: {
 		newStatus: ApplicationStatus;
 		changedAt: string;
+		clarificationThreadId?: string | null;
 	} | null;
 	// Изменения статусов заказов (оба типа)
 	bookingStatusChanges: {
@@ -225,10 +226,11 @@ export async function pollClientNotificationsAction(
 		const [threads, application, bookings, studioBookings] = await Promise.all([
 			// Все треды клиента с сообщениями
 			prisma.supportThread.findMany({
-				where: { userId },
+				where: { userId, deletedByClientAt: null },
 				select: {
 					id: true,
 					subject: true,
+					clientReadAt: true,
 					messages: {
 						orderBy: { createdAt: "desc" },
 						take: 1,
@@ -260,18 +262,25 @@ export async function pollClientNotificationsAction(
 		]);
 
 		// Непрочитанные чаты (последнее сообщение от админа)
-		const unreadChats = threads.filter(
-			(t) => t.messages[0]?.isAdmin === true
-		).length;
+		const unreadChats = threads.filter((t) => {
+			const lastMsg = t.messages[0];
+			if (!lastMsg?.isAdmin) return false;
+			if (!t.clientReadAt) return true;
+			return new Date(lastMsg.createdAt) > new Date(t.clientReadAt);
+		}).length;
 
 		// Новые сообщения от админа с момента lastPolledAt
 		const newChatMessages = since
 			? threads
 					.map((t) => {
 						const message = t.messages[0];
-						if (!message?.isAdmin || new Date(message.createdAt) <= since) {
+						if (!message?.isAdmin) return null;
+						if (new Date(message.createdAt) <= since) return null;
+						if (
+							t.clientReadAt &&
+							new Date(message.createdAt) <= new Date(t.clientReadAt)
+						)
 							return null;
-						}
 
 						return {
 							threadId: t.id,
@@ -307,6 +316,20 @@ export async function pollClientNotificationsAction(
 					}
 				: null;
 
+		let clarificationThreadId: string | null = null;
+		if (applicationStatusChanged?.newStatus === "CLARIFICATION") {
+			const clarThread = await prisma.supportThread.findFirst({
+				where: {
+					userId,
+					deletedByClientAt: null,
+					messages: { some: { isAdmin: true } },
+				},
+				orderBy: { lastMessageAt: "desc" },
+				select: { id: true },
+			});
+			clarificationThreadId = clarThread?.id ?? null;
+		}
+
 		// Изменения статусов заказов оборудования
 		const bookingStatusChanges = bookings.map((b) => ({
 			bookingId: b.id,
@@ -326,7 +349,9 @@ export async function pollClientNotificationsAction(
 		return {
 			unreadChats,
 			newChatMessages,
-			applicationStatusChanged,
+			applicationStatusChanged: applicationStatusChanged
+				? { ...applicationStatusChanged, clarificationThreadId }
+				: null,
 			bookingStatusChanges,
 			studioBookingStatusChanges,
 		};

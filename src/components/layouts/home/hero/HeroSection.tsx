@@ -15,7 +15,7 @@ export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 				{/* Левая колонка — Текст и УТП */}
 				<div className="md:space-y-6 lg:space-y-8 md:pr-4 px-2 pt-2 md:p-0">
 					<div className="space-y-4 xl:space-y-10">
-						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
+						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
 							Прокат фото- видеооборудования в Самаре
 						</span>
 						<div className="flex max-[477px]:flex-row flex-col max-[477px]:gap-4 gap-2 max-[477px]:items-center items-start">

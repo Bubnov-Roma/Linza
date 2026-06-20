@@ -4,6 +4,7 @@ import { CaretLeftIcon, EnvelopeOpenIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
 import type { DbSupportThread } from "@/actions/support-actions";
+import { ClientTime } from "@/components/shared";
 import { Badge, Card } from "@/components/ui";
 import { CHATS_STATUS_COLORS, CHATS_STATUS_LABELS } from "@/constants";
 import { cn } from "@/lib/utils";
@@ -22,20 +23,6 @@ export default function AdminClientThreadsClient({
 	const getUnreadCount = (thread: DbSupportThread) => {
 		return thread.messages.filter((m) => !m.isAdmin && m.readBy.length === 0)
 			.length;
-	};
-
-	const formatDate = (date: Date) => {
-		const now = new Date();
-		const diff = now.getTime() - new Date(date).getTime();
-		const minutes = Math.floor(diff / 60000);
-		const hours = Math.floor(diff / 3600000);
-		const days = Math.floor(diff / 86400000);
-
-		if (minutes < 60) return `${minutes}м назад`;
-		if (hours < 24) return `${hours}ч назад`;
-		if (days < 7) return `${days}д назад`;
-
-		return new Date(date).toLocaleDateString("ru-RU");
 	};
 
 	return (
@@ -112,7 +99,7 @@ export default function AdminClientThreadsClient({
 										<div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
 											<span>{thread.messages.length} сообщений</span>
 											<span>•</span>
-											<span>{formatDate(thread.lastMessageAt)}</span>
+											<ClientTime iso={thread.lastMessageAt} fmt="date" />
 											<span>•</span>
 											<span>
 												{thread.platform === "WEBSITE" && "📱 Сайт"}

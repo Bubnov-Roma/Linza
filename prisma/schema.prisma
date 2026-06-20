@@ -802,7 +802,10 @@ model SupportThread {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   lastMessageAt     DateTime            @default(now())
-  contactInfo       String?   // email / telegram / phone клиента
+  contactInfo       String?             // email / telegram / phone клиента
+  clientReadAt      DateTime?           // когда клиент последний раз читал тред
+  deletedByClientAt DateTime?           // мягкое удаление клиентом
+  deletedByAdminAt  DateTime?           // мягкое удаление админом
 
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages          SupportMessage[]

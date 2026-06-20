@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -174,6 +175,7 @@ export default function ClientFavoritesPage() {
 	const [creatingSet, setCreatingSet] = useState(false);
 	const queryClient = useQueryClient();
 	const addItem = useCartStore((s) => s.addItem);
+	const router = useRouter();
 
 	// Undo-очередь: Map<favId, timeoutId>
 	const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -307,7 +309,6 @@ export default function ClientFavoritesPage() {
 
 	const isEmptyFavs = visibleFavorites.length === 0 && !favsLoading;
 	const isEmptySets = sets.length === 0 && !setsLoading;
-	const isEmptyFavsAndSets = isEmptySets && isEmptyFavs;
 
 	// Универсальный скелетон на этапе SSR и первоначального монтирования
 	if (!isMounted) {
@@ -342,15 +343,17 @@ export default function ClientFavoritesPage() {
 							Сохранённая техника и сеты
 						</p>
 					</div>
-					{activeTab === "sets" && !isEmptyFavs && (
-						<Button
-							onClick={() => setCreatingSet(true)}
-							className="rounded-full gap-2 shrink-0"
-							size="icon-lg"
-						>
-							<PlusIcon size={16} />
-						</Button>
-					)}
+					<Button
+						onClick={() => {
+							activeTab === "sets"
+								? setCreatingSet(true)
+								: router.push("/equipment");
+						}}
+						className="rounded-full gap-2 shrink-0"
+						size="icon-xl"
+					>
+						<PlusIcon size={16} />
+					</Button>
 				</div>
 
 				{/* Tabs */}
@@ -405,7 +408,7 @@ export default function ClientFavoritesPage() {
 							) : isEmptyFavs ? (
 								<EmptyState
 									icon={HeartIcon}
-									title="Пусто"
+									title="Нет избранного"
 									description="Сохраняйте любимую технику в избранное чтобы всегда иметь под рукой"
 									action={{
 										label: "Добавить избранное",
@@ -417,7 +420,6 @@ export default function ClientFavoritesPage() {
 									<AnimatePresence>
 										{visibleFavorites.map((fav) => {
 											const eq = fav.equipment;
-											// Если товар недоступен — показываем карточку-уведомление
 											if (!eq?.isAvailable) {
 												return (
 													<UnavailableFavoriteCard
@@ -461,25 +463,14 @@ export default function ClientFavoritesPage() {
 								</div>
 							) : (
 								<>
-									{isEmptySets && !isEmptyFavsAndSets && (
+									{isEmptySets && (
 										<EmptyState
 											icon={CardsThreeIcon}
-											title="Нет сетов"
-											description="Собирайте сеты из избранного под разные сценарии съемок"
+											title="Нет комплектов"
+											description="Создавайте компелкты под разные сценарии съемок"
 											action={{
-												label: "Создать сет",
+												label: "Собрать компелкт",
 												onClick: () => setCreatingSet(true),
-											}}
-										/>
-									)}
-									{isEmptyFavsAndSets && (
-										<EmptyState
-											icon={CardsThreeIcon}
-											title="Нет сетов"
-											description="Добавьте любимые позиции в избранное чтобы собрать из них сет"
-											action={{
-												label: "Найти избранное",
-												href: "/equipment",
 											}}
 										/>
 									)}

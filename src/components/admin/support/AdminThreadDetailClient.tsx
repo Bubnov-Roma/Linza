@@ -6,21 +6,24 @@ import {
 	LockIcon,
 	PaperPlaneTiltIcon,
 	PencilSimpleIcon,
+	TrashIcon,
 	WarningIcon,
 	XIcon,
 } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	closeSupportThreadAction,
 	type DbSupportThread,
+	deleteThreadByAdminAction,
 	editSupportMessageAction,
 	markSupportMessageAsReadAction,
 	pollSupportThreadAction,
 	reopenSupportThreadAction,
 	sendSupportMessageAction,
 } from "@/actions/support-actions";
-import { BackButton } from "@/components/shared";
+import { BackButton, ClientTime } from "@/components/shared";
 import { Badge, Button, Textarea } from "@/components/ui";
 import {
 	AlertDialog,
@@ -41,6 +44,8 @@ export default function AdminThreadDetailClient({
 }: {
 	initialThread: DbSupportThread;
 }) {
+	const router = useRouter();
+
 	const [thread, setThread] = useState(initialThread);
 	const [message, setMessage] = useState("");
 	const [isPending, startTransition] = useTransition();
@@ -110,7 +115,13 @@ export default function AdminThreadDetailClient({
 					...prev,
 					messages: [
 						...prev.messages,
-						{ ...resultMessage, isEdited: false, editedAt: null },
+						{
+							...resultMessage,
+							isEdited: false,
+							editedAt: null,
+							deletedByClientAt: null,
+							deletedByAdminAt: null,
+						},
 					],
 					status: "WAITING_FOR_CLIENT",
 					lastMessageAt: new Date(),
@@ -164,7 +175,6 @@ export default function AdminThreadDetailClient({
 		});
 	};
 
-	// ИЗМЕНЕНО: Нативный confirm убран, функция вызывается сразу из диалога
 	const handleCloseThread = () => {
 		startTransition(async () => {
 			const result = await closeSupportThreadAction(thread.id);
@@ -189,18 +199,15 @@ export default function AdminThreadDetailClient({
 		});
 	};
 
-	const formatTime = (date: Date) =>
-		new Date(date).toLocaleTimeString("ru-RU", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-
-	const formatDate = (date: Date) =>
-		new Date(date).toLocaleDateString("ru-RU", {
-			weekday: "short",
-			day: "numeric",
-			month: "short",
-		});
+	const handleAdminDelete = async () => {
+		const result = await deleteThreadByAdminAction(thread.id);
+		if (!result.success) {
+			toast.error(result.error);
+			return;
+		}
+		toast.success("Чат удалён");
+		router.push("/admin/support");
+	};
 
 	const unreadCount = thread.messages.filter(
 		(m) => !m.isAdmin && m.readBy.length === 0
@@ -210,14 +217,14 @@ export default function AdminThreadDetailClient({
 		<div className="container mx-auto max-w-4xl px-4 pt-10 pb-28 space-y-6 flex flex-col">
 			{/* Заголовок */}
 			<div className="space-y-4 shrink-0">
-				<div className="space-y-3">
-					<div className="flex flex-col items-start justify-between gap-4">
+				<div className="space-y-3 w-full">
+					<div className="flex flex-col md:flex-row items-start justify-between gap-4">
 						<div className="space-y-2 flex-1">
 							<h1 className="text-2xl font-bold gap-4">
 								<BackButton fallback="/admin/support" />
 								{thread.subject}
 							</h1>
-							<div className="flex flex-1 justify-between flex-col md:flex-row">
+							<div className="flex flex-1 justify-between flex-col md:flex-row space-y-2">
 								<div className="space-y-1 text-sm text-muted-foreground">
 									<p>
 										<strong>Клиент:</strong> {thread.user.name || "Без имени"} (
@@ -229,8 +236,9 @@ export default function AdminThreadDetailClient({
 										</p>
 									)}
 									<p>
-										<strong>Создано:</strong> {formatDate(thread.createdAt)} в{" "}
-										{formatTime(thread.createdAt)}
+										<strong>Создано:</strong>{" "}
+										<ClientTime iso={thread.createdAt} fmt="date" /> в{" "}
+										<ClientTime iso={thread.createdAt} fmt="time" />
 									</p>
 									<p>
 										<strong>Сообщений:</strong> {thread.messages.length}
@@ -242,7 +250,7 @@ export default function AdminThreadDetailClient({
 									</p>
 								</div>
 
-								<div className="flex md:flex-col items-end shrink-0 ml-auto gap-4">
+								<div className="flex md:flex-col items-center shrink-0 justify-between gap-4">
 									<Badge
 										className={cn(
 											"px-3 py-1 rounded-xl font-medium text-sm select-none",
@@ -259,28 +267,101 @@ export default function AdminThreadDetailClient({
 										{CHATS_STATUS_LABELS[thread.status] || thread.status}
 									</Badge>
 
-									{!isClosed ? (
+									<div className="flex gap-2">
+										{!isClosed ? (
+											<AlertDialog>
+												<AlertDialogTrigger asChild>
+													<Button
+														disabled={isPending}
+														variant="outline"
+														size="sm"
+														className="text-red-600 hover:text-red-600 hover:bg-red-500/10 border-red-300/30 shrink-0"
+													>
+														<CheckIcon size={14} weight="bold" />
+														Завершить
+													</Button>
+												</AlertDialogTrigger>
+												<AlertDialogContent className="glass-card">
+													<AlertDialogHeader>
+														<AlertDialogTitle>
+															Закрыть это обращение?
+														</AlertDialogTitle>
+														<AlertDialogDescription>
+															Диалог будет переведен в архив. Клиент больше не
+															сможет отправлять новые сообщения, пока вы не
+															возобновите тикет.
+														</AlertDialogDescription>
+													</AlertDialogHeader>
+													<AlertDialogFooter>
+														<AlertDialogCancel asChild>
+															<Button variant="outline">Отмена</Button>
+														</AlertDialogCancel>
+														<AlertDialogAction
+															asChild
+															onClick={handleCloseThread}
+														>
+															<Button variant="destructive">Закрыть</Button>
+														</AlertDialogAction>
+													</AlertDialogFooter>
+												</AlertDialogContent>
+											</AlertDialog>
+										) : (
+											<AlertDialog>
+												<AlertDialogTrigger asChild>
+													<Button
+														disabled={isPending}
+														variant="outline"
+														size="sm"
+														className="text-green-600 hover:text-green-600 hover:bg-green-500/10 border-green-300/30"
+													>
+														<ArrowClockwiseIcon size={14} weight="bold" />
+														Возобновить
+													</Button>
+												</AlertDialogTrigger>
+												<AlertDialogContent className="glass-card">
+													<AlertDialogHeader>
+														<AlertDialogTitle>
+															Переоткрыть это обращение?
+														</AlertDialogTitle>
+														<AlertDialogDescription>
+															Чат снова станет активным, и клиент сможет
+															продолжить общение с поддержкой.
+														</AlertDialogDescription>
+													</AlertDialogHeader>
+													<AlertDialogFooter>
+														<AlertDialogCancel asChild>
+															<Button variant="outline">Отмена</Button>
+														</AlertDialogCancel>
+														<AlertDialogAction
+															onClick={handleReopenThread}
+															asChild
+														>
+															<Button>Возобновить</Button>
+														</AlertDialogAction>
+													</AlertDialogFooter>
+												</AlertDialogContent>
+											</AlertDialog>
+										)}
 										<AlertDialog>
 											<AlertDialogTrigger asChild>
 												<Button
-													disabled={isPending}
 													variant="outline"
-													size="sm"
-													className="text-red-600 hover:text-red-600 hover:bg-red-500/10 border-red-300/30 shrink-0"
+													size="icon-sm"
+													className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-2"
+													title="Удалить чат"
 												>
-													<CheckIcon size={14} weight="bold" />
-													Завершить
+													<TrashIcon size={16} weight="duotone" />
 												</Button>
 											</AlertDialogTrigger>
 											<AlertDialogContent className="glass-card">
 												<AlertDialogHeader>
 													<AlertDialogTitle>
-														Закрыть это обращение?
+														Удалить это обращение?
 													</AlertDialogTitle>
 													<AlertDialogDescription>
-														Диалог будет переведен в архив. Клиент больше не
-														сможет отправлять новые сообщения, пока вы не
-														возобновите тикет.
+														Чат будет удален на странице администратора.
+														<br />
+														Клиент увидит, что чат был закрыт администратором.
 													</AlertDialogDescription>
 												</AlertDialogHeader>
 												<AlertDialogFooter>
@@ -289,50 +370,14 @@ export default function AdminThreadDetailClient({
 													</AlertDialogCancel>
 													<AlertDialogAction
 														asChild
-														onClick={handleCloseThread}
+														onClick={handleAdminDelete}
 													>
-														<Button variant="destructive">Закрыть</Button>
+														<Button variant="destructive">Удалить</Button>
 													</AlertDialogAction>
 												</AlertDialogFooter>
 											</AlertDialogContent>
 										</AlertDialog>
-									) : (
-										<AlertDialog>
-											<AlertDialogTrigger asChild>
-												<Button
-													disabled={isPending}
-													variant="outline"
-													size="sm"
-													className="text-green-600 hover:text-green-600 hover:bg-green-500/10 border-green-300/30"
-												>
-													<ArrowClockwiseIcon size={14} weight="bold" />
-													Возобновить
-												</Button>
-											</AlertDialogTrigger>
-											<AlertDialogContent className="glass-card">
-												<AlertDialogHeader>
-													<AlertDialogTitle>
-														Переоткрыть это обращение?
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														Чат снова станет активным, и клиент сможет
-														продолжить общение с поддержкой.
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel asChild>
-														<Button variant="outline">Отмена</Button>
-													</AlertDialogCancel>
-													<AlertDialogAction
-														onClick={handleReopenThread}
-														asChild
-													>
-														<Button>Возобновить</Button>
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
-									)}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -342,8 +387,7 @@ export default function AdminThreadDetailClient({
 						<div className="bg-red-500/10 border border-red-300/30 rounded-lg p-3 flex items-center gap-2 text-sm text-red-700/80">
 							<WarningIcon size={16} weight="bold" className="shrink-0" />
 							<span>
-								<strong>Требует вашего ответа!</strong> Клиент ждёт ответ
-								поддержки.
+								<strong>Клиент ждёт ответ поддержки.</strong>
 							</span>
 						</div>
 					)}
@@ -431,7 +475,7 @@ export default function AdminThreadDetailClient({
 										)}
 
 										<div className="flex items-center gap-2 text-xs text-muted-foreground">
-											<span>{formatTime(msg.createdAt)}</span>
+											<ClientTime iso={msg.createdAt} fmt="time" />
 											{msg.isEdited && (
 												<span className="text-muted-foreground/60 italic">
 													изменено

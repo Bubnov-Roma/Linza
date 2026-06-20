@@ -25,7 +25,7 @@ export const StudioSection = async ({
 				{/* Левая колонка — Текст и УТП студии */}
 				<div className="space-y-6 pt-1 md:pr-4">
 					<div className="space-y-4 xl:space-y-10 ">
-						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
+						<span className="inline-flex items-center justify-center text-center gap-2 px-3 py-1 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider bg-muted-foreground/5 dark:bg-primary/10 text-foreground dark:text-primary border border-foreground/10 dark:border-primary/20">
 							Профессиональная студия в Самаре
 						</span>
 						<h2 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black leading-[0.85] uppercase italic text-foreground tracking-tighter">

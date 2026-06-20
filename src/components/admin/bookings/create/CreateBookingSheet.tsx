@@ -53,7 +53,7 @@ import {
 	combineDateAndTime,
 	fmtRub,
 } from "@/lib/utils";
-import { useSiteSettingsStore } from "@/store";
+import { useSiteSettingsStore } from "@/store/use-site-settings.store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

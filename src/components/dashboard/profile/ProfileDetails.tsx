@@ -3,6 +3,7 @@
 import {
 	ArrowClockwiseIcon,
 	ArrowLeftIcon,
+	BellIcon,
 	EnvelopeIcon,
 	EnvelopeOpenIcon,
 	ImageIcon,
@@ -27,6 +28,7 @@ import {
 	updateUserFieldAction,
 } from "@/actions/user-actions";
 import { ApplicationDataEditor } from "@/components/dashboard/profile/ApplicationDataEditor";
+import { ClientNotificationSoundSettings } from "@/components/dashboard/profile/ClientNotificationSoundSettings";
 import { VerificationBadge } from "@/components/forms";
 import { ThemeCard } from "@/components/layouts/ThemeToggle";
 import {
@@ -51,7 +53,7 @@ import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { ClientFormValues } from "@/schemas";
 import { emailSchema } from "@/schemas";
-import { useApplicationStore } from "@/store";
+import { useApplicationStore } from "@/store/use-application.store";
 import { getClientDisplayData } from "@/utils/client-data.utils";
 import { PasswordSection } from "./PasswordSection";
 
@@ -331,10 +333,16 @@ export function ProfileDetails({
 			{/* ── Settings tab ─────────────────────────────────────────────── */}
 			{activeTab === "settings" && (
 				<div className="space-y-4 animate-in fade-in duration-200">
+					{/* Theme */}
 					<SectionCard icon={<MonitorIcon size={14} />} title="Тема интерфейса">
 						<div className="p-5">
 							<ThemeCard />
 						</div>
+					</SectionCard>
+
+					{/* Notification sound */}
+					<SectionCard icon={<BellIcon size={14} />} title="Уведомления">
+						<ClientNotificationSoundSettings />
 					</SectionCard>
 
 					{/* Nickname */}
@@ -419,7 +427,7 @@ export function ProfileDetails({
 						</p>
 					</SectionCard>
 
-					{/* Безопасность */}
+					{/* Password */}
 					<SectionCard icon={<LockIcon size={14} />} title="Безопасность">
 						<div className="px-5 py-4">
 							<PasswordSection

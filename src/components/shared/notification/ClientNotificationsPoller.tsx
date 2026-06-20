@@ -3,22 +3,12 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { pollClientNotificationsAction } from "@/actions/notification-actions";
-import { VERIFICATION_CONFIG } from "@/constants";
+import { BOOKING_STATUS_LABELS, VERIFICATION_CONFIG } from "@/constants";
 import {
 	getClientSoundProfile,
 	playNotificationSound,
 } from "@/lib/use-notification-sound";
 import { useClientNotificationsStore } from "@/store/use-client-notifications.store";
-
-const BOOKING_STATUS_LABELS: Record<string, string> = {
-	PENDING_REVIEW: "На проверке",
-	WAIT_PAYMENT: "Ожидает оплаты",
-	READY_TO_RENT: "Готов к выдаче",
-	ACTIVE: "Активен",
-	COMPLETED: "Завершён",
-	CANCELLED: "Отменён",
-	EXPIRED: "Истёк",
-};
 
 interface Props {
 	initialUnreadChats: number;
@@ -30,6 +20,7 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 	const {
 		setUnreadChats,
 		setHasNewApplicationStatus,
+		setApplicationStatusNotification,
 		addBookingChanges,
 		setLastPolledAt,
 		lastPolledAt,
@@ -39,7 +30,6 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 	const lastPolledAtRef = useRef<string | null>(lastPolledAt);
 	const isFirstRunRef = useRef(true);
 
-	// Инициализируем счётчик чатов серверным значением
 	useEffect(() => {
 		setUnreadChats(initialUnreadChats);
 	}, [initialUnreadChats, setUnreadChats]);
@@ -52,10 +42,8 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 					lastPolledAtRef.current
 				);
 
-				// Всегда обновляем счётчик чатов
 				setUnreadChats(result.unreadChats);
 
-				// Первый запуск — только baseline, без тостов и звуков
 				if (isFirstRunRef.current) {
 					isFirstRunRef.current = false;
 					const now = new Date().toISOString();
@@ -64,7 +52,7 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 					return;
 				}
 
-				// ── Новые сообщения в чатах ──────────────────────────────────────
+				// ── Новые сообщения в чатах (только звук + тост, бейдж не в панели) ─
 				if (result.newChatMessages.length > 0) {
 					const profile = getClientSoundProfile("chatMessage", soundSettings);
 					playNotificationSound(profile);
@@ -86,18 +74,28 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 				// ── Изменение статуса анкеты ─────────────────────────────────────
 				if (result.applicationStatusChanged) {
 					setHasNewApplicationStatus(true);
+					setApplicationStatusNotification({
+						newStatus: result.applicationStatusChanged.newStatus,
+						changedAt: result.applicationStatusChanged.changedAt,
+						clarificationThreadId:
+							result.applicationStatusChanged.clarificationThreadId ?? null,
+					});
+
 					const profile = getClientSoundProfile(
 						"applicationStatus",
 						soundSettings
 					);
 					playNotificationSound(profile);
 
-					const statusLabel =
-						VERIFICATION_CONFIG?.[result.applicationStatusChanged.newStatus] ??
-						result.applicationStatusChanged.newStatus;
+					const statusConfig =
+						VERIFICATION_CONFIG?.[
+							result.applicationStatusChanged
+								.newStatus as keyof typeof VERIFICATION_CONFIG
+						];
 
 					toast("Статус анкеты изменён", {
-						description: statusLabel.description,
+						description:
+							statusConfig?.label ?? result.applicationStatusChanged.newStatus,
 						duration: 8000,
 						action: {
 							label: "Перейти",
@@ -145,7 +143,7 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 				lastPolledAtRef.current = now;
 				setLastPolledAt(now);
 			} catch {
-				// Сетевые ошибки — молча пропускаем
+				// ignore
 			}
 		};
 
@@ -155,6 +153,7 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 	}, [
 		setUnreadChats,
 		setHasNewApplicationStatus,
+		setApplicationStatusNotification,
 		addBookingChanges,
 		setLastPolledAt,
 	]);

@@ -17,7 +17,7 @@ import {
 	Button,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { useUnsavedChanges } from "@/store";
+import { useUnsavedChanges } from "@/store/unsaved-changes.store";
 
 interface SignOutButtonProps {
 	className?: string;

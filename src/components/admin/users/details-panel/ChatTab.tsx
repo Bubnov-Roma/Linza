@@ -15,6 +15,7 @@ import {
 	getClientSupportThreadsAction,
 } from "@/actions/support-actions";
 import { AdminNewThreadModal } from "@/components/admin/support/AdminNewThreadModal";
+import { ClientTime } from "@/components/shared";
 import { Badge, Button } from "@/components/ui";
 import { CHATS_STATUS_COLORS, CHATS_STATUS_LABELS } from "@/constants";
 import { cn } from "@/lib/utils";
@@ -23,19 +24,6 @@ interface ChatTabProps {
 	userId: string;
 	userName: string | null;
 	userEmail: string | null;
-}
-
-function formatDate(date: Date) {
-	const now = new Date();
-	const diff = now.getTime() - new Date(date).getTime();
-	const minutes = Math.floor(diff / 60000);
-	const hours = Math.floor(diff / 3600000);
-	const days = Math.floor(diff / 86400000);
-
-	if (minutes < 60) return `${minutes}м назад`;
-	if (hours < 24) return `${hours}ч назад`;
-	if (days < 7) return `${days}д назад`;
-	return new Date(date).toLocaleDateString("ru-RU");
 }
 
 export function ChatTab({ userId, userName, userEmail }: ChatTabProps) {
@@ -182,7 +170,7 @@ export function ChatTab({ userId, userName, userEmail }: ChatTabProps) {
 											{/* Мета */}
 											<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
 												<ClockIcon size={10} />
-												<span>{formatDate(thread.lastMessageAt)}</span>
+												<ClientTime iso={thread.lastMessageAt} fmt="date" />
 												<span>·</span>
 												<ChatTeardropDotsIcon size={10} />
 												<span>{thread.messages.length}</span>

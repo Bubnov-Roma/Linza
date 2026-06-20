@@ -96,27 +96,22 @@ export function BookingDetailClient({
 			{/* ── Основная сетка ── */}
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 				{/* ЛЕВАЯ КОЛОНКА: Статус, Период, Действия */}
-				{/* <div className="lg:col-span-7 space-y-6"> */}
 				<aside className="lg:col-span-5 lg:sticky h-fit lg:top-20 space-y-6 order-1">
 					{/* Блок статуса со Stepper */}
 					<div className="card-surface overflow-hidden border border-foreground/5">
 						<button
 							type="button"
 							onClick={() => setIsStatusExpanded(!isStatusExpanded)}
-							className="w-full px-6 py-5 flex items-center justify-between hover:bg-muted-foreground/20 transition-colors"
+							className="cursor-pointer w-full px-6 py-5 flex items-center justify-between hover:bg-secondary/20 transition-colors"
 						>
-							<div className="flex items-center gap-4 text-left">
+							<div className="cursor-pointer flex items-center gap-4 text-left">
 								<div
 									className={cn(
 										"w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0",
 										BOOKING_STATUS_STYLES[status]
 									)}
 								>
-									{isCancelled ? (
-										<XIcon size={20} />
-									) : (
-										<CheckIcon size={20} className="animate-pulse" />
-									)}
+									{isCancelled ? <XIcon size={20} /> : <CheckIcon size={20} />}
 								</div>
 								<div>
 									<p className="text-sm font-bold uppercase tracking-tight">
@@ -164,21 +159,23 @@ export function BookingDetailClient({
 																isDone
 																	? "bg-emerald-500 border-emerald-500 text-white"
 																	: isCurrent
-																		? "bg-background border-primary text-primary"
+																		? "bg-background border-primary-accent text-primary-accent"
 																		: "bg-background border-foreground/10 text-muted-foreground/20"
 															)}
 														>
 															{isDone ? (
 																<CheckIcon size={14} strokeWidth={3} />
 															) : (
-																<div className="w-1.5 h-1.5 rounded-full bg-current" />
+																<div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
 															)}
 														</div>
 														<div>
 															<p
 																className={cn(
 																	"text-sm font-bold",
-																	isCurrent ? "text-primary" : "text-foreground"
+																	isCurrent
+																		? "text-foreground/80"
+																		: "text-muted-foreground"
 																)}
 															>
 																{step.label}
@@ -310,7 +307,7 @@ export function BookingDetailClient({
 						<button
 							type="button"
 							onClick={() => setIsEquipExpanded(!isEquipExpanded)}
-							className="w-full px-6 py-5 flex items-center justify-between hover:bg-muted-foreground/20 transition-colors"
+							className="w-full px-6 py-5 flex items-center justify-between hover:bg-secondary/20 transition-colors"
 						>
 							<div className="flex gap-2">
 								<p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

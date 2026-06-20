@@ -21,7 +21,7 @@ import {
 	DrawerTitle,
 } from "@/components/ui";
 import { clampTime, cn, generateTimeSlots } from "@/lib/utils";
-import { useSiteSettingsStore } from "@/store";
+import { useSiteSettingsStore } from "@/store/use-site-settings.store";
 
 export interface RentalPeriodValue {
 	startDate: Date;

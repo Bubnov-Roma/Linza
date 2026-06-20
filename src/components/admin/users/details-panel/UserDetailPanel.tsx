@@ -29,6 +29,7 @@ import {
 	updateApplicationStatusAction,
 	updateUserRoleAction,
 } from "@/actions/client-application-actions";
+import { setStatusClarificationWithThreadAction } from "@/actions/support-actions";
 import { AppStatusBadge } from "@/components/admin/users/details-panel/AppStatusBadge";
 import { AuditTab } from "@/components/admin/users/details-panel/AuditTab";
 import { ChatTab } from "@/components/admin/users/details-panel/ChatTab";
@@ -104,10 +105,14 @@ export function UserDetailPanel({
 	);
 	const [comments, setComments] = useState<UserComment[]>([]);
 	const [isPending, startTransition] = useTransition();
+	const [currentAppStatus, setCurrentAppStatus] = useState(
+		user?.application?.status ?? null
+	);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <.>
 	useEffect(() => {
 		if (user && open) {
+			setCurrentAppStatus(user.application?.status ?? null);
 			setPermissions(user.permissions ?? {});
 
 			const application = user.application;
@@ -118,6 +123,7 @@ export function UserDetailPanel({
 							onUpdate({
 								application: { ...application, status: "REVIEWING" },
 							});
+							setCurrentAppStatus("REVIEWING");
 						}
 					}
 				);
@@ -153,7 +159,7 @@ export function UserDetailPanel({
 
 	// Перехват закрытия
 	const handleOpenChange = (newOpen: boolean) => {
-		if (!newOpen && user.application?.status === "REVIEWING") {
+		if (!newOpen && currentAppStatus === "REVIEWING") {
 			setShowReviewDialog(true);
 		} else {
 			onOpenChange(newOpen);
@@ -163,10 +169,39 @@ export function UserDetailPanel({
 	// Обработка финального решения по ревью
 	const handleReviewSubmit = () => {
 		if (!reviewStatusAction || !user.application?.id) return;
+
+		if (currentAppStatus !== "REVIEWING") {
+			onOpenChange(false);
+			return;
+		}
 		startTransition(async () => {
 			const userApp = user.application;
 			const userAppId = userApp?.id;
 			if (userApp && userAppId) {
+				if (reviewStatusAction === "CLARIFICATION") {
+					if (!reviewMessage.trim()) {
+						toast.error("Напишите уточняющий вопрос");
+						return;
+					}
+					const res = await setStatusClarificationWithThreadAction({
+						applicationId: userAppId,
+						userId: user.id,
+						question: reviewMessage,
+					});
+					if (!res.success) {
+						toast.error(res.error);
+						return;
+					}
+					toast.success("Статус изменён, вопрос отправлен клиенту");
+					const newStatus: ApplicationStatus = "CLARIFICATION";
+					setCurrentAppStatus(newStatus);
+					onUpdate({
+						application: { ...userApp, status: newStatus, id: userAppId },
+					});
+					setShowReviewDialog(false);
+					onOpenChange(false);
+					return;
+				}
 				const res = await updateApplicationStatusAction(
 					userAppId,
 					reviewStatusAction,
@@ -174,6 +209,7 @@ export function UserDetailPanel({
 				);
 				if (res.success) {
 					toast.success("Статус анкеты обновлен");
+					setCurrentAppStatus(reviewStatusAction);
 					onUpdate({
 						application: {
 							...userApp,
@@ -304,9 +340,15 @@ export function UserDetailPanel({
 
 									{/* Read-Only Бейджи (Управление перенесено в Досье) */}
 									<AppStatusBadge
-										status={user.application?.status || "NO_APPLICATION"}
-										onUpdate={onUpdate}
+										status={currentAppStatus || "NO_APPLICATION"}
+										onUpdate={(updated) => {
+											if (updated.application?.status) {
+												setCurrentAppStatus(updated.application.status);
+											}
+											onUpdate(updated);
+										}}
 										app={user.application}
+										userId={user.id}
 									/>
 									{currentDiscount && (
 										<DiscountField
@@ -595,7 +637,12 @@ export function UserDetailPanel({
 							Выйти без сохранения
 						</Button>
 						<Button
-							disabled={!reviewStatusAction || isPending}
+							disabled={
+								!reviewStatusAction ||
+								isPending ||
+								(reviewStatusAction === "CLARIFICATION" &&
+									!reviewMessage.trim())
+							}
 							onClick={handleReviewSubmit}
 							className="flex-1"
 						>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getAllSupportThreadsAction } from "@/actions/support-actions";
+import { getAdminAllSupportThreadsAction } from "@/actions/support-actions";
 import { auth } from "@/auth";
 import AdminSupportListClient from "@/components/admin/support/AdminSupportListClient";
 
@@ -16,7 +16,7 @@ export default async function AdminSupportPage() {
 		redirect("/");
 	}
 
-	const threads = await getAllSupportThreadsAction();
+	const threads = await getAdminAllSupportThreadsAction();
 
 	return (
 		<div className="min-h-screen bg-background">

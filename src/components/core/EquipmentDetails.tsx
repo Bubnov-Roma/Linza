@@ -49,8 +49,8 @@ import {
 	combineDateAndTime,
 	fmtRub,
 } from "@/lib/utils";
-import { useSiteSettingsStore } from "@/store";
 import { useCartStore } from "@/store/use-cart.store";
+import { useSiteSettingsStore } from "@/store/use-site-settings.store";
 
 function MD({ children }: { children: string | null | undefined }) {
 	if (!children) return null;

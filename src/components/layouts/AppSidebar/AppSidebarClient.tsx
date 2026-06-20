@@ -3,6 +3,7 @@
 import {
 	CaretRightIcon,
 	ChatCenteredTextIcon,
+	ChatsCircleIcon,
 	EnvelopeSimpleIcon,
 	FilmSlateIcon,
 	HeadsetIcon,
@@ -17,7 +18,7 @@ import {
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { Logo, VkLogoIcon } from "@/components/icons";
 import { CategoryNavItem } from "@/components/layouts/AppSidebar/CategoryNavItem";
@@ -47,7 +48,8 @@ import { getCategoryIcon } from "@/constants";
 import { ADMIN_NAV } from "@/constants/navigation";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";
-import { useAdminNotificationsStore } from "@/store";
+import { useAdminNotificationsStore } from "@/store/use-admin-notifications.store";
+import { useClientNotificationsStore } from "@/store/use-client-notifications.store";
 
 interface Props {
 	isAdmin: boolean;
@@ -59,6 +61,7 @@ interface Props {
 		address: string;
 		email: string;
 	};
+	initialUnreadChats?: number | undefined;
 }
 
 const containerVariants = {
@@ -91,11 +94,25 @@ const itemVariants: Variants = {
 	},
 };
 
-export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
+export function AppSidebarClient({
+	isAdmin,
+	categories,
+	supportInfo,
+	initialUnreadChats,
+}: Props) {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const currentCategory = searchParams.get("category");
 	const currentSubcategory = searchParams.get("subcategory");
+
+	const unreadChats = useClientNotificationsStore((s) => s.unreadChats);
+
+	const setUnreadChats = useClientNotificationsStore((s) => s.setUnreadChats);
+
+	useEffect(() => {
+		if (!isAdmin && initialUnreadChats !== undefined)
+			setUnreadChats(initialUnreadChats);
+	}, [initialUnreadChats, isAdmin, setUnreadChats]);
 
 	const isAllEquipment = pathname === "/equipment" && !currentCategory;
 
@@ -117,7 +134,7 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 	const supportChannels = [
 		{
 			id: "chat",
-			label: "Чат",
+			label: "Новый чат",
 			icon: ChatCenteredTextIcon,
 			action: () => setIsChatOpen(true),
 			isLink: false,
@@ -166,7 +183,27 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 					},
 				]
 			: []),
+		{
+			id: "chats",
+			label: "Мои чаты",
+			icon: ChatsCircleIcon,
+			href: "/dashboard/support",
+			isLink: true,
+			badge: unreadChats,
+		},
 	];
+
+	const getAdminNavBadge = (href: string): string | undefined => {
+		if (href === "/admin/bookings")
+			return pendingBookings > 0 ? String(pendingBookings) : undefined;
+		if (href === "/admin/users")
+			return pendingApps > 0 ? String(pendingApps) : undefined;
+		if (href === "/admin/studio")
+			return pendingStudio > 0 ? String(pendingStudio) : undefined;
+		if (href === "/admin/support")
+			return pendingChats > 0 ? String(pendingChats) : undefined;
+		return undefined;
+	};
 
 	const pendingBookings = useAdminNotificationsStore((s) => s.pendingBookings);
 	const pendingApps = useAdminNotificationsStore((s) => s.pendingApps);
@@ -634,6 +671,9 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 												/>
 											</div>
 											<CollapseLabel text="Поддержка" />
+											{unreadChats > 0 && (
+												<span className="absolute top-1 right-2 flex h-2.5 min-w-2.5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border border-sidebar shadow-sm animate-in zoom-in px-1" />
+											)}
 										</button>
 									</SidebarMenuButton>
 
@@ -645,7 +685,7 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 												initial="hidden"
 												animate="visible"
 												exit="hidden"
-												className="fixed left-3 top-19 rounded-full w-14 z-50 flex flex-col-reverse items-center gap-2.5 pb-4 pointer-events-auto backdrop-blur-xs bg-sidebar/60"
+												className="fixed left-3 top-3 rounded-full w-14 z-50 flex flex-col-reverse items-center gap-2.5 pb-4 pointer-events-auto backdrop-blur-xs bg-sidebar/60"
 											>
 												{supportChannels.map((channel) => {
 													const Icon = channel.icon;
@@ -664,6 +704,12 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 																	weight="fill"
 																	className="transition-transform duration-200 group-hover/speeddial:rotate-6"
 																/>
+																{channel.badge !== undefined &&
+																	channel.badge > 0 && (
+																		<span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border border-sidebar shadow-md animate-in zoom-in px-1">
+																			{channel.badge}
+																		</span>
+																	)}
 															</div>
 															<span className="mt-1 text-[9px] font-black tracking-tight text-muted-foreground/90 group-hover/speeddial:text-foreground px-1 rounded truncate max-w-16 text-center">
 																{channel.label}
@@ -801,21 +847,7 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 										? pathname === "/admin"
 										: pathname.startsWith(item.href);
 
-								const getNavBadge = (href: string): string | undefined => {
-									if (href === "/admin/bookings")
-										return pendingBookings > 0
-											? String(pendingBookings)
-											: undefined;
-									if (href === "/admin/users")
-										return pendingApps > 0 ? String(pendingApps) : undefined;
-									if (href === "/admin/studio")
-										return pendingStudio > 0
-											? String(pendingStudio)
-											: undefined;
-									if (href === "/admin/support")
-										return pendingChats > 0 ? String(pendingChats) : undefined;
-									return undefined;
-								};
+								const badge = getAdminNavBadge(item.href) || "";
 
 								return (
 									<SidebarMenuItem key={item.title}>
@@ -854,9 +886,9 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 														<span className="font-medium text-base truncate ml-3 flex-1 text-left">
 															{item.title}
 														</span>
-														{getNavBadge(item.href) && (
+														{badge && (
 															<span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold bg-primary text-primary-foreground border border-primary/20 px-2">
-																{getNavBadge(item.href)}
+																{badge}
 															</span>
 														)}
 													</>
@@ -864,9 +896,9 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 
 												{isCollapsed && <CollapseLabel text={item.title} />}
 
-												{getNavBadge(item.href) && isCollapsed && (
+												{badge && isCollapsed && (
 													<span className="absolute top-1.5 right-1.5 flex h-5 min-w-5 px-0.5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground animate-in zoom-in">
-														{getNavBadge(item.href)}
+														{badge}
 													</span>
 												)}
 											</Link>
@@ -886,7 +918,7 @@ export function AppSidebarClient({ isAdmin, categories, supportInfo }: Props) {
 			</SidebarContent>
 
 			{/* ── FOOTER ── */}
-			<SidebarFooter className="p-4 mx-auto">
+			<SidebarFooter className="p-4 bg-transparent!">
 				<UserMenu isAdmin={isAdmin} variant="sidebar" />
 			</SidebarFooter>
 			<SupportModal

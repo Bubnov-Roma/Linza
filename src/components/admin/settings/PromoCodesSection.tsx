@@ -9,8 +9,6 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import type { DiscountType } from "@prisma/client";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -21,6 +19,7 @@ import {
 	resetPromoCodeUsageAction,
 	updatePromoCodeAction,
 } from "@/actions/promo-code-actions";
+import { ClientTime } from "@/components/shared";
 import {
 	Badge,
 	Button,
@@ -45,11 +44,6 @@ import { fmtRub } from "@/lib/utils";
 
 function formatValue(type: DiscountType, value: number) {
 	return type === "PERCENT" ? `${value}%` : `${fmtRub(value)}`;
-}
-
-function formatDate(iso: string | null) {
-	if (!iso) return "—";
-	return format(new Date(iso), "dd MMM yyyy", { locale: ru });
 }
 
 function usageColor(used: number, limit: number | null) {
@@ -345,8 +339,18 @@ function PromoRow({
 						{promo.usageLimit !== null ? ` / ${promo.usageLimit}` : " / ∞"}
 					</span>
 					{(promo.validFrom || promo.validUntil) && (
-						<span>
-							{formatDate(promo.validFrom)} — {formatDate(promo.validUntil)}
+						<span className="flex items-center gap-1">
+							{promo.validFrom ? (
+								<ClientTime iso={promo.validFrom} fmt="date" />
+							) : (
+								"-"
+							)}
+							<span>-</span>
+							{promo.validUntil ? (
+								<ClientTime iso={promo.validUntil} fmt="date" />
+							) : (
+								"—"
+							)}
 						</span>
 					)}
 					{promo.creatorName && <span>Создан: {promo.creatorName}</span>}

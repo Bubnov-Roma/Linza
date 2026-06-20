@@ -14,7 +14,8 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { useApplicationStore } from "@/store";
+import { useApplicationStore } from "@/store/use-application.store";
+import { useClientNotificationsStore } from "@/store/use-client-notifications.store";
 
 interface UserMenuProps {
 	isAdmin: boolean;
@@ -27,6 +28,14 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const { state, isMobile } = useSidebar();
 	const isCollapsed = state === "collapsed" && !isMobile;
+
+	const hasClientNotifs = useClientNotificationsStore(
+		(s) =>
+			!isAdmin &&
+			(s.unreadChats > 0 ||
+				s.hasNewApplicationStatus ||
+				s.unseenBookingChanges.length > 0)
+	);
 
 	const storedDisplayName = useApplicationStore((s) => s.displayName);
 	const avatarUrl = user?.image;
@@ -71,7 +80,7 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 				<button
 					type="button"
 					onClick={() => setIsOpen(!isOpen)}
-					className="relative w-9 h-9 rounded-xl overflow-hidden border transition-all active:scale-90"
+					className="relative w-12 h-12 rounded-xl overflow-hidden border border-muted-foreground/20! transition-all active:scale-90"
 					style={{
 						borderColor: isOpen
 							? "hsl(var(--primary) / 0.7)"
@@ -91,7 +100,9 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 							{nameInitial.charAt(0).toUpperCase()}
 						</div>
 					)}
-					<span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
+					{hasClientNotifs && !isAdmin && (
+						<span className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-primary border-2 border-muted-foreground animate-pulse" />
+					)}
 				</button>
 			</UserMenuDropdown>
 		);
@@ -137,9 +148,9 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 					<SidebarMenuButton
 						tooltip="Личный кабинет"
 						size="lg"
-						className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+						className="relative cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 					>
-						<div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 mx-auto">
+						<div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 mx-auto">
 							{avatarUrl ? (
 								<Image
 									src={avatarUrl}
@@ -153,8 +164,10 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 									{nameInitial.charAt(0).toUpperCase()}
 								</div>
 							)}
+							{hasClientNotifs && !isAdmin && (
+								<span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-muted-foreground animate-pulse" />
+							)}
 						</div>
-						{/* <span className="absolute bottom-0 right-1 top-1 h-2 w-2 rounded-full bg-green-500 border border-background" /> */}
 						{!isCollapsed && (
 							<>
 								<div className="grid flex-1 text-left text-sm leading-tight ml-2">

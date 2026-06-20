@@ -66,7 +66,7 @@ import type {
 	OwnershipType,
 } from "@/core/domain/entities/Equipment";
 import { cn, fmtRub } from "@/lib/utils";
-import { useUnsavedChanges } from "@/store";
+import { useUnsavedChanges } from "@/store/unsaved-changes.store";
 
 interface EditMode {
 	mode: "edit";

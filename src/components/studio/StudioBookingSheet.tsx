@@ -43,7 +43,7 @@ import {
 } from "@/components/ui";
 import { useRequireAuth } from "@/hooks";
 import { cn, combineDateAndTime, fmtRub } from "@/lib/utils";
-import { useSiteSettingsStore } from "@/store";
+import { useSiteSettingsStore } from "@/store/use-site-settings.store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

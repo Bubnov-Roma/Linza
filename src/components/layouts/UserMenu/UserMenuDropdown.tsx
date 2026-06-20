@@ -5,10 +5,10 @@ import {
 	GearIcon,
 	HeartIcon,
 	LayoutIcon,
-	PackageIcon,
 	UserCircleIcon,
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import { ClientNotificationsPanel } from "@/components/shared/notification/ClientNotificationsPanel";
 import { SignOutButton } from "@/components/shared/SignOutButton";
 import {
 	DropdownMenu,
@@ -91,16 +91,6 @@ export function UserMenuDropdown({
 								<span className="font-medium">Личный кабинет</span>
 							</DropdownMenuItem>
 							<DropdownMenuItem
-								onClick={() => router.push("/dashboard/bookings")}
-								className="rounded-xl p-3 cursor-pointer"
-							>
-								<PackageIcon
-									className="mr-3 h-5 w-5 text-muted-foreground"
-									weight="duotone"
-								/>
-								<span className="font-medium">Бронирования</span>
-							</DropdownMenuItem>
-							<DropdownMenuItem
 								onClick={() => router.push("/favorites")}
 								className="rounded-xl p-3 cursor-pointer"
 							>
@@ -120,14 +110,12 @@ export function UserMenuDropdown({
 								/>
 								<span className="font-medium">Профиль</span>
 							</DropdownMenuItem>
+							<ClientNotificationsPanel align="start" side="top" />
 						</>
 					)}
 				</div>
 				<DropdownMenuSeparator className="my-2 bg-foreground/10" />
-
-				<div className="px-1 pb-1">
-					<SignOutButton className="w-full h-10 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20" />
-				</div>
+				<SignOutButton className="w-full h-10 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20" />
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

@@ -53,7 +53,7 @@ import {
 import { BOOKING_STATUS_CONFIG } from "@/constants";
 import type { BookingStatus } from "@/core/domain/entities/Booking";
 import { cn, combineDateAndTime, fmtRub } from "@/lib/utils";
-import { useSiteSettingsStore } from "@/store";
+import { useSiteSettingsStore } from "@/store/use-site-settings.store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

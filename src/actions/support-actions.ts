@@ -24,6 +24,8 @@ export type DbSupportThread = SupportThread & {
 		editedAt: Date | null;
 		author?: { name: string | null };
 		readBy: Array<{ adminId: string; readAt: Date }>;
+		deletedByClientAt: Date | null;
+		deletedByAdminAt: Date | null;
 	}>;
 };
 
@@ -100,7 +102,7 @@ export async function createSupportThreadAction(data: {
 				messages: {
 					include: {
 						author: { select: { name: true } },
-						readBy: true,
+						readBy: { select: { adminId: true, readAt: true } },
 					},
 					orderBy: { createdAt: "asc" },
 				},
@@ -116,7 +118,7 @@ export async function createSupportThreadAction(data: {
 		});
 
 		revalidatePath("/dashboard/support");
-		return { success: true, thread };
+		return { success: true, thread: thread as unknown as DbSupportThread };
 	} catch (error: unknown) {
 		const msg = error instanceof Error ? error.message : "Неизвестная ошибка";
 		return { success: false, error: msg };
@@ -133,19 +135,19 @@ export async function getUserSupportThreadsAction(): Promise<
 	if (!authResult.ok) return [];
 
 	return prisma.supportThread.findMany({
-		where: { userId: authResult.userId },
+		where: { userId: authResult.userId, deletedByClientAt: null },
 		include: {
 			user: { select: { id: true, name: true, email: true } },
 			messages: {
 				include: {
 					author: { select: { name: true } },
-					readBy: true,
+					readBy: { select: { adminId: true, readAt: true } },
 				},
 				orderBy: { createdAt: "asc" },
 			},
 		},
 		orderBy: { lastMessageAt: "desc" },
-	});
+	}) as unknown as DbSupportThread[];
 }
 
 /**
@@ -164,7 +166,7 @@ export async function getSupportThreadAction(
 			messages: {
 				include: {
 					author: { select: { name: true } },
-					readBy: true,
+					readBy: { select: { adminId: true, readAt: true } },
 				},
 				orderBy: { createdAt: "asc" },
 			},
@@ -181,7 +183,46 @@ export async function getSupportThreadAction(
 		}
 	}
 
-	return { success: true, thread };
+	return { success: true, thread: thread as unknown as DbSupportThread };
+}
+
+/**
+ * Пометить тред прочитанным
+ */
+export async function markThreadReadByClientAction(
+	threadId: string
+): Promise<void> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return;
+		await prisma.supportThread.updateMany({
+			where: { id: threadId, userId: session.user.id },
+			data: { clientReadAt: new Date() },
+		});
+	} catch {}
+}
+
+/**
+ * Удалить тред (мягко)
+ */
+export async function deleteThreadByClientAction(
+	threadId: string
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
+
+		const updated = await prisma.supportThread.updateMany({
+			where: { id: threadId, userId: session.user.id },
+			data: { deletedByClientAt: new Date() },
+		});
+
+		if (updated.count === 0) return { success: false, error: "Тред не найден" };
+		return { success: true };
+	} catch (err) {
+		if (err instanceof Error) return { success: false, error: err.message };
+		return { success: false, error: "Ошибка удаления" };
+	}
 }
 
 // ─── MESSAGING ───────────────────────────────────────────────────────────────
@@ -270,23 +311,31 @@ export async function sendSupportMessageAction(data: {
 /**
  * Получить все потоки (для админа)
  */
-export async function getAllSupportThreadsAction(): Promise<DbSupportThread[]> {
+export async function getAdminAllSupportThreadsAction(): Promise<
+	DbSupportThread[]
+> {
 	const authResult = await requireAdminOrManager();
 	if (!authResult.ok) return [];
 
 	return prisma.supportThread.findMany({
 		include: {
-			user: { select: { id: true, name: true, email: true } },
+			user: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+				},
+			},
 			messages: {
 				include: {
 					author: { select: { name: true } },
-					readBy: true,
+					readBy: { select: { adminId: true, readAt: true } },
 				},
 				orderBy: { createdAt: "asc" },
 			},
 		},
 		orderBy: { lastMessageAt: "desc" },
-	});
+	}) as unknown as DbSupportThread[];
 }
 
 /**
@@ -313,7 +362,7 @@ export async function getClientSupportThreadsAction(
 			messages: {
 				include: {
 					author: { select: { name: true } },
-					readBy: true,
+					readBy: { select: { adminId: true, readAt: true } },
 				},
 				orderBy: { createdAt: "asc" },
 			},
@@ -321,7 +370,7 @@ export async function getClientSupportThreadsAction(
 		orderBy: { lastMessageAt: "desc" },
 	});
 
-	return { success: true, threads };
+	return { success: true, threads: threads as unknown as DbSupportThread[] };
 }
 
 /**
@@ -493,7 +542,7 @@ export async function pollSupportThreadAction(
 			messages: {
 				include: {
 					author: { select: { name: true } },
-					readBy: true,
+					readBy: { select: { adminId: true, readAt: true } },
 				},
 				orderBy: { createdAt: "asc" },
 			},
@@ -504,7 +553,7 @@ export async function pollSupportThreadAction(
 		return { hasUpdates: true };
 	}
 
-	return { hasUpdates: true, thread: full };
+	return { hasUpdates: true, thread: full as unknown as DbSupportThread };
 }
 
 /**
@@ -548,7 +597,10 @@ export async function pollSupportThreadsAction(params: {
 				include: {
 					user: { select: { id: true, name: true, email: true } },
 					messages: {
-						include: { author: { select: { name: true } }, readBy: true },
+						include: {
+							author: { select: { name: true } },
+							readBy: { select: { adminId: true, readAt: true } },
+						},
 						orderBy: { createdAt: "asc" },
 					},
 				},
@@ -559,14 +611,17 @@ export async function pollSupportThreadsAction(params: {
 				include: {
 					user: { select: { id: true, name: true, email: true } },
 					messages: {
-						include: { author: { select: { name: true } }, readBy: true },
+						include: {
+							author: { select: { name: true } },
+							readBy: { select: { adminId: true, readAt: true } },
+						},
 						orderBy: { createdAt: "asc" },
 					},
 				},
 				orderBy: { lastMessageAt: "desc" },
 			});
 
-	return { hasUpdates: true, threads };
+	return { hasUpdates: true, threads: threads as unknown as DbSupportThread[] };
 }
 
 /**
@@ -675,7 +730,7 @@ export async function createSupportThreadByAdminAction(data: {
 			messages: {
 				include: {
 					author: { select: { name: true } },
-					readBy: true,
+					readBy: { select: { adminId: true, readAt: true } },
 				},
 				orderBy: { createdAt: "asc" },
 			},
@@ -684,7 +739,7 @@ export async function createSupportThreadByAdminAction(data: {
 
 	revalidatePath("/admin/support");
 	revalidatePath(`/dashboard/support`);
-	return { success: true, thread };
+	return { success: true, thread: thread as unknown as DbSupportThread };
 }
 
 /**
@@ -733,35 +788,79 @@ export async function editSupportMessageAction(data: {
 }
 
 /**
- * Количество тредов, ожидающих ответа админа (для поллинга)
+ * Удалить тред (мягко — у клиента станет CLOSED)
  */
-export async function getPendingChatsCountAction(): Promise<number> {
-	const authResult = await requireAdminOrManager();
-	if (!authResult.ok) return 0;
+export async function deleteThreadByAdminAction(
+	threadId: string
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const session = await auth();
+		const role = session?.user?.role;
+		if (role !== "ADMIN" && role !== "MANAGER")
+			return { success: false, error: "Недостаточно прав" };
 
-	return prisma.supportThread.count({
-		where: { status: "WAITING_FOR_ADMIN" },
-	});
+		await prisma.supportThread.update({
+			where: { id: threadId },
+			data: {
+				deletedByAdminAt: new Date(),
+				status: "CLOSED",
+			},
+		});
+
+		revalidatePath("/admin/support");
+		return { success: true };
+	} catch (err) {
+		if (err instanceof Error) return { success: false, error: err.message };
+		return { success: false, error: "Ошибка удаления" };
+	}
 }
 
 /**
- * Есть ли у клиента непрочитанные ответы от админа (для поллинга)
+ * Отправить уточняющий вопрос по анкете клиенту
  */
-export async function getClientUnreadChatsCountAction(): Promise<number> {
-	const authResult = await requireAuth();
-	if (!authResult.ok) return 0;
+export async function setStatusClarificationWithThreadAction(data: {
+	applicationId: string;
+	userId: string; // клиент которому задаём вопрос
+	question: string; // текст уточняющего вопроса
+}): Promise<{ success: boolean; threadId?: string; error?: string }> {
+	const authResult = await requireAdminOrManager();
+	if (!authResult.ok) return { success: false, error: authResult.error };
 
-	// Треды клиента где последнее сообщение от админа
-	const threads = await prisma.supportThread.findMany({
-		where: { userId: authResult.userId },
-		select: {
-			messages: {
-				orderBy: { createdAt: "desc" },
-				take: 1,
-				select: { isAdmin: true },
+	if (!data.question.trim()) {
+		return { success: false, error: "Укажите уточняющий вопрос" };
+	}
+
+	try {
+		// 1. Меняем статус анкеты
+		await prisma.clientApplication.update({
+			where: { id: data.applicationId },
+			data: { status: "CLARIFICATION" },
+		});
+
+		// 2. Создаём тред с вопросом
+		const thread = await prisma.supportThread.create({
+			data: {
+				userId: data.userId,
+				subject: "Уточнение по анкете",
+				platform: "WEBSITE",
+				status: "WAITING_FOR_CLIENT",
+				messages: {
+					create: {
+						authorId: authResult.userId,
+						isAdmin: true,
+						content: data.question.trim(),
+					},
+				},
 			},
-		},
-	});
+			select: { id: true },
+		});
 
-	return threads.filter((t) => t.messages[0]?.isAdmin === true).length;
+		revalidatePath("/admin/users");
+		revalidatePath(`/dashboard/support`);
+
+		return { success: true, threadId: thread.id };
+	} catch (err) {
+		if (err instanceof Error) return { success: false, error: err.message };
+		return { success: false, error: "Ошибка" };
+	}
 }

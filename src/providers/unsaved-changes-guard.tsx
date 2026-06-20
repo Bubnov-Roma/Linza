@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
-import { useUnsavedChanges } from "@/store";
+import { useUnsavedChanges } from "@/store/unsaved-changes.store";
 
 export function UnsavedChangesGuard() {
 	const { data: session } = useSession();

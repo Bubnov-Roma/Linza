@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { BookingStatus } from "@/core/domain/entities/Booking";
 import type { SoundProfile } from "@/types";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ClientNotificationEvent =
 	| "chatMessage"
@@ -11,17 +10,23 @@ export type ClientNotificationEvent =
 
 export type ClientSoundSettings = Record<ClientNotificationEvent, SoundProfile>;
 
-interface BookingStatusChange {
+export interface BookingStatusChange {
 	bookingId: string;
 	type: "equipment" | "studio";
-	newStatus: string;
-	seenAt?: string;
+	newStatus: BookingStatus;
+	changedAt?: string;
 }
 
 interface ClientNotificationsState {
 	// Счётчики бейджей
 	unreadChats: number;
 	hasNewApplicationStatus: boolean;
+	// Детальная информация для панели
+	applicationStatusNotification: {
+		newStatus: string;
+		changedAt: string;
+		clarificationThreadId?: string | null;
+	} | null;
 	unseenBookingChanges: BookingStatusChange[];
 
 	// Поллинг
@@ -33,6 +38,13 @@ interface ClientNotificationsState {
 	// Мутации
 	setUnreadChats: (count: number) => void;
 	setHasNewApplicationStatus: (val: boolean) => void;
+	setApplicationStatusNotification: (
+		n: {
+			newStatus: string;
+			changedAt: string;
+			clarificationThreadId?: string | null;
+		} | null
+	) => void;
 	addBookingChanges: (changes: BookingStatusChange[]) => void;
 	clearBookingChange: (bookingId: string) => void;
 	clearAllBookingChanges: () => void;
@@ -43,21 +55,18 @@ interface ClientNotificationsState {
 	) => void;
 }
 
-// ─── Default sound settings ───────────────────────────────────────────────────
-
 const DEFAULT_SOUND_SETTINGS: ClientSoundSettings = {
 	chatMessage: "subtle",
 	applicationStatus: "default",
 	bookingStatus: "subtle",
 };
 
-// ─── Store ────────────────────────────────────────────────────────────────────
-
 export const useClientNotificationsStore = create<ClientNotificationsState>()(
 	persist(
 		(set) => ({
 			unreadChats: 0,
 			hasNewApplicationStatus: false,
+			applicationStatusNotification: null,
 			unseenBookingChanges: [],
 			lastPolledAt: null,
 			soundSettings: DEFAULT_SOUND_SETTINGS,
@@ -67,9 +76,11 @@ export const useClientNotificationsStore = create<ClientNotificationsState>()(
 			setHasNewApplicationStatus: (val) =>
 				set({ hasNewApplicationStatus: val }),
 
+			setApplicationStatusNotification: (n) =>
+				set({ applicationStatusNotification: n }),
+
 			addBookingChanges: (changes) =>
 				set((state) => {
-					// Дедупликация: обновляем существующие, добавляем новые
 					const existing = new Map(
 						state.unseenBookingChanges.map((c) => [c.bookingId, c])
 					);
@@ -95,11 +106,12 @@ export const useClientNotificationsStore = create<ClientNotificationsState>()(
 		}),
 		{
 			name: "client-notifications",
-			// Персистим только настройки звука и lastPolledAt
-			// Счётчики всегда пересчитываются с сервера
 			partialize: (state) => ({
 				soundSettings: state.soundSettings,
 				lastPolledAt: state.lastPolledAt,
+				// Персистим непрочитанные уведомления чтобы не пропали при перезагрузке
+				applicationStatusNotification: state.applicationStatusNotification,
+				unseenBookingChanges: state.unseenBookingChanges,
 			}),
 		}
 	)

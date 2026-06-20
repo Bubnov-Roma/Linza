@@ -144,8 +144,11 @@ export default async function RootLayout({
 
 	if (user?.id && !isAdmin) {
 		const threads = await prisma.supportThread.findMany({
-			where: { userId: user.id },
+			where: { userId: user.id, deletedByClientAt: null },
 			select: {
+				id: true,
+				subject: true,
+				clientReadAt: true,
 				messages: {
 					orderBy: { createdAt: "desc" },
 					take: 1,
@@ -185,7 +188,11 @@ export default async function RootLayout({
 						initialData={decryptedInitialApp}
 						displayName={displayName}
 					>
-						<AppSidebar isAdmin={isAdmin} categories={categories} />
+						<AppSidebar
+							isAdmin={isAdmin}
+							categories={categories}
+							initialUnreadChats={clientUnreadChats}
+						/>
 						<SidebarInset className="flex flex-col min-h-screen">
 							<Header
 								categories={categories}
@@ -198,6 +205,7 @@ export default async function RootLayout({
 								categories={categories}
 								isAdmin={isAdmin}
 								support={support}
+								initialUnreadChats={clientUnreadChats}
 							/>
 						</SidebarInset>
 					</ApplicationInitializer>

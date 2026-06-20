@@ -12,7 +12,7 @@ import {
 	UserIcon,
 } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CatalogDrawer } from "@/components/layouts/MobileNavBar/CatalogDrawer";
 import { NavTab } from "@/components/layouts/MobileNavBar/NavTab";
@@ -23,22 +23,33 @@ import {
 import { UserMenu } from "@/components/layouts/UserMenu";
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
 import type { DbCategory } from "@/core/domain/entities/Equipment";
-import { useAdminNotificationsStore } from "@/store";
+import { useAdminNotificationsStore } from "@/store/use-admin-notifications.store";
+import { useClientNotificationsStore } from "@/store/use-client-notifications.store";
 import { MobileSearch, type MobileSearchHandle } from "./MobileSearch";
 
 interface MobileNavBarProps {
 	categories: DbCategory[];
 	isAdmin: boolean;
 	support: SupportConfig;
+	initialUnreadChats?: number;
 }
 
 export function MobileNavBar({
 	categories,
 	isAdmin,
 	support,
+	initialUnreadChats,
 }: MobileNavBarProps) {
 	const pathname = usePathname();
 	const mobileSearchRef = useRef<MobileSearchHandle>(null);
+
+	const unreadChats = useClientNotificationsStore((s) => s.unreadChats);
+	const setUnreadChats = useClientNotificationsStore((s) => s.setUnreadChats);
+
+	useEffect(() => {
+		if (!isAdmin && initialUnreadChats !== undefined)
+			setUnreadChats(initialUnreadChats);
+	}, [initialUnreadChats, isAdmin, setUnreadChats]);
 
 	// Состояния открытия шторок/модалок
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -126,16 +137,17 @@ export function MobileNavBar({
 								isActive={pathname.startsWith("/studio")}
 							/>
 							<NavTab
-								title="Поиск"
-								icon={MagnifyingGlassIcon}
-								isActive={searchOpen}
-								onClick={handleOpenSearch}
-							/>
-							<NavTab
 								title="Связь"
 								icon={HeadsetIcon}
 								isActive={supportOpen}
 								onClick={() => setSupportOpen(true)}
+								badge={unreadChats > 0 ? unreadChats : ""}
+							/>
+							<NavTab
+								title="Поиск"
+								icon={MagnifyingGlassIcon}
+								isActive={searchOpen}
+								onClick={handleOpenSearch}
 							/>
 						</>
 					)}

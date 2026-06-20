@@ -3,7 +3,6 @@
 import {
 	CaretLeftIcon,
 	CheckIcon,
-	LockIcon,
 	PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -11,13 +10,19 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type DbSupportThread,
+	markThreadReadByClientAction,
 	pollSupportThreadAction,
 	sendSupportMessageAction,
 } from "@/actions/support-actions";
-import { InlineEditField, SupportModalTrigger } from "@/components/shared";
-import { Badge, Card } from "@/components/ui";
+import {
+	ClientTime,
+	InlineEditField,
+	SupportModalTrigger,
+} from "@/components/shared";
+import { Badge } from "@/components/ui";
 import { CHATS_STATUS_COLORS, CHATS_STATUS_LABELS } from "@/constants";
 import { cn } from "@/lib/utils";
+import { useClientNotificationsStore } from "@/store/use-client-notifications.store";
 
 interface SupportThreadDetailClientProps {
 	initialThread: DbSupportThread;
@@ -27,14 +32,13 @@ export default function SupportThreadDetailClient({
 	initialThread,
 }: SupportThreadDetailClientProps) {
 	const [thread, setThread] = useState(initialThread);
+	const setUnreadChats = useClientNotificationsStore((s) => s.setUnreadChats);
+	const unreadChats = useClientNotificationsStore((s) => s.unreadChats);
 	const [message, setMessage] = useState("");
 
-	// ИЗМЕНЕНО: Ссылка теперь указывает на сам контейнер со скроллом, а не на пустой div
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
-
 	const isClosed = thread.status === "CLOSED";
 
-	// ИЗМЕНЕНО: Точечный скролл контейнера без влияния на внешнее окно (window)
 	const scrollToBottom = () => {
 		if (scrollContainerRef.current) {
 			scrollContainerRef.current.scrollTo({
@@ -44,11 +48,35 @@ export default function SupportThreadDetailClient({
 		}
 	};
 
+	// Помечаем прочитанным при открытии на основе сравнения дат
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
+	useEffect(() => {
+		markThreadReadByClientAction(initialThread.id).then(() => {
+			setThread((prev) => ({ ...prev, clientReadAt: new Date() }));
+
+			// Вычисляем, горел ли чат непрочитанным до открытия
+			const lastAdminMessage = [...initialThread.messages]
+				.reverse()
+				.find((m) => m.isAdmin);
+
+			const wasUnread =
+				lastAdminMessage &&
+				(!initialThread.clientReadAt ||
+					new Date(lastAdminMessage.createdAt) >
+						new Date(initialThread.clientReadAt));
+
+			if (wasUnread) {
+				setUnreadChats(Math.max(0, (unreadChats ?? 0) - 1));
+			}
+		});
+	}, [initialThread.id]);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <>
 	useEffect(() => {
 		scrollToBottom();
 	}, [thread.messages]);
 
+	// Интеллектуальный поллинг внутри открытого чата
 	useEffect(() => {
 		const interval = setInterval(async () => {
 			const result = await pollSupportThreadAction(
@@ -57,6 +85,14 @@ export default function SupportThreadDetailClient({
 			);
 			if (result.hasUpdates && result.thread) {
 				setThread(result.thread);
+
+				// Если пришло новое сообщение от админа, пока мы внутри — сразу гасим его в БД
+				const lastMsg =
+					result.thread.messages[result.thread.messages.length - 1];
+				if (lastMsg?.isAdmin) {
+					markThreadReadByClientAction(thread.id);
+					setThread((prev) => ({ ...prev, clientReadAt: new Date() }));
+				}
 			}
 		}, 10_000);
 
@@ -77,36 +113,25 @@ export default function SupportThreadDetailClient({
 		}
 
 		if (result.message) {
-			const newMessage = result.message;
+			const newMessage = {
+				...result.message,
+				deletedByClientAt: null,
+				deletedByAdminAt: null,
+			};
 			setThread((prev) => ({
 				...prev,
 				messages: [...prev.messages, newMessage],
 				status: "WAITING_FOR_ADMIN",
 				lastMessageAt: new Date(),
+				clientReadAt: new Date(), // Свое сообщение — всё прочитано автоматически
 			}));
 			setMessage("");
 			toast.success("Сообщение отправлено");
 		}
 	};
 
-	const formatTime = (date: Date) => {
-		return new Date(date).toLocaleTimeString("ru-RU", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	};
-
-	const formatDate = (date: Date) => {
-		return new Date(date).toLocaleDateString("ru-RU", {
-			weekday: "short",
-			day: "numeric",
-			month: "short",
-		});
-	};
-
 	return (
 		<div className="container mx-auto max-w-3xl px-4 pt-10 pb-28 space-y-6 flex flex-col">
-			{/* Заголовок и информация */}
 			<div className="space-y-4 shrink-0">
 				<Link
 					href="/dashboard/support"
@@ -138,7 +163,7 @@ export default function SupportThreadDetailClient({
 							</span>
 							<span>•</span>
 							<span>
-								{formatDate(thread.createdAt)} в {formatTime(thread.createdAt)}
+								<ClientTime iso={thread.createdAt} fmt="date" />
 							</span>
 							<span>•</span>
 							<span>
@@ -150,8 +175,8 @@ export default function SupportThreadDetailClient({
 					</div>
 				</div>
 			</div>
+
 			<div className="border border-muted-foreground/10 glass-card h-[calc(100vh-400px)] min-h-125 flex flex-col overflow-hidden rounded-2xl">
-				{/* 1. ЛЕНТА СООБЩЕНИЙ */}
 				<div
 					ref={scrollContainerRef}
 					className="flex-1 overflow-y-auto p-4 flex flex-col gap-2"
@@ -185,7 +210,7 @@ export default function SupportThreadDetailClient({
 								>
 									<p className="text-sm whitespace-pre-wrap">{msg.content}</p>
 									<div className="flex items-center gap-2 text-xs text-muted-foreground">
-										<span>{formatTime(msg.createdAt)}</span>
+										<ClientTime iso={thread.createdAt} fmt="time" />
 										{!msg.isAdmin && (
 											<CheckIcon
 												size={12}
@@ -206,15 +231,7 @@ export default function SupportThreadDetailClient({
 					)}
 				</div>
 
-				{/* 2. ФИКСИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ С ПОЛЕМ ВВОДА */}
 				<div className="p-4 border-t border-muted-foreground/10 bg-background/50 shrink-0">
-					{isClosed && (
-						<div className="bg-gray-500/10 border border-gray-300/30 rounded-lg p-3 flex items-center gap-2 text-sm text-gray-700/80 mb-3">
-							<LockIcon size={16} weight="bold" />
-							<span>Это обращение закрыто. Вы можете отправить новое.</span>
-						</div>
-					)}
-
 					{!isClosed ? (
 						<div className="space-y-1.5">
 							<InlineEditField
@@ -232,17 +249,16 @@ export default function SupportThreadDetailClient({
 							</p>
 						</div>
 					) : (
-						<div className="space-y-3">
-							<Card className="p-4 bg-gray-500/5 border-gray-300/30">
-								<p className="text-sm text-gray-700/80 mb-3">
-									Обращение закрыто. Создайте новое, если вам нужна дальнейшая
-									помощь.
-								</p>
-								<SupportModalTrigger
-									variant="button"
-									label="Создать новое обращение"
-								/>
-							</Card>
+						<div className="space-y-3 flex gap-4 w-full justify-between items-center">
+							<p className="text-sm text-muted-foreground">
+								Обращение закрыто.
+								<br /> Создайте новое, если вам нужна дальнейшая помощь.
+							</p>
+							<SupportModalTrigger
+								variant="button"
+								label="Создать новое обращение"
+								className="self-end"
+							/>
 						</div>
 					)}
 				</div>

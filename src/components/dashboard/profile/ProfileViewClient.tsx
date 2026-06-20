@@ -3,7 +3,7 @@
 import { ProfileDetails } from "@/components/dashboard/profile/ProfileDetails";
 import { ProfileSkeleton } from "@/components/dashboard/profile/ProfileSkeleton";
 import { ClientForm } from "@/components/forms";
-import { useApplicationStore } from "@/store";
+import { useApplicationStore } from "@/store/use-application.store";
 
 interface ProfileViewClientProps {
 	hasPassword: boolean;

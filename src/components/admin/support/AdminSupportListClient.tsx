@@ -1,7 +1,7 @@
 "use client";
 
 import {
-	ChatCenteredIcon,
+	ChatIcon,
 	ChatsIcon,
 	FunnelIcon,
 	MagnifyingGlassIcon,
@@ -16,6 +16,7 @@ import {
 	pollSupportThreadsAction,
 } from "@/actions/support-actions";
 import { AdminNewThreadModal } from "@/components/admin/support/AdminNewThreadModal";
+import { ClientTime } from "@/components/shared";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import {
 	CHATS_STATUS_COLORS,
@@ -115,20 +116,6 @@ export default function AdminSupportListClient({
 			.length;
 	};
 
-	const formatDate = (date: Date) => {
-		const now = new Date();
-		const diff = now.getTime() - new Date(date).getTime();
-		const minutes = Math.floor(diff / 60000);
-		const hours = Math.floor(diff / 3600000);
-		const days = Math.floor(diff / 86400000);
-
-		if (minutes < 60) return `${minutes}м назад`;
-		if (hours < 24) return `${hours}ч назад`;
-		if (days < 7) return `${days}д назад`;
-
-		return new Date(date).toLocaleDateString("ru-RU");
-	};
-
 	return (
 		<div className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
 			{/* Заголовок */}
@@ -223,7 +210,7 @@ export default function AdminSupportListClient({
 					<select
 						value={sortBy}
 						onChange={(e) => setSortBy(e.target.value as "newest" | "oldest")}
-						className="px-3 py-1 rounded-2xl text-xs font-medium bg-foreground/5 border border-foreground/10 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+						className="px-3 py-1 h-11 rounded-2xl text-xs font-medium bg-foreground/5 border border-foreground/10 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
 					>
 						<option value="newest">Новые</option>
 						<option value="oldest">Старые</option>
@@ -287,6 +274,14 @@ export default function AdminSupportListClient({
 											<p className="text-sm text-muted-foreground truncate">
 												{thread.user.email}
 											</p>
+											{thread.deletedByClientAt && (
+												<Badge
+													variant="outline"
+													className="text-[10px] text-muted-foreground border-muted-foreground/20"
+												>
+													Удалено клиентом
+												</Badge>
+											)}
 										</div>
 									</div>
 
@@ -308,7 +303,7 @@ export default function AdminSupportListClient({
 									<div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
 										<span>{thread.messages.length} сообщений</span>
 										<span>•</span>
-										<span>{formatDate(thread.lastMessageAt)}</span>
+										<ClientTime iso={thread.lastMessageAt} fmt="relative" />
 									</div>
 								</div>
 
@@ -337,15 +332,26 @@ export default function AdminSupportListClient({
 				{filtered.length === 0 && (
 					<div className="text-center py-12 text-muted-foreground">
 						{threads.length === 0 ? (
-							<>
-								<ChatCenteredIcon weight="duotone" size={22} />
-								<p className="text-lg font-semibold mb-2">
-									Чатов с клиентами пока нет
-								</p>
-								<p className="text-sm">
-									Когда клиенты начнут писать, они появятся здесь
-								</p>
-							</>
+							<div className="py-12 text-center space-y-2">
+								<div className="w-22 h-22 rounded-2xl bg-foreground/5 flex items-center justify-center mx-auto">
+									<ChatIcon size={44} className="text-muted-foreground/40" />
+								</div>
+								<div>
+									<p className="text-lg font-semibold mb-2">
+										Чатов с клиентами пока нет
+									</p>
+									<p className="text-md text-muted-foreground mt-1">
+										Когда клиенты начнут писать, они появятся здесь
+									</p>
+								</div>
+								<Button
+									size="md"
+									variant="ghost"
+									onClick={() => setNewThreadOpen(true)}
+								>
+									Написать клиенту
+								</Button>
+							</div>
 						) : (
 							<>
 								<p className="text-lg font-semibold mb-2">Ничего не найдено</p>

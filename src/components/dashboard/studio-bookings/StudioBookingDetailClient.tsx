@@ -1,7 +1,6 @@
 "use client";
 
 import { TagChevronIcon } from "@phosphor-icons/react";
-import { differenceInHours } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	ArrowLeft,
@@ -191,8 +190,11 @@ export function StudioBookingDetailClient({
 
 	const status = booking.status as BookingStatus;
 	const shortId = booking.id.split("-")[0]?.toUpperCase();
+
 	const hours = Math.ceil(
-		differenceInHours(new Date(booking.endDate), new Date(booking.startDate))
+		(new Date(booking.endDate).getTime() -
+			new Date(booking.startDate).getTime()) /
+			3600000
 	);
 
 	const editable = !["ACTIVE", "COMPLETED", "CANCELLED", "EXPIRED"].includes(

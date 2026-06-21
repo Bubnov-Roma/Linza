@@ -1,7 +1,6 @@
 "use client";
 
 import { PackageIcon, TagChevronIcon, XIcon } from "@phosphor-icons/react";
-import { differenceInHours, isWithinInterval, parseISO } from "date-fns";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookingQuickDialog } from "@/components/dashboard/bookings/BookingQuickDialog";
@@ -111,14 +110,20 @@ export function BookingsTable({
 			if (filters.status && b.status !== filters.status) return false;
 
 			if (filters.dateFrom || filters.dateTo) {
-				const start = b.startDate;
-				const from = filters.dateFrom
-					? parseISO(filters.dateFrom)
-					: new Date(0);
-				const to = filters.dateTo
-					? parseISO(`${filters.dateTo}T23:59:59`)
-					: new Date(8.64e15);
-				if (!isWithinInterval(start, { start: from, end: to })) return false;
+				// Переводим даты в миллисекунды для сравнения без date-fns
+				const startMs = new Date(b.startDate).getTime();
+
+				// Устанавливаем начало дня для dateFrom
+				const fromMs = filters.dateFrom
+					? new Date(`${filters.dateFrom}T00:00:00`).getTime()
+					: 0;
+
+				// Устанавливаем конец дня для dateTo
+				const toMs = filters.dateTo
+					? new Date(`${filters.dateTo}T23:59:59`).getTime()
+					: 8.64e15; // Максимально возможная дата в JS
+
+				if (startMs < fromMs || startMs > toMs) return false;
 			}
 
 			return true;
@@ -256,12 +261,11 @@ export function BookingsTable({
 					<TableBody>
 						{filtered.map((booking) => {
 							const isSelected = selectedIds.has(booking.id);
-							const hours = Math.ceil(
-								differenceInHours(
-									new Date(booking.endDate),
-									new Date(booking.startDate)
-								)
-							);
+
+							// Нативный расчет разницы в часах без date-fns
+							const startMs = new Date(booking.startDate).getTime();
+							const endMs = new Date(booking.endDate).getTime();
+							const hours = Math.ceil((endMs - startMs) / 3600000);
 
 							const dashboardBooking = asDashboardBooking(booking);
 

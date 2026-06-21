@@ -1,6 +1,5 @@
 "use client";
 
-import { isAfter, isBefore, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CalendarIcon, ChevronDown, Clock } from "lucide-react";
 import {
@@ -97,7 +96,10 @@ export function RentalPeriod({
 	}, []);
 
 	const close = useCallback(() => setOpenPicker(null), []);
-	const today = startOfDay(new Date());
+
+	// Нативное получение начала сегодняшнего дня
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
 
 	const handleStartDateSelect = useCallback(
 		(d: Date | undefined) => {
@@ -106,8 +108,11 @@ export function RentalPeriod({
 			const [sh, sm] = value.startTime.split(":").map(Number);
 			newStart.setHours(sh ?? workStart, sm ?? 0, 0, 0);
 			let newEnd = new Date(value.endDate);
-			if (isBefore(newEnd, newStart))
+
+			// Нативное сравнение дат (isBefore)
+			if (newEnd.getTime() < newStart.getTime())
 				newEnd = new Date(newStart.getTime() + 4 * 60 * 60 * 1000);
+
 			onChange({
 				...value,
 				startDate: newStart,
@@ -121,7 +126,11 @@ export function RentalPeriod({
 
 	const handleEndDateSelect = useCallback(
 		(d: Date | undefined) => {
-			if (!d || isBefore(d, startOfDay(value.startDate))) return;
+			const startOfValueDate = new Date(value.startDate);
+			startOfValueDate.setHours(0, 0, 0, 0);
+
+			if (!d || d.getTime() < startOfValueDate.getTime()) return;
+
 			const newEnd = new Date(d);
 			const [eh, em] = value.endTime.split(":").map(Number);
 			newEnd.setHours(eh ?? workStart, em ?? 0, 0, 0);
@@ -153,15 +162,18 @@ export function RentalPeriod({
 	);
 
 	const disableStartDate = (d: Date) => {
-		if (disablePast && isBefore(d, today)) return true;
+		if (disablePast && d.getTime() < today.getTime()) return true;
 		return disabledDatesObjects.some(
 			(dis) => dis.toDateString() === d.toDateString()
 		);
 	};
 
 	const disableEndDate = (d: Date) => {
-		if (disablePast && isBefore(d, today)) return true;
-		if (isBefore(d, startOfDay(value.startDate))) return true;
+		const startOfValueDate = new Date(value.startDate);
+		startOfValueDate.setHours(0, 0, 0, 0);
+
+		if (disablePast && d.getTime() < today.getTime()) return true;
+		if (d.getTime() < startOfValueDate.getTime()) return true;
 		return disabledDatesObjects.some(
 			(dis) => dis.toDateString() === d.toDateString()
 		);
@@ -662,7 +674,9 @@ function PortalTimeDropdown({
 		const [h, m] = s.split(":").map(Number);
 		const d = new Date();
 		d.setHours(h ?? 0, m ?? 0, 0, 0);
-		return isAfter(d, now);
+
+		// Нативное сравнение дат (isAfter)
+		return d.getTime() > now.getTime();
 	});
 
 	const selectedRef = useRef<HTMLButtonElement>(null);

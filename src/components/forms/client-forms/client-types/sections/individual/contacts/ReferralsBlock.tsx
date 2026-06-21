@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useFormContext, useWatch } from "react-hook-form";
 import { FormInput } from "@/components/forms/shared/FormInput";
 import { Label } from "@/components/ui";
@@ -16,16 +16,16 @@ import { cn } from "@/lib/utils";
 import type { ClientFormValues } from "@/schemas";
 
 export const ReferralsBlock = () => {
-	const { control, setValue } = useFormContext<ClientFormValues>();
+	const { control, setValue, formState } = useFormContext<ClientFormValues>();
 
 	const referralSource = useWatch({
 		control,
 		name: "applicationData.additional.referralSource",
 	});
-	// Для подсветки ошибки
+
 	const { error } = control.getFieldState(
-		"applicationData.additional.referralSource"
-		// formState нужен — добавить в деструктуринг:
+		"applicationData.additional.referralSource",
+		formState
 	);
 
 	const selectedOption = REFERRAL_OPTIONS.find(
@@ -40,7 +40,7 @@ export const ReferralsBlock = () => {
 	return (
 		<div className="space-y-0">
 			<div>
-				<div className="flex w-full gap-4 justify-between">
+				<div className="flex flex-col md:flex-row w-full gap-4 justify-between">
 					<Label required>Как вы о нас узнали?</Label>
 					<Select
 						value={referralSource ?? ""}
@@ -55,7 +55,8 @@ export const ReferralsBlock = () => {
 						<SelectTrigger
 							className={cn(
 								"h-6 rounded-2xl cursor-pointer py-0 bg-muted-foreground/5 min-w-35 w-auto",
-								error && "border-red-400/50"
+								error &&
+									"border-red-400/50 bg-red-400/5 text-red-400 focus:ring-red-400/30"
 							)}
 						>
 							<SelectValue placeholder="Выберите вариант..." />
@@ -77,26 +78,33 @@ export const ReferralsBlock = () => {
 					</Select>
 				</div>
 				{error?.message && (
-					<p className="text-[9px] text-red-400 uppercase font-bold tracking-tighter">
+					<motion.p
+						initial={{ opacity: 0, y: -5 }}
+						animate={{ opacity: 1, y: 0 }}
+						className="text-[10px] text-red-400 uppercase font-bold tracking-tighter mt-1.5 text-right"
+					>
 						{error.message}
-					</p>
+					</motion.p>
 				)}
 			</div>
 
-			{showExtraInput && (
-				<motion.div
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					exit={{ opacity: 0 }}
-				>
-					<FormInput
-						name="applicationData.additional.recommendation"
-						label=""
-						placeholder={selectedOption.placeholder}
-						disabled={inputIsDisabled}
-					/>
-				</motion.div>
-			)}
+			<AnimatePresence initial={false}>
+				{showExtraInput && (
+					<motion.div
+						initial={{ opacity: 0, height: 0 }}
+						animate={{ opacity: 1, height: "auto" }}
+						exit={{ opacity: 0, height: 0 }}
+						className="overflow-hidden pt-1"
+					>
+						<FormInput
+							name="applicationData.additional.recommendation"
+							label=""
+							placeholder={selectedOption.placeholder}
+							disabled={inputIsDisabled}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };

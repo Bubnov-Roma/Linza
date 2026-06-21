@@ -1,6 +1,5 @@
 "use client";
 import { TagChevronIcon } from "@phosphor-icons/react";
-import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ChevronDown, InfoIcon } from "lucide-react";
 import Link from "next/link";
@@ -42,11 +41,19 @@ export function EditDatesClient({ booking }: EditDatesClientProps) {
 	const [period, setPeriod] = useState<RentalPeriodValue>(() => {
 		const start = new Date(booking.startDate);
 		const end = new Date(booking.endDate);
+
+		// Нативная функция форматирования времени в HH:mm
+		const formatTime = (date: Date) => {
+			const hh = String(date.getHours()).padStart(2, "0");
+			const mm = String(date.getMinutes()).padStart(2, "0");
+			return `${hh}:${mm}`;
+		};
+
 		return {
 			startDate: start,
 			endDate: end,
-			startTime: format(start, "HH:mm"),
-			endTime: format(end, "HH:mm"),
+			startTime: formatTime(start),
+			endTime: formatTime(end),
 		};
 	});
 

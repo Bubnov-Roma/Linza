@@ -12,7 +12,6 @@ import {
 	TagChevronIcon,
 	XCircleIcon,
 } from "@phosphor-icons/react";
-import { differenceInHours } from "date-fns";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -118,9 +117,11 @@ const COMPLETED_STATUSES: BookingStatus[] = ["COMPLETED"];
 const CANCELLED_STATUSES: BookingStatus[] = ["CANCELLED", "EXPIRED"];
 
 function BookingCard({ booking }: { booking: UnifiedBooking }) {
+	// Нативный расчет разницы в часах
 	const hours = Math.ceil(
-		differenceInHours(booking.endDate, booking.startDate)
+		(booking.endDate.getTime() - booking.startDate.getTime()) / 3600000
 	);
+
 	const isEquipment = booking.kind === "equipment";
 	const firstItem = booking.bookingItems?.[0];
 	const extraCount = (booking.bookingItems?.length ?? 0) - 1;
@@ -399,7 +400,6 @@ export function UnifiedBookingsDashboard({
 		? `/dashboard/bookings?status=${tabToStatusParam[activeTab]}`
 		: "/dashboard/bookings";
 
-	// Настройки анимации для родительского контейнера
 	const containerVariants = {
 		hidden: { opacity: 0 },
 		show: {
@@ -410,7 +410,6 @@ export function UnifiedBookingsDashboard({
 		},
 	};
 
-	// Настройки анимации для каждой отдельной карточки
 	const itemVariants: Variants = {
 		hidden: { opacity: 0, y: 15, scale: 0.98 },
 		show: {
@@ -466,7 +465,6 @@ export function UnifiedBookingsDashboard({
 					)}
 				</AnimatePresence>
 
-				{/* Footer CTA */}
 				{activeBookings.length > 0 && (
 					<motion.div
 						initial={{ opacity: 0 }}

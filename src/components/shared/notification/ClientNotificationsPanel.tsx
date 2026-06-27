@@ -45,6 +45,7 @@ export function ClientNotificationsPanel({
 		hasNewApplicationStatus,
 		applicationStatusNotification,
 		unseenBookingChanges,
+		availableAutoPromo,
 		setHasNewApplicationStatus,
 		setApplicationStatusNotification,
 		clearBookingChange,
@@ -52,7 +53,9 @@ export function ClientNotificationsPanel({
 	} = useClientNotificationsStore();
 
 	const totalCount =
-		(hasNewApplicationStatus ? 1 : 0) + unseenBookingChanges.length;
+		(hasNewApplicationStatus ? 1 : 0) +
+		unseenBookingChanges.length +
+		(availableAutoPromo ? 1 : 0);
 	const hasAny = totalCount > 0;
 
 	const clarificationThreadId =
@@ -295,6 +298,37 @@ export function ClientNotificationsPanel({
 									</div>
 								</div>
 							)}
+						</div>
+					)}
+
+					{/* Авто-промокод */}
+					{availableAutoPromo && (
+						<div className="border-b border-foreground/5 last:border-0">
+							<div className="flex items-start gap-3 px-4 py-3">
+								<div className="shrink-0 w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center mt-0.5">
+									<span className="text-sm">🎁</span>
+								</div>
+								<div className="flex-1 min-w-0">
+									<p className="text-sm font-medium leading-tight">
+										Промокод активирован
+									</p>
+									<p className="text-xs text-muted-foreground mt-0.5">
+										<span className="font-mono font-bold text-foreground">
+											{availableAutoPromo.code}
+										</span>
+										{" — "}
+										{availableAutoPromo.type === "PERCENT"
+											? `скидка ${availableAutoPromo.value}%`
+											: `скидка ${availableAutoPromo.value.toLocaleString("ru-RU")} ₽`}
+										{availableAutoPromo.minOrderAmount
+											? ` при заказе от ${availableAutoPromo.minOrderAmount.toLocaleString("ru-RU")} ₽`
+											: ""}
+									</p>
+									<p className="text-[11px] text-muted-foreground/50 mt-1">
+										Применится автоматически при первом заказе
+									</p>
+								</div>
+							</div>
 						</div>
 					)}
 

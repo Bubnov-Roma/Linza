@@ -7,6 +7,7 @@ import {
 	type Role,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { assignAutoPromoOnApprovalAction } from "@/actions/admin-user-actions";
 import { createAdminNotification } from "@/actions/notification-actions";
 import { auth } from "@/auth";
 import { encrypt } from "@/lib/crypto";
@@ -323,13 +324,19 @@ export async function updateApplicationStatusAction(
 			return { success: false, error: "Нет прав доступа" };
 		}
 
-		await prisma.clientApplication.update({
+		const app = await prisma.clientApplication.update({
 			where: { id: applicationId },
 			data: {
 				status: status as ApplicationStatus,
 				rejectionReason: status === "REJECTED" ? rejectionReason || null : null,
 			},
+			select: { userId: true },
 		});
+
+		// при одобрении — записываем авто-промокод в профиль
+		if (status === "APPROVED") {
+			await assignAutoPromoOnApprovalAction(app.userId);
+		}
 
 		revalidatePath("/admin/users");
 		return { success: true };

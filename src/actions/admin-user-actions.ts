@@ -993,8 +993,6 @@ export async function consumeInviteTokenAction(token: string): Promise<{
 	}
 }
 
-// ─── Остальные экшены (без изменений) ────────────────────────────────────────
-
 export async function adminGetUserApplicationAction(userId: string): Promise<{
 	success: boolean;
 	data?: ApplicationDataFull;
@@ -1287,6 +1285,40 @@ export async function adminAssignDiscountAction(data: {
 			success: false,
 			error: e instanceof Error ? e.message : "Ошибка",
 		};
+	}
+}
+
+// ─── Авто-промокод при одобрении анкеты ──────────────────────────────────────
+
+/**
+ * Вызывается после установки статуса анкеты APPROVED.
+ * Ищет активный промокод с триггером FIRST_BOOKING_AFTER_APPROVAL
+ * и записывает его код в User.autoPromoCode.
+ * Fire-and-forget — не бросает исключений.
+ */
+export async function assignAutoPromoOnApprovalAction(
+	userId: string
+): Promise<void> {
+	try {
+		const now = new Date();
+
+		const promo = await prisma.promoCode.findFirst({
+			where: {
+				autoApplyTrigger: "FIRST_BOOKING_AFTER_APPROVAL",
+				isActive: true,
+				OR: [{ validUntil: null }, { validUntil: { gte: now } }],
+				AND: [{ OR: [{ validFrom: null }, { validFrom: { lte: now } }] }],
+			},
+			select: { code: true },
+			orderBy: { createdAt: "asc" }, // берём первый созданный
+		});
+
+		await prisma.user.update({
+			where: { id: userId },
+			data: { autoPromoCode: promo?.code ?? null },
+		});
+	} catch (err) {
+		console.error("[assignAutoPromoOnApprovalAction]", err);
 	}
 }
 

@@ -34,7 +34,8 @@ export function UserMenu({ isAdmin, variant = "sidebar" }: UserMenuProps) {
 			!isAdmin &&
 			(s.unreadChats > 0 ||
 				s.hasNewApplicationStatus ||
-				s.unseenBookingChanges.length > 0)
+				s.unseenBookingChanges.length > 0 ||
+				s.availableAutoPromo !== null)
 	);
 
 	const storedDisplayName = useApplicationStore((s) => s.displayName);

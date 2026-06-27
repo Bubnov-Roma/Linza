@@ -6,7 +6,15 @@ import type { SoundProfile } from "@/types";
 export type ClientNotificationEvent =
 	| "chatMessage"
 	| "applicationStatus"
-	| "bookingStatus";
+	| "bookingStatus"
+	| "promoApplied";
+
+export interface AutoPromoInfo {
+	code: string;
+	type: string;
+	value: number;
+	minOrderAmount: number | null;
+}
 
 export type ClientSoundSettings = Record<ClientNotificationEvent, SoundProfile>;
 
@@ -35,6 +43,11 @@ interface ClientNotificationsState {
 	// Звук
 	soundSettings: ClientSoundSettings;
 
+	// последний применённый промокод (после submit заказа)
+	lastAppliedPromo: { code: string; discountAmount: number } | null;
+	// авто-промокод доступный клиенту (из поллера)
+	availableAutoPromo: AutoPromoInfo | null;
+
 	// Мутации
 	setUnreadChats: (count: number) => void;
 	setHasNewApplicationStatus: (val: boolean) => void;
@@ -53,12 +66,19 @@ interface ClientNotificationsState {
 		event: ClientNotificationEvent,
 		profile: SoundProfile
 	) => void;
+	// NEW:
+	setLastAppliedPromo: (
+		promo: { code: string; discountAmount: number } | null
+	) => void;
+	clearLastAppliedPromo: () => void;
+	setAvailableAutoPromo: (promo: AutoPromoInfo | null) => void;
 }
 
 const DEFAULT_SOUND_SETTINGS: ClientSoundSettings = {
 	chatMessage: "subtle",
 	applicationStatus: "default",
 	bookingStatus: "subtle",
+	promoApplied: "default",
 };
 
 export const useClientNotificationsStore = create<ClientNotificationsState>()(
@@ -70,15 +90,14 @@ export const useClientNotificationsStore = create<ClientNotificationsState>()(
 			unseenBookingChanges: [],
 			lastPolledAt: null,
 			soundSettings: DEFAULT_SOUND_SETTINGS,
+			lastAppliedPromo: null, // NEW
+			availableAutoPromo: null, // NEW
 
 			setUnreadChats: (count) => set({ unreadChats: count }),
-
 			setHasNewApplicationStatus: (val) =>
 				set({ hasNewApplicationStatus: val }),
-
 			setApplicationStatusNotification: (n) =>
 				set({ applicationStatusNotification: n }),
-
 			addBookingChanges: (changes) =>
 				set((state) => {
 					const existing = new Map(
@@ -87,31 +106,33 @@ export const useClientNotificationsStore = create<ClientNotificationsState>()(
 					for (const c of changes) existing.set(c.bookingId, c);
 					return { unseenBookingChanges: Array.from(existing.values()) };
 				}),
-
 			clearBookingChange: (bookingId) =>
 				set((state) => ({
 					unseenBookingChanges: state.unseenBookingChanges.filter(
 						(c) => c.bookingId !== bookingId
 					),
 				})),
-
 			clearAllBookingChanges: () => set({ unseenBookingChanges: [] }),
-
 			setLastPolledAt: (at) => set({ lastPolledAt: at }),
-
 			setSoundSetting: (event, profile) =>
 				set((state) => ({
 					soundSettings: { ...state.soundSettings, [event]: profile },
 				})),
+			// NEW:
+			setLastAppliedPromo: (promo) => set({ lastAppliedPromo: promo }),
+			clearLastAppliedPromo: () => set({ lastAppliedPromo: null }),
+			setAvailableAutoPromo: (promo) => set({ availableAutoPromo: promo }),
 		}),
 		{
 			name: "client-notifications",
 			partialize: (state) => ({
 				soundSettings: state.soundSettings,
 				lastPolledAt: state.lastPolledAt,
-				// Персистим непрочитанные уведомления чтобы не пропали при перезагрузке
 				applicationStatusNotification: state.applicationStatusNotification,
 				unseenBookingChanges: state.unseenBookingChanges,
+				// персистим чтобы промокод не пропал при перезагрузке страницы
+				lastAppliedPromo: state.lastAppliedPromo,
+				availableAutoPromo: state.availableAutoPromo,
 			}),
 		}
 	)

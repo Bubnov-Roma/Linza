@@ -25,7 +25,14 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 		setLastPolledAt,
 		lastPolledAt,
 		soundSettings,
+		setAvailableAutoPromo,
+		availableAutoPromo,
 	} = useClientNotificationsStore();
+
+	// Трекер показанных авто-промо-тостов за сессию — чтобы не спамить
+	const autoPromoToastShownRef = useRef(false);
+	// Запоминаем код из стора на момент монтирования — если уже есть, не тостим
+	const initialAutoPromoCode = useRef(availableAutoPromo?.code ?? null);
 
 	const lastPolledAtRef = useRef<string | null>(lastPolledAt);
 	const isFirstRunRef = useRef(true);
@@ -137,6 +144,38 @@ export function ClientNotificationsPoller({ initialUnreadChats }: Props) {
 							}
 						);
 					}
+				}
+
+				// ── Авто-промокод ───────────────────────────────────────────────
+				setAvailableAutoPromo(result.autoPromo);
+
+				if (
+					result.autoPromo &&
+					!autoPromoToastShownRef.current &&
+					result.autoPromo.code !== initialAutoPromoCode.current
+				) {
+					autoPromoToastShownRef.current = true;
+					const profile = getClientSoundProfile("promoApplied", soundSettings);
+					playNotificationSound(profile);
+
+					const discountText =
+						result.autoPromo.type === "PERCENT"
+							? `${result.autoPromo.value}%`
+							: `${result.autoPromo.value.toLocaleString("ru-RU")} ₽`;
+					const minNote = result.autoPromo.minOrderAmount
+						? ` при заказе от ${result.autoPromo.minOrderAmount.toLocaleString("ru-RU")} ₽`
+						: "";
+
+					toast.success(`🎁 Вам доступна скидка ${discountText}`, {
+						description: `Промокод ${result.autoPromo.code} применится автоматически${minNote} при первом заказе.`,
+						duration: 10000,
+					});
+				}
+
+				// Если промокод исчез — сбрасываем флаг для нового промокода
+				if (!result.autoPromo) {
+					autoPromoToastShownRef.current = false;
+					initialAutoPromoCode.current = null;
 				}
 
 				const now = new Date().toISOString();

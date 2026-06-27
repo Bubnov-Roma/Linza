@@ -371,7 +371,12 @@ export async function searchStudioEquipmentAction(
 
 export async function submitStudioBookingAction(
 	input: SubmitStudioBookingInput
-): Promise<{ success: boolean; bookingId?: string; error?: string }> {
+): Promise<{
+	success: boolean;
+	bookingId?: string;
+	error?: string;
+	appliedPromoCode?: { code: string; discountAmount: number } | null;
+}> {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) {
@@ -436,8 +441,9 @@ export async function submitStudioBookingAction(
 		let finalTotal = rawTotal;
 
 		if (input.promoCode) {
+			const code = input.promoCode.trim().toUpperCase();
 			const promo = await prisma.promoCode.findUnique({
-				where: { code: input.promoCode.trim().toUpperCase() },
+				where: { code },
 				select: {
 					id: true,
 					isActive: true,
@@ -445,24 +451,47 @@ export async function submitStudioBookingAction(
 					value: true,
 					usageLimit: true,
 					usedCount: true,
+					perUserLimit: true,
+					minOrderAmount: true,
 					validFrom: true,
 					validUntil: true,
+					// у студийного заказа equipmentRestrictions проверяем по input.equipmentIds
+					equipmentRestrictions: { select: { equipmentId: true } },
 				},
 			});
 			const now = new Date();
-			const isValid =
+			const baseValid =
 				promo?.isActive &&
 				(!promo.validFrom || now >= promo.validFrom) &&
 				(!promo.validUntil || now <= promo.validUntil) &&
 				(promo.usageLimit === null || promo.usedCount < promo.usageLimit);
 
-			if (isValid && promo) {
-				promoCodeId = promo.id;
-				const discount =
-					promo.type === "PERCENT"
-						? (rawTotal * promo.value) / 100
-						: Math.min(promo.value, rawTotal);
-				finalTotal = Math.max(0, rawTotal - discount);
+			if (baseValid && promo) {
+				// perUserLimit
+				let perUserOk = true;
+				if (promo.perUserLimit !== null) {
+					const userUsage = await prisma.studioBooking.count({
+						where: { userId: session.user.id, promoCode: code },
+					});
+					perUserOk = userUsage < promo.perUserLimit;
+				}
+				// minOrderAmount
+				const minOk =
+					promo.minOrderAmount === null || rawTotal >= promo.minOrderAmount;
+				// equipmentRestrictions
+				const allowed = promo.equipmentRestrictions.map((e) => e.equipmentId);
+				const equipOk =
+					allowed.length === 0 ||
+					(input.equipmentIds ?? []).every((id) => allowed.includes(id));
+
+				if (perUserOk && minOk && equipOk) {
+					promoCodeId = promo.id;
+					const discount =
+						promo.type === "PERCENT"
+							? (rawTotal * promo.value) / 100
+							: Math.min(promo.value, rawTotal);
+					finalTotal = Math.max(0, rawTotal - discount);
+				}
 			}
 		}
 
@@ -507,7 +536,17 @@ export async function submitStudioBookingAction(
 
 		revalidatePath("/studio");
 		revalidatePath("/dashboard");
-		return { success: true, bookingId: booking.id };
+		return {
+			success: true,
+			bookingId: booking.id,
+			appliedPromoCode:
+				promoCodeId && input.promoCode
+					? {
+							code: input.promoCode.trim().toUpperCase(),
+							discountAmount: rawTotal - finalTotal,
+						}
+					: null,
+		};
 	} catch (e) {
 		console.error("submitStudioBookingAction:", e);
 		return { success: false, error: "Ошибка при создании заказа" };

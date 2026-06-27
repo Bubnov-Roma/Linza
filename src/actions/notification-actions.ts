@@ -41,6 +41,13 @@ export interface ClientNotificationResult {
 		newStatus: BookingStatus;
 		changedAt: string;
 	}[];
+	// NEW: авто-промокод доступный клиенту (при статусе APPROVED + триггер)
+	autoPromo: {
+		code: string;
+		type: string;
+		value: number;
+		minOrderAmount: number | null;
+	} | null;
 }
 
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
@@ -215,6 +222,7 @@ export async function pollClientNotificationsAction(
 		applicationStatusChanged: null,
 		bookingStatusChanges: [],
 		studioBookingStatusChanges: [],
+		autoPromo: null,
 	};
 
 	try {
@@ -223,43 +231,66 @@ export async function pollClientNotificationsAction(
 		const userId = session.user.id;
 		const since = lastPolledAt ? new Date(lastPolledAt) : null;
 
-		const [threads, application, bookings, studioBookings] = await Promise.all([
-			// Все треды клиента с сообщениями
-			prisma.supportThread.findMany({
-				where: { userId, deletedByClientAt: null },
-				select: {
-					id: true,
-					subject: true,
-					clientReadAt: true,
-					messages: {
-						orderBy: { createdAt: "desc" },
-						take: 1,
-						select: { isAdmin: true, content: true, createdAt: true },
+		const [threads, application, bookings, studioBookings, autoPromoData] =
+			await Promise.all([
+				// Все треды клиента с сообщениями
+				prisma.supportThread.findMany({
+					where: { userId, deletedByClientAt: null },
+					select: {
+						id: true,
+						subject: true,
+						clientReadAt: true,
+						messages: {
+							orderBy: { createdAt: "desc" },
+							take: 1,
+							select: { isAdmin: true, content: true, createdAt: true },
+						},
 					},
-				},
-			}),
-			// Статус анкеты + когда обновлялась
-			prisma.clientApplication.findUnique({
-				where: { userId },
-				select: { status: true, updatedAt: true },
-			}),
-			// Заказы оборудования (updatedAt > since)
-			since
-				? prisma.booking.findMany({
-						where: { userId, updatedAt: { gt: since } },
-						select: { id: true, status: true, updatedAt: true },
-						orderBy: { updatedAt: "desc" },
-					})
-				: Promise.resolve([]),
-			// Заказы студии (updatedAt > since)
-			since
-				? prisma.studioBooking.findMany({
-						where: { userId, updatedAt: { gt: since } },
-						select: { id: true, status: true, updatedAt: true },
-						orderBy: { updatedAt: "desc" },
-					})
-				: Promise.resolve([]),
-		]);
+				}),
+				// Статус анкеты + когда обновлялась
+				prisma.clientApplication.findUnique({
+					where: { userId },
+					select: { status: true, updatedAt: true },
+				}),
+				// Заказы оборудования (updatedAt > since)
+				since
+					? prisma.booking.findMany({
+							where: { userId, updatedAt: { gt: since } },
+							select: { id: true, status: true, updatedAt: true },
+							orderBy: { updatedAt: "desc" },
+						})
+					: Promise.resolve([]),
+				// Заказы студии (updatedAt > since)
+				since
+					? prisma.studioBooking.findMany({
+							where: { userId, updatedAt: { gt: since } },
+							select: { id: true, status: true, updatedAt: true },
+							orderBy: { updatedAt: "desc" },
+						})
+					: Promise.resolve([]),
+				// авто-промокод — ищем активный промокод с триггером FIRST_BOOKING_AFTER_APPROVAL
+				// только если статус анкеты APPROVED (подтянем через отдельный запрос ниже)
+				prisma.promoCode.findFirst({
+					where: {
+						autoApplyTrigger: "FIRST_BOOKING_AFTER_APPROVAL",
+						isActive: true,
+						OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+						AND: [
+							{ OR: [{ validFrom: null }, { validFrom: { lte: new Date() } }] },
+						],
+					},
+					select: {
+						id: true,
+						code: true,
+						type: true,
+						value: true,
+						minOrderAmount: true,
+						perUserLimit: true,
+						usageLimit: true,
+						usedCount: true,
+					},
+				}),
+			]);
 
 		// Непрочитанные чаты (последнее сообщение от админа)
 		const unreadChats = threads.filter((t) => {
@@ -346,6 +377,36 @@ export async function pollClientNotificationsAction(
 			changedAt: b.updatedAt.toISOString(),
 		}));
 
+		// авто-промокод — проверяем доступность для текущего клиента
+		let autoPromo: ClientNotificationResult["autoPromo"] = null;
+		if (autoPromoData && application?.status === "APPROVED") {
+			// Глобальный лимит
+			const globalLimitOk =
+				autoPromoData.usageLimit === null ||
+				autoPromoData.usedCount < autoPromoData.usageLimit;
+
+			if (globalLimitOk) {
+				// Лимит на клиента (по умолчанию 1 для авто-промокодов)
+				const perUserLimit = autoPromoData.perUserLimit ?? 1;
+				const userUsageCount = await prisma.booking.count({
+					where: { userId, promoCode: autoPromoData.code },
+				});
+				// Также считаем студийные заказы
+				const userStudioUsageCount = await prisma.studioBooking.count({
+					where: { userId, promoCode: autoPromoData.code },
+				});
+
+				if (userUsageCount + userStudioUsageCount < perUserLimit) {
+					autoPromo = {
+						code: autoPromoData.code,
+						type: autoPromoData.type,
+						value: autoPromoData.value,
+						minOrderAmount: autoPromoData.minOrderAmount,
+					};
+				}
+			}
+		}
+
 		return {
 			unreadChats,
 			newChatMessages,
@@ -354,6 +415,7 @@ export async function pollClientNotificationsAction(
 				: null,
 			bookingStatusChanges,
 			studioBookingStatusChanges,
+			autoPromo,
 		};
 	} catch {
 		return empty;

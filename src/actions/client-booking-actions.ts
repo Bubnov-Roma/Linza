@@ -24,7 +24,12 @@ export async function submitBookingAction(formData: {
 	totalReplacementValue: number;
 	promoCode?: string | undefined;
 	discountAmount?: number;
-}): Promise<{ success: boolean; bookingId?: string; error?: string }> {
+}): Promise<{
+	success: boolean;
+	bookingId?: string;
+	error?: string;
+	appliedPromoCode?: { code: string; discountAmount: number } | null;
+}> {
 	try {
 		const session = await auth();
 		if (!session?.user?.id) return { success: false, error: "Не авторизован" };
@@ -72,25 +77,49 @@ export async function submitBookingAction(formData: {
 
 		let promoCodeId: string | null = null;
 		if (formData.promoCode) {
+			const code = formData.promoCode.trim().toUpperCase();
 			const promo = await prisma.promoCode.findUnique({
-				where: { code: formData.promoCode.trim().toUpperCase() },
+				where: { code },
 				select: {
 					id: true,
 					isActive: true,
 					usageLimit: true,
 					usedCount: true,
+					perUserLimit: true,
+					minOrderAmount: true,
 					validFrom: true,
 					validUntil: true,
+					equipmentRestrictions: { select: { equipmentId: true } },
 				},
 			});
 			const now = new Date();
-			const isValid =
+			const baseValid =
 				promo?.isActive &&
 				(!promo.validFrom || now >= promo.validFrom) &&
 				(!promo.validUntil || now <= promo.validUntil) &&
 				(promo.usageLimit === null || promo.usedCount < promo.usageLimit);
 
-			if (isValid) promoCodeId = promo.id;
+			if (baseValid && promo) {
+				// perUserLimit
+				let perUserOk = true;
+				if (promo.perUserLimit !== null) {
+					const userUsage = await prisma.booking.count({
+						where: { userId: session.user.id, promoCode: code },
+					});
+					perUserOk = userUsage < promo.perUserLimit;
+				}
+				// minOrderAmount
+				const minOk =
+					promo.minOrderAmount === null ||
+					formData.totalPrice >= promo.minOrderAmount;
+				// equipmentRestrictions
+				const allowed = promo.equipmentRestrictions.map((e) => e.equipmentId);
+				const equipOk =
+					allowed.length === 0 ||
+					formData.items.every((item) => allowed.includes(item.id));
+
+				if (perUserOk && minOk && equipOk) promoCodeId = promo.id;
+			}
 		}
 
 		const booking = await prisma.booking.create({
@@ -128,7 +157,17 @@ export async function submitBookingAction(formData: {
 		});
 
 		revalidatePath("/dashboard/bookings");
-		return { success: true, bookingId: booking.id };
+		return {
+			success: true,
+			bookingId: booking.id,
+			appliedPromoCode:
+				promoCodeId && formData.promoCode
+					? {
+							code: formData.promoCode.trim().toUpperCase(),
+							discountAmount: formData.discountAmount ?? 0,
+						}
+					: null,
+		};
 	} catch (error: unknown) {
 		if (error instanceof Error) return { success: false, error: error.message };
 		return { success: false, error: "Ошибка создания брони" };

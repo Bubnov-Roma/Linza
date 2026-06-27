@@ -67,6 +67,10 @@ export default function CheckoutPage() {
 	const [busyIds, setBusyIds] = useState<string[]>([]);
 	const [bookingId, setBookingId] = useState<string | null>(null);
 	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+	const [appliedPromoCode, setAppliedPromoCode] = useState<{
+		code: string;
+		discountAmount: number;
+	} | null>(null);
 
 	// -- Empty Cart -> top scroll
 	useEffect(() => {
@@ -193,6 +197,9 @@ export default function CheckoutPage() {
 			if (result.success && result.bookingId) {
 				clearCart();
 				setBookingId(result.bookingId);
+				if (result.appliedPromoCode) {
+					setAppliedPromoCode(result.appliedPromoCode);
+				}
 				return true;
 			}
 			toast.error(result.error || "Ошибка брони");
@@ -219,6 +226,7 @@ export default function CheckoutPage() {
 			<BookingSuccessScreen
 				bookingId={bookingId}
 				redirectUrl={`/dashboard/bookings/${bookingId}`}
+				appliedPromoCode={appliedPromoCode}
 			/>
 		);
 	if (!hydrated) return <CheckoutSkeleton />;

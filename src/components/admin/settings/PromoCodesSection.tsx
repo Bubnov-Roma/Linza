@@ -62,8 +62,12 @@ interface PromoFormState {
 	value: string;
 	description: string;
 	isActive: boolean;
-	usageLimit: string; // "" = безлимит
-	validFrom: string; // "YYYY-MM-DD" или ""
+	usageLimit: string;
+	perUserLimit: string; // "" = без ограничений
+	minOrderAmount: string; // "" = без минимума
+	autoApplyTrigger: string; // "" | "FIRST_BOOKING_AFTER_APPROVAL"
+	equipmentIds: string[]; // NEW: [] = без ограничений по технике
+	validFrom: string;
 	validUntil: string;
 }
 
@@ -74,6 +78,10 @@ const EMPTY_FORM: PromoFormState = {
 	description: "",
 	isActive: true,
 	usageLimit: "",
+	perUserLimit: "",
+	minOrderAmount: "",
+	autoApplyTrigger: "",
+	equipmentIds: [],
 	validFrom: "",
 	validUntil: "",
 };
@@ -186,6 +194,60 @@ function PromoForm({
 					/>
 				</div>
 			</div>
+			{/* Расширенные ограничения */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+				<div className="space-y-1.5">
+					<Label className="text-xs">Лимит на клиента (пусто = 1)</Label>
+					<Input
+						type="number"
+						min={1}
+						placeholder="1"
+						value={form.perUserLimit}
+						onChange={(e) => set("perUserLimit", e.target.value)}
+						disabled={isPending}
+						className="glass-input"
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label className="text-xs">Мин. сумма заказа (₽)</Label>
+					<Input
+						type="number"
+						min={0}
+						placeholder="Без минимума"
+						value={form.minOrderAmount}
+						onChange={(e) => set("minOrderAmount", e.target.value)}
+						disabled={isPending}
+						className="glass-input"
+					/>
+				</div>
+			</div>
+
+			{/* Авто-применение */}
+			<div className="rounded-xl border border-foreground/10 p-3 space-y-2 bg-foreground/2">
+				<div className="flex items-center justify-between">
+					<div className="space-y-0.5">
+						<Label className="text-xs font-semibold">
+							Авто-применение при одобрении анкеты
+						</Label>
+						<p className="text-[10px] text-muted-foreground">
+							Промокод применится автоматически к первому заказу после одобрения
+						</p>
+					</div>
+					<Switch
+						checked={form.autoApplyTrigger === "FIRST_BOOKING_AFTER_APPROVAL"}
+						onCheckedChange={(v) =>
+							set("autoApplyTrigger", v ? "FIRST_BOOKING_AFTER_APPROVAL" : "")
+						}
+						disabled={isPending}
+					/>
+				</div>
+				{form.autoApplyTrigger === "FIRST_BOOKING_AFTER_APPROVAL" && (
+					<p className="text-[10px] text-amber-500 bg-amber-500/10 rounded-lg px-2 py-1.5 border border-amber-500/20">
+						⚡ Только один активный авто-промокод применяется — первый по дате
+						создания
+					</p>
+				)}
+			</div>
 			{/* Кнопки */}
 			<div className="flex items-center gap-2 pt-1">
 				<Button
@@ -241,6 +303,14 @@ function PromoRow({
 				description: form.description || null,
 				isActive: form.isActive,
 				usageLimit: form.usageLimit ? parseInt(form.usageLimit, 10) : null,
+				perUserLimit: form.perUserLimit
+					? parseInt(form.perUserLimit, 10)
+					: null,
+				minOrderAmount: form.minOrderAmount
+					? parseFloat(form.minOrderAmount)
+					: null,
+				autoApplyTrigger: form.autoApplyTrigger || null,
+				equipmentIds: form.equipmentIds,
 				validFrom: form.validFrom || null,
 				validUntil: form.validUntil || null,
 			});
@@ -296,6 +366,12 @@ function PromoRow({
 			description: promo.description ?? "",
 			isActive: promo.isActive,
 			usageLimit: promo.usageLimit !== null ? String(promo.usageLimit) : "",
+			perUserLimit:
+				promo.perUserLimit !== null ? String(promo.perUserLimit) : "",
+			minOrderAmount:
+				promo.minOrderAmount !== null ? String(promo.minOrderAmount) : "",
+			autoApplyTrigger: promo.autoApplyTrigger ?? "",
+			equipmentIds: promo.equipmentIds ?? [],
 			validFrom: promo.validFrom ? promo.validFrom.slice(0, 10) : "",
 			validUntil: promo.validUntil ? promo.validUntil.slice(0, 10) : "",
 		};
@@ -338,6 +414,17 @@ function PromoRow({
 						Использован: {promo.usedCount}
 						{promo.usageLimit !== null ? ` / ${promo.usageLimit}` : " / ∞"}
 					</span>
+
+					{/* per-user лимит */}
+					{promo.perUserLimit !== null && (
+						<span>На клиента: {promo.perUserLimit}×</span>
+					)}
+
+					{/* минимальная сумма */}
+					{promo.minOrderAmount !== null && (
+						<span>От {fmtRub(promo.minOrderAmount)}</span>
+					)}
+
 					{(promo.validFrom || promo.validUntil) && (
 						<span className="flex items-center gap-1">
 							{promo.validFrom ? (
@@ -355,6 +442,18 @@ function PromoRow({
 					)}
 					{promo.creatorName && <span>Создан: {promo.creatorName}</span>}
 				</div>
+
+				{/* авто-промокод бейдж */}
+				{promo.autoApplyTrigger === "FIRST_BOOKING_AFTER_APPROVAL" && (
+					<div className="flex items-center gap-1 mt-1">
+						<Badge
+							variant="outline"
+							className="text-[10px] border-amber-500/30 text-amber-600 bg-amber-500/8 gap-1"
+						>
+							⚡ Авто: первый заказ после одобрения
+						</Badge>
+					</div>
+				)}
 			</div>
 
 			<div className="flex flex-col justify-between h-100% items-end">
@@ -444,6 +543,14 @@ export function PromoCodesSection() {
 				description: form.description || "",
 				isActive: form.isActive,
 				usageLimit: form.usageLimit ? parseInt(form.usageLimit, 10) : null,
+				perUserLimit: form.perUserLimit
+					? parseInt(form.perUserLimit, 10)
+					: null,
+				minOrderAmount: form.minOrderAmount
+					? parseFloat(form.minOrderAmount)
+					: null,
+				autoApplyTrigger: form.autoApplyTrigger || null,
+				equipmentIds: form.equipmentIds,
 				validFrom: form.validFrom || null,
 				validUntil: form.validUntil || null,
 			});

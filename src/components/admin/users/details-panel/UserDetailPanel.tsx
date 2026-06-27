@@ -60,7 +60,6 @@ import {
 import { LABEL_COLORS } from "@/constants";
 import type {
 	ApplicationStatus,
-	// ApplicationStatus,
 	UserProfile,
 } from "@/core/domain/entities/User";
 import { cn } from "@/lib/utils";

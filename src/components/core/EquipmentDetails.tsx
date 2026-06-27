@@ -109,6 +109,10 @@ export default function EquipmentDetails({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [bookingId, setBookingId] = useState<string | null>(null);
 	const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+	const [appliedPromoCode, setAppliedPromoCode] = useState<{
+		code: string;
+		discountAmount: number;
+	} | null>(null);
 
 	useEffect(() => {
 		if (window.innerWidth < 1024 && titleRef.current) {
@@ -244,6 +248,9 @@ export default function EquipmentDetails({
 				clearCart();
 				setIsQuickBookOpen(false);
 				setBookingId(result.bookingId);
+				if (result.appliedPromoCode) {
+					setAppliedPromoCode(result.appliedPromoCode);
+				}
 			} else {
 				toast.error(result.error || "Ошибка брони");
 			}
@@ -265,7 +272,13 @@ export default function EquipmentDetails({
 		equipment.relatedIds && equipment.relatedIds.length > 0
 	);
 
-	if (bookingId) return <BookingSuccessScreen bookingId={bookingId} />;
+	if (bookingId)
+		return (
+			<BookingSuccessScreen
+				bookingId={bookingId}
+				appliedPromoCode={appliedPromoCode}
+			/>
+		);
 
 	const quickBookContent = (
 		<>

@@ -183,6 +183,7 @@ model User {
   studioPaymentsAuthored     StudioBookingPayment[]    @relation("StudioPaymentAuthor")
   studioAuditLogsAuthored    StudioBookingAuditLog[]   @relation("StudioAuditAuthor")
   createdPromoCodes          PromoCode[]               @relation("PromoCreator")
+  autoPromoCode              String?                   // код авто-промокода при одобрении анкеты
 
   supportThreads             SupportThread[]
   sentSupportMessages        SupportMessage[]          @relation("SupportMessageAuthor")
@@ -378,48 +379,50 @@ model BookingPayment {
 }
 
 model Equipment {
-  id               String          @id @default(uuid())
-  title            String
-  slug             String          @unique
-  description      String?         @db.Text
-  pricePerDay      Float
-  price4h          Float           @default(0)
-  price8h          Float           @default(0)
-  deposit          Float           @default(0)
-  replacementValue Float           @default(0)
+  id                       String          @id @default(uuid())
+  title                    String
+  slug                     String          @unique
+  description              String?         @db.Text
+  pricePerDay              Float
+  price4h                  Float           @default(0)
+  price8h                  Float           @default(0)
+  deposit                  Float           @default(0)
+  replacementValue         Float           @default(0)
 
-  categoryId       String          
-  subcategoryId    String?         
+  categoryId               String          
+  subcategoryId            String?         
   
-  isAvailable      Boolean         @default(true)
-  isPrimary        Boolean         @default(false)
-  isFeatured       Boolean         @default(false)
-  priceStudio      Float           @default(0)
-  studioAvailable  Boolean         @default(true)
-  status           EquipmentStatus @default(AVAILABLE)
-  inventoryNumber  String?
-  defects          String?         @db.Text
-  kit              String?         @db.Text
-  kitDescription   String?         @db.Text
-  ownershipType    OwnershipType   @default(INTERNAL)
-  partnerName      String?
-  specifications   Json            @default("{}")
-  comments         Json            @default("[]")
-  videoUrls        Json            @default("[]")
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  isAvailable              Boolean         @default(true)
+  isPrimary                Boolean         @default(false)
+  isFeatured               Boolean         @default(false)
+  priceStudio              Float           @default(0)
+  studioAvailable          Boolean         @default(true)
+  status                   EquipmentStatus @default(AVAILABLE)
+  inventoryNumber          String?
+  defects                  String?         @db.Text
+  kit                      String?         @db.Text
+  kitDescription           String?         @db.Text
+  ownershipType            OwnershipType   @default(INTERNAL)
+  partnerName              String?
+  specifications           Json            @default("{}")
+  comments                 Json            @default("[]")
+  videoUrls                Json            @default("[]")
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
 
-  category         Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  subcategory      Subcategory?    @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  category                 Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory              Subcategory?    @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
 
-  relatedEquipment EquipmentRelation[] @relation("EquipmentToRelated")
-  relatedTo        EquipmentRelation[] @relation("RelatedToEquipment")
+  relatedEquipment         EquipmentRelation[] @relation("EquipmentToRelated")
+  relatedTo                EquipmentRelation[] @relation("RelatedToEquipment")
 
-  bookingItems        BookingItem[]
-  cartItems           CartItem[]
-  favorites           Favorite[]
-  equipmentImageLinks EquipmentImageLink[]
-  studioBookingItems  StudioBookingItem[]
+  bookingItems             BookingItem[]
+  cartItems                CartItem[]
+  favorites                Favorite[]
+  equipmentImageLinks      EquipmentImageLink[]
+  studioBookingItems       StudioBookingItem[]
+
+  promoRestrictions        PromoCodeEquipment[]
 }
 
 model EquipmentRelation {
@@ -675,21 +678,35 @@ model DocumentGenerationLog {
 // ─── PROMO CODES ─────────────────────────────────────────────────────────────
 
 model PromoCode {
-  id          String       @id @default(uuid())
-  code        String       @unique
-  type        DiscountType
-  value       Float
-  description String?      @db.Text
-  isActive    Boolean      @default(true)
-  usageLimit  Int?
-  usedCount   Int          @default(0)
-  validFrom   DateTime?
-  validUntil  DateTime?
-  createdBy   String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                      String       @id @default(uuid())
+  code                    String       @unique
+  type                    DiscountType
+  value                   Float
+  description             String?      @db.Text
+  isActive                Boolean      @default(true)
+  usageLimit              Int?
+  usedCount               Int          @default(0)
+  perUserLimit            Int?                              // лимит на одного клиента (null = без ограничений)
+  minOrderAmount          Float?                            // минимальная сумма заказа
+  autoApplyTrigger        String?                           // "FIRST_BOOKING_AFTER_APPROVAL" | null
+  validFrom               DateTime?
+  validUntil              DateTime?
+  createdBy               String?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
 
-  creator     User?        @relation("PromoCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  creator                 User?                   @relation("PromoCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  equipmentRestrictions   PromoCodeEquipment[]   //
+}
+
+model PromoCodeEquipment {
+  promoCodeId  String
+  equipmentId  String
+
+  promoCode    PromoCode  @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  equipment    Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@id([promoCodeId, equipmentId])
 }
 
 // ─── STUDIO ──────────────────────────────────────────────────────────────────

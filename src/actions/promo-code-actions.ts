@@ -10,12 +10,16 @@ import { prisma } from "@/lib/prisma";
 export interface PromoCodeItem {
 	id: string;
 	code: string;
-	type: DiscountType; // PERCENT | FIXED
-	value: number; // % или рублей
+	type: DiscountType;
+	value: number;
 	description: string | null;
 	isActive: boolean;
-	usageLimit: number | null; // null = безлимит
+	usageLimit: number | null;
 	usedCount: number;
+	perUserLimit: number | null;
+	minOrderAmount: number | null;
+	autoApplyTrigger: string | null;
+	equipmentIds: string[];
 	validFrom: string | null;
 	validUntil: string | null;
 	createdBy: string | null;
@@ -23,7 +27,7 @@ export interface PromoCodeItem {
 	createdAt: string;
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helper: авторизация ───────────────────────────────────────────────────────
 
 async function requireAdminOrPromoRight() {
 	const session = await auth();
@@ -47,6 +51,53 @@ async function requireAdminOrPromoRight() {
 	return session.user.id;
 }
 
+// ─── Helper: маппинг строки БД → PromoCodeItem ────────────────────────────────
+
+function mapPromoRow(r: {
+	id: string;
+	code: string;
+	type: DiscountType;
+	value: number;
+	description: string | null;
+	isActive: boolean;
+	usageLimit: number | null;
+	usedCount: number;
+	perUserLimit: number | null;
+	minOrderAmount: number | null;
+	autoApplyTrigger: string | null;
+	validFrom: Date | null;
+	validUntil: Date | null;
+	createdBy: string | null;
+	createdAt: Date;
+	creator: { name: string | null } | null;
+	equipmentRestrictions: { equipmentId: string }[];
+}): PromoCodeItem {
+	return {
+		id: r.id,
+		code: r.code,
+		type: r.type,
+		value: r.value,
+		description: r.description,
+		isActive: r.isActive,
+		usageLimit: r.usageLimit,
+		usedCount: r.usedCount,
+		perUserLimit: r.perUserLimit,
+		minOrderAmount: r.minOrderAmount,
+		autoApplyTrigger: r.autoApplyTrigger,
+		equipmentIds: r.equipmentRestrictions.map((e) => e.equipmentId),
+		validFrom: r.validFrom?.toISOString() ?? null,
+		validUntil: r.validUntil?.toISOString() ?? null,
+		createdBy: r.createdBy,
+		creatorName: r.creator?.name ?? null,
+		createdAt: r.createdAt.toISOString(),
+	};
+}
+
+const PROMO_INCLUDE = {
+	creator: { select: { name: true } },
+	equipmentRestrictions: { select: { equipmentId: true } },
+} as const;
+
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 /** Получить все промокоды */
@@ -60,27 +111,10 @@ export async function getPromoCodesAction(): Promise<{
 
 		const rows = await prisma.promoCode.findMany({
 			orderBy: { createdAt: "desc" },
-			include: { creator: { select: { name: true } } },
+			include: PROMO_INCLUDE,
 		});
 
-		return {
-			success: true,
-			data: rows.map((r) => ({
-				id: r.id,
-				code: r.code,
-				type: r.type,
-				value: r.value,
-				description: r.description,
-				isActive: r.isActive,
-				usageLimit: r.usageLimit,
-				usedCount: r.usedCount,
-				validFrom: r.validFrom?.toISOString() ?? null,
-				validUntil: r.validUntil?.toISOString() ?? null,
-				createdBy: r.createdBy,
-				creatorName: r.creator?.name ?? null,
-				createdAt: r.createdAt.toISOString(),
-			})),
-		};
+		return { success: true, data: rows.map(mapPromoRow) };
 	} catch (e) {
 		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
 	}
@@ -94,6 +128,10 @@ export async function createPromoCodeAction(input: {
 	description?: string;
 	isActive?: boolean;
 	usageLimit?: number | null;
+	perUserLimit?: number | null;
+	minOrderAmount?: number | null;
+	autoApplyTrigger?: string | null;
+	equipmentIds?: string[];
 	validFrom?: string | null;
 	validUntil?: string | null;
 }): Promise<{ success: boolean; data?: PromoCodeItem; error?: string }> {
@@ -104,9 +142,8 @@ export async function createPromoCodeAction(input: {
 		if (!code) return { success: false, error: "Кодовое слово обязательно" };
 		if (input.value <= 0)
 			return { success: false, error: "Значение должно быть больше 0" };
-		if (input.type === "PERCENT" && input.value > 100) {
+		if (input.type === "PERCENT" && input.value > 100)
 			return { success: false, error: "Скидка не может превышать 100%" };
-		}
 
 		const created = await prisma.promoCode.create({
 			data: {
@@ -116,34 +153,27 @@ export async function createPromoCodeAction(input: {
 				description: input.description?.trim() ?? null,
 				isActive: input.isActive ?? true,
 				usageLimit: input.usageLimit ?? null,
+				perUserLimit: input.perUserLimit ?? null,
+				minOrderAmount: input.minOrderAmount ?? null,
+				autoApplyTrigger: input.autoApplyTrigger ?? null,
 				validFrom: input.validFrom ? new Date(input.validFrom) : null,
 				validUntil: input.validUntil ? new Date(input.validUntil) : null,
 				createdBy: authorId,
+				// Создаём связи с оборудованием в одной операции
+				equipmentRestrictions: input.equipmentIds?.length
+					? {
+							create: input.equipmentIds.map((equipmentId) => ({
+								equipmentId,
+							})),
+						}
+					: {},
 			},
-			include: { creator: { select: { name: true } } },
+			include: PROMO_INCLUDE,
 		});
 
 		revalidatePath("/admin/settings");
-		return {
-			success: true,
-			data: {
-				id: created.id,
-				code: created.code,
-				type: created.type,
-				value: created.value,
-				description: created.description,
-				isActive: created.isActive,
-				usageLimit: created.usageLimit,
-				usedCount: created.usedCount,
-				validFrom: created.validFrom?.toISOString() ?? null,
-				validUntil: created.validUntil?.toISOString() ?? null,
-				createdBy: created.createdBy,
-				creatorName: created.creator?.name ?? null,
-				createdAt: created.createdAt.toISOString(),
-			},
-		};
+		return { success: true, data: mapPromoRow(created) };
 	} catch (e: unknown) {
-		// P2002 — unique constraint (code уже существует)
 		if (
 			e instanceof Error &&
 			"code" in e &&
@@ -165,6 +195,10 @@ export async function updatePromoCodeAction(
 		description: string | null;
 		isActive: boolean;
 		usageLimit: number | null;
+		perUserLimit: number | null;
+		minOrderAmount: number | null;
+		autoApplyTrigger: string | null;
+		equipmentIds: string[];
 		validFrom: string | null;
 		validUntil: string | null;
 	}>
@@ -184,6 +218,12 @@ export async function updatePromoCodeAction(
 		if (input.description !== undefined) data.description = input.description;
 		if (input.isActive !== undefined) data.isActive = input.isActive;
 		if (input.usageLimit !== undefined) data.usageLimit = input.usageLimit;
+		if (input.perUserLimit !== undefined)
+			data.perUserLimit = input.perUserLimit;
+		if (input.minOrderAmount !== undefined)
+			data.minOrderAmount = input.minOrderAmount;
+		if (input.autoApplyTrigger !== undefined)
+			data.autoApplyTrigger = input.autoApplyTrigger;
 		if (input.validFrom !== undefined) {
 			data.validFrom = input.validFrom ? new Date(input.validFrom) : null;
 		}
@@ -191,7 +231,27 @@ export async function updatePromoCodeAction(
 			data.validUntil = input.validUntil ? new Date(input.validUntil) : null;
 		}
 
-		await prisma.promoCode.update({ where: { id }, data });
+		if (input.equipmentIds !== undefined) {
+			// Полная замена: удаляем старые → создаём новые в транзакции
+			await prisma.$transaction([
+				prisma.promoCodeEquipment.deleteMany({ where: { promoCodeId: id } }),
+				prisma.promoCode.update({
+					where: { id },
+					data: {
+						...data,
+						equipmentRestrictions: input.equipmentIds.length
+							? {
+									create: input.equipmentIds.map((equipmentId) => ({
+										equipmentId,
+									})),
+								}
+							: {},
+					},
+				}),
+			]);
+		} else {
+			await prisma.promoCode.update({ where: { id }, data });
+		}
 
 		revalidatePath("/admin/settings");
 		return { success: true };
@@ -213,6 +273,7 @@ export async function deletePromoCodeAction(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		await requireAdminOrPromoRight();
+		// equipmentRestrictions удалятся каскадно (onDelete: Cascade в схеме)
 		await prisma.promoCode.delete({ where: { id } });
 		revalidatePath("/admin/settings");
 		return { success: true };
@@ -237,15 +298,29 @@ export async function resetPromoCodeUsageAction(
 
 /**
  * Публичный action — проверить промокод при оформлении заказа клиентом.
- * Возвращает тип и значение скидки, не раскрывая id и внутренние поля.
+ *
+ * Новые проверки:
+ *   - perUserLimit: считаем сколько раз клиент уже использовал этот промокод
+ *   - minOrderAmount: проверяем переданную сумму заказа
+ *   - equipmentIds: проверяем что все позиции заказа входят в разрешённый список
  */
-export async function validatePromoCodeAction(code: string): Promise<{
+export async function validatePromoCodeAction(
+	code: string,
+	context?: {
+		orderAmount?: number; // итоговая сумма заказа для проверки minOrderAmount
+		equipmentIds?: string[]; // id позиций в заказе для проверки ограничений по технике
+	}
+): Promise<{
 	success: boolean;
 	type?: DiscountType;
 	value?: number;
+	minOrderAmount?: number | null;
 	error?: string;
 }> {
 	try {
+		const session = await auth();
+		const userId = session?.user?.id ?? null;
+
 		const normalized = code.trim().toUpperCase();
 		if (!normalized) return { success: false, error: "Введите промокод" };
 
@@ -258,29 +333,174 @@ export async function validatePromoCodeAction(code: string): Promise<{
 				value: true,
 				usageLimit: true,
 				usedCount: true,
+				perUserLimit: true,
+				minOrderAmount: true,
+				autoApplyTrigger: true,
 				validFrom: true,
 				validUntil: true,
+				equipmentRestrictions: { select: { equipmentId: true } },
 			},
 		});
 
 		if (!promo) return { success: false, error: "Промокод не найден" };
 		if (!promo.isActive) return { success: false, error: "Промокод неактивен" };
 
+		// ── Даты ──────────────────────────────────────────────────────────────────
 		const now = new Date();
-		if (promo.validFrom && now < promo.validFrom) {
+		if (promo.validFrom && now < promo.validFrom)
 			return { success: false, error: "Промокод ещё не действует" };
-		}
-		if (promo.validUntil && now > promo.validUntil) {
+		if (promo.validUntil && now > promo.validUntil)
 			return { success: false, error: "Срок действия промокода истёк" };
-		}
-		if (promo.usageLimit !== null && promo.usedCount >= promo.usageLimit) {
+
+		// ── Глобальный лимит использований ───────────────────────────────────────
+		if (promo.usageLimit !== null && promo.usedCount >= promo.usageLimit)
 			return {
 				success: false,
 				error: "Лимит использований промокода исчерпан",
 			};
+
+		// ── Лимит на клиента (perUserLimit) ───────────────────────────────────────
+		if (promo.perUserLimit !== null && userId) {
+			const userUsageCount = await prisma.booking.count({
+				where: { userId, promoCode: normalized },
+			});
+			if (userUsageCount >= promo.perUserLimit) {
+				return {
+					success: false,
+					error:
+						promo.perUserLimit === 1
+							? "Вы уже использовали этот промокод"
+							: `Вы использовали этот промокод максимальное количество раз (${promo.perUserLimit})`,
+				};
+			}
 		}
 
-		return { success: true, type: promo.type, value: promo.value };
+		// ── Минимальная сумма заказа ──────────────────────────────────────────────
+		if (promo.minOrderAmount !== null) {
+			if (
+				context?.orderAmount !== undefined &&
+				context.orderAmount < promo.minOrderAmount
+			) {
+				return {
+					success: false,
+					error: `Промокод действует при заказе от ${promo.minOrderAmount.toLocaleString("ru-RU")} ₽`,
+				};
+			}
+			// Если сумма не передана — возвращаем ограничение в ответе,
+			// чтобы клиентская форма могла показать его пользователю
+		}
+
+		// ── Ограничение по технике ────────────────────────────────────────────────
+		const allowedEquipmentIds = promo.equipmentRestrictions.map(
+			(e) => e.equipmentId
+		);
+		if (allowedEquipmentIds.length > 0 && context?.equipmentIds?.length) {
+			const hasDisallowed = context.equipmentIds.some(
+				(id) => !allowedEquipmentIds.includes(id)
+			);
+			if (hasDisallowed) {
+				return {
+					success: false,
+					error: "Промокод не распространяется на некоторые позиции в заказе",
+				};
+			}
+		}
+
+		return {
+			success: true,
+			type: promo.type,
+			value: promo.value,
+			minOrderAmount: promo.minOrderAmount,
+		};
+	} catch (e) {
+		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
+	}
+}
+
+/**
+ * Найти авто-применяемый промокод для пользователя.
+ *
+ * Логика для триггера "FIRST_BOOKING_AFTER_APPROVAL":
+ *   1. У пользователя статус анкеты APPROVED
+ *   2. У него ещё не было ни одного заказа с этим промокодом
+ *   3. Промокод активен и не истёк
+ *
+ * Возвращает код и параметры промокода, либо null если условия не выполнены.
+ */
+export async function getAutoApplyPromoForUserAction(): Promise<{
+	success: boolean;
+	promo?: {
+		code: string;
+		type: DiscountType;
+		value: number;
+		minOrderAmount: number | null;
+	} | null;
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) return { success: true, promo: null };
+		const userId = session.user.id;
+
+		// Ищем все промокоды с авто-триггером
+		const autoPromos = await prisma.promoCode.findMany({
+			where: {
+				autoApplyTrigger: "FIRST_BOOKING_AFTER_APPROVAL",
+				isActive: true,
+				OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+				AND: [
+					{ OR: [{ validFrom: null }, { validFrom: { lte: new Date() } }] },
+				],
+			},
+			select: {
+				id: true,
+				code: true,
+				type: true,
+				value: true,
+				minOrderAmount: true,
+				perUserLimit: true,
+				usageLimit: true,
+				usedCount: true,
+			},
+		});
+
+		if (!autoPromos.length) return { success: true, promo: null };
+
+		// Проверяем статус анкеты
+		const application = await prisma.clientApplication.findUnique({
+			where: { userId },
+			select: { status: true },
+		});
+
+		if (application?.status !== "APPROVED")
+			return { success: true, promo: null };
+
+		// Ищем первый подходящий промокод (приоритет — порядок создания)
+		for (const promo of autoPromos) {
+			// Глобальный лимит
+			if (promo.usageLimit !== null && promo.usedCount >= promo.usageLimit)
+				continue;
+
+			// Лимит на клиента
+			const perUserLimit = promo.perUserLimit ?? 1; // по умолчанию 1 для авто-промокодов
+			const userUsageCount = await prisma.booking.count({
+				where: { userId, promoCode: promo.code },
+			});
+			if (userUsageCount >= perUserLimit) continue;
+
+			// Нашли подходящий
+			return {
+				success: true,
+				promo: {
+					code: promo.code,
+					type: promo.type,
+					value: promo.value,
+					minOrderAmount: promo.minOrderAmount,
+				},
+			};
+		}
+
+		return { success: true, promo: null };
 	} catch (e) {
 		return { success: false, error: e instanceof Error ? e.message : "Ошибка" };
 	}

@@ -1,8 +1,7 @@
-# 🎥 Rental Hub - Аренда фото-видео оборудования
+# 🎥 LINZA - Аренда фото-видео оборудования
 
-![Next.js](https://img.shields.io/badge/Next.js-16.0.10-black)
+![Next.js](https://img.shields.io/badge/Next.js-16.2.10-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Supabase](https://img.shields.io/badge/Supabase-3.0-green)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38b2ac)
 
 Современная платформа для аренды профессионального фото-видео оборудования с мгновенным бронированием и управлением.

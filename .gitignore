@@ -76,3 +76,4 @@ temp/
 dist/
 release.tar.gz
 /init-db/
+/.docs/*

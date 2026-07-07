@@ -11,9 +11,11 @@ import {
 	PlusIcon,
 	ProhibitIcon,
 	UploadSimpleIcon,
+	UserIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useDebounceValue } from "usehooks-ts";
@@ -33,6 +35,7 @@ import {
 	Button,
 	Card,
 	CardContent,
+	Checkbox,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -218,6 +221,7 @@ export default function AdminBookingsTable({
 	);
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <Сброс страницы при изменении фильтров>
 	useEffect(() => {
@@ -673,6 +677,20 @@ export default function AdminBookingsTable({
 							)}
 						>
 							<TableRow className="border-foreground/5 hover:bg-transparent font-black">
+								<TableHead className="w-10">
+									<Checkbox
+										checked={
+											bookings.length > 0 &&
+											selectedIds.size === bookings.length
+										}
+										onCheckedChange={(checked) => {
+											setSelectedIds(
+												checked ? new Set(bookings.map((b) => b.id)) : new Set()
+											);
+										}}
+									/>
+								</TableHead>
+								<TableHead>Клиент</TableHead>
 								<TableHead
 									className="cursor-pointer select-none hover:text-foreground transition-colors"
 									onClick={() => handleSort("createdAt")}
@@ -686,7 +704,6 @@ export default function AdminBookingsTable({
 										/>
 									</span>
 								</TableHead>
-								<TableHead>Клиент</TableHead>
 								<TableHead>Техника</TableHead>
 								<TableHead
 									className="cursor-pointer select-none hover:text-foreground transition-colors"
@@ -754,6 +771,7 @@ export default function AdminBookingsTable({
 											activeBooking?.id === booking.id &&
 												sheetOpen &&
 												"bg-foreground/7",
+											selectedIds.has(booking.id) && "bg-primary/10",
 											booking.status === "PENDING_REVIEW" &&
 												"bg-amber-500/7 border-l-2 border-l-amber-500/40",
 											booking.status === "WAIT_PAYMENT" &&
@@ -767,16 +785,44 @@ export default function AdminBookingsTable({
 										)}
 										onClick={() => openBooking(booking)}
 									>
-										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-											{createdDate}
+										<TableCell onClick={(e) => e.stopPropagation()}>
+											<Checkbox
+												checked={selectedIds.has(booking.id)}
+												onCheckedChange={(checked) => {
+													const newSelected = new Set(selectedIds);
+													if (checked) newSelected.add(booking.id);
+													else newSelected.delete(booking.id);
+													setSelectedIds(newSelected);
+												}}
+											/>
 										</TableCell>
 										<TableCell>
-											<p className="text-sm font-medium truncate max-w-32">
-												{booking.clientName || "Без имени"}
-											</p>
-											<p className="text-[11px] text-muted-foreground truncate max-w-32">
-												{booking.clientEmail || "—"}
-											</p>
+											<div className="flex items-center gap-3">
+												<div className="h-8 w-8 rounded-full bg-foreground/8 flex items-center justify-center overflow-hidden shrink-0">
+													{booking.clientImage ? (
+														<Image
+															src={booking.clientImage}
+															alt=""
+															width={32}
+															height={32}
+															className="object-cover"
+														/>
+													) : (
+														<UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
+													)}
+												</div>
+												<div className="min-w-0">
+													<p className="text-sm font-medium truncate max-w-32">
+														{booking.clientName || "Без имени"}
+													</p>
+													<p className="text-[11px] text-muted-foreground truncate max-w-32">
+														{booking.clientEmail || "—"}
+													</p>
+												</div>
+											</div>
+										</TableCell>
+										<TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+											{createdDate}
 										</TableCell>
 										<TableCell>
 											<EquipmentCell booking={booking} />

@@ -171,6 +171,7 @@ export interface AdminBookingRow {
 	clientId: string;
 	clientName: string | null;
 	clientEmail: string | null;
+	clientPhone: string | null;
 	equipmentTitles: string[];
 	itemCount: number;
 	bookingItems: AdminBookingItemSnippet[];

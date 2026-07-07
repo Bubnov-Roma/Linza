@@ -77,3 +77,5 @@ dist/
 release.tar.gz
 /init-db/
 /.docs/*
+
+server_setup.sh

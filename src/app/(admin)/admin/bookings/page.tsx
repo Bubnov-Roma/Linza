@@ -53,7 +53,7 @@ export default async function AdminBookingsPage() {
 			unknown
 		> | null;
 
-		const { fullName } = extractEnrichedUserData(overrides, {
+		const { fullName, phone } = extractEnrichedUserData(overrides, {
 			name: row.user.name,
 			phone: row.user.phone,
 		});
@@ -83,6 +83,7 @@ export default async function AdminBookingsPage() {
 			cancelledAt: row.cancelledAt?.toISOString() ?? null,
 			clientName: fullName,
 			clientEmail: row.user.email,
+			clientPhone: phone,
 			equipmentTitles: equipmentTitles,
 			itemCount: row.bookingItems.length,
 			bookingItems,

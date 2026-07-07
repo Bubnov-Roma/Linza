@@ -5,6 +5,7 @@ import {
 	CalendarIcon,
 	CheckIcon,
 	ClockIcon,
+	CopyIcon,
 	CurrencyRubIcon,
 	FileTextIcon,
 	HandCoinsIcon,
@@ -59,13 +60,11 @@ import {
 	refundToBalanceAction,
 	removeBookingLabelAction,
 } from "@/actions/audit-and-balance-actions";
-import {
-	InlinePaymentChanger,
-	InlineStatusChanger,
-} from "@/components/admin/bookings/BookingInlineChanger";
+import { InlineStatusChanger } from "@/components/admin/bookings/BookingInlineChanger";
 import { DocumentsPanel } from "@/components/admin/bookings/documents/DocumentsPanel";
 import { PaymentsPanel } from "@/components/admin/bookings/PaymentsPanel";
 import { LabelsBlock } from "@/components/admin/users/details-panel/LabelsBlock";
+import { ClientTime } from "@/components/shared";
 import {
 	RentalPeriod,
 	type RentalPeriodValue,
@@ -169,17 +168,41 @@ function SectionTitle({
 function EditBtn({
 	onClick,
 	label = "Изменить",
+	className,
 }: {
 	onClick: () => void;
 	label?: string;
+	className?: string;
 }) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+			className={`flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors ${className || ""}`}
 		>
 			<PencilIcon size={10} /> {label}
+		</button>
+	);
+}
+
+function CopyIconButton({ value, label }: { value: string; label: string }) {
+	return (
+		<button
+			type="button"
+			onClick={async (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				try {
+					await navigator.clipboard.writeText(value);
+					toast.success(`${label} скопирован`);
+				} catch {
+					toast.error("Не удалось скопировать");
+				}
+			}}
+			className="p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-foreground/8 transition-colors shrink-0"
+			title={`Скопировать ${label.toLowerCase()}`}
+		>
+			<CopyIcon size={12} />
 		</button>
 	);
 }
@@ -385,7 +408,12 @@ function ClientBlock({
 	addAudit,
 }: {
 	booking: AdminBookingRow;
-	onSaved: (id: string, name: string | null, email: string | null) => void;
+	onSaved: (
+		id: string,
+		name: string | null,
+		email: string | null,
+		phone: string | null
+	) => void;
 	addAudit: (
 		e: Omit<AuditLogEntry, "id" | "createdAt" | "authorName" | "authorId">
 	) => void;
@@ -433,7 +461,12 @@ function ClientBlock({
 					valueAfter: `${selected.name} (${selected.email})`,
 					fieldName: null,
 				});
-				onSaved(selected.id, selected.name, selected.email);
+				onSaved(
+					selected.id,
+					selected.name,
+					selected.email,
+					selected.phone ?? null
+				);
 				reset();
 				toast.success("Клиент заказа изменён");
 			} else {
@@ -443,19 +476,14 @@ function ClientBlock({
 
 	if (!editing)
 		return (
-			<div className="px-6 py-4">
-				<SectionTitle
-					icon={UserIcon}
-					action={<EditBtn onClick={() => setEditing(true)} />}
-				>
-					Клиент
-				</SectionTitle>
-				<Link
-					href={`/admin/users?userId=${booking.clientId}`}
-					onClick={(e) => e.stopPropagation()}
-					className="flex items-center gap-3 group/client w-fit"
-				>
-					<div className="w-9 h-9 rounded-full bg-foreground/8 flex items-center justify-center shrink-0 overflow-hidden">
+			<div className="flex items-start gap-4">
+				<div className="flex flex-col gap-1.5">
+					{/* Крупная аватарка — клик открывает карточку клиента */}
+					<Link
+						href={`/admin/users?userId=${booking.clientId}`}
+						onClick={(e) => e.stopPropagation()}
+						className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm overflow-hidden"
+					>
 						{booking.clientImage ? (
 							<Image
 								width={64}
@@ -465,23 +493,65 @@ function ClientBlock({
 								className="w-full h-full object-cover"
 							/>
 						) : (
-							<UserIcon size={16} className="text-muted-foreground" />
+							<UserIcon size={28} className="text-primary/70" />
+						)}
+					</Link>
+					<EditBtn
+						onClick={() => setEditing(true)}
+						label="Сменить"
+						className="md:hidden"
+					/>
+				</div>
+
+				<div className="flex-1 min-w-0 flex flex-col gap-1.5 pt-0.5">
+					<div className="flex flex-wrap items-center gap-3">
+						<Link
+							href={`/admin/users?userId=${booking.clientId}`}
+							onClick={(e) => e.stopPropagation()}
+							className="text-xl font-black truncate hover:underline"
+						>
+							{booking.clientName || "Без имени"}
+						</Link>
+						<EditBtn
+							onClick={() => setEditing(true)}
+							label="Сменить"
+							className="hidden md:flex"
+						/>
+					</div>
+
+					<div className="flex flex-col md:flex-row gap-1 text-sm text-muted-foreground mt-0.5">
+						{booking.clientEmail && (
+							<div className="flex items-center gap-1.5 group/contact">
+								<Link
+									href={`mailto:${booking.clientEmail}`}
+									className="hover:text-foreground hover:underline transition-colors flex items-center gap-1.5 min-w-0"
+								>
+									<span className="truncate">{booking.clientEmail}</span>
+								</Link>
+								<CopyIconButton value={booking.clientEmail} label="Email" />
+							</div>
+						)}
+						{booking.clientPhone && (
+							<div className="flex items-center gap-1.5 group/contact">
+								<Link
+									href={`tel:${booking.clientPhone}`}
+									className="hover:text-foreground hover:underline transition-colors flex items-center gap-1.5 min-w-0"
+								>
+									<span className="truncate">{booking.clientPhone}</span>
+								</Link>
+								<CopyIconButton value={booking.clientPhone} label="Телефон" />
+							</div>
+						)}
+						{!booking.clientEmail && !booking.clientPhone && (
+							<span className="text-xs">Нет контактных данных</span>
 						)}
 					</div>
-					<div>
-						<p className="font-semibold text-sm group-hover/client:underline transition-all">
-							{booking.clientName || "Без имени"}
-						</p>
-						<p className="text-xs text-muted-foreground">
-							{booking.clientEmail || "—"}
-						</p>
-					</div>
-				</Link>
+				</div>
 			</div>
 		);
 
 	return (
-		<div className="px-6 py-4 space-y-3">
+		<div className="space-y-3">
 			<SectionTitle icon={UserIcon} action={<CancelBtn onClick={reset} />}>
 				Сменить клиента
 			</SectionTitle>
@@ -1575,47 +1645,47 @@ export function BookingDetailSheet({
 				className="w-full sm:max-w-2xl flex flex-col p-0 gap-0 overflow-hidden"
 			>
 				{/* Header */}
-				<SheetHeader className="px-6 py-4 shrink-0">
-					<div className="flex items-start justify-start gap-3">
-						<div>
-							<SheetTitle className="text-base font-bold">
-								Заказ #{localBooking.id.slice(0, 8).toUpperCase()}
-							</SheetTitle>
-							<p className="text-xs text-muted-foreground mt-0.5">
-								Создан{" "}
-								{new Date(localBooking.createdAt).toLocaleString("ru-RU", {
-									day: "numeric",
-									month: "short",
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
+				<SheetHeader className="p-6 pb-4 shrink-0">
+					<SheetTitle className="sr-only">
+						Заказ #{localBooking.id.slice(0, 8).toUpperCase()}
+					</SheetTitle>
+
+					<ClientBlock
+						booking={localBooking}
+						onSaved={(id, name, email, phone) => {
+							const updated = {
+								...localBooking,
+								clientId: id,
+								clientName: name,
+								clientEmail: email,
+								clientPhone: phone,
+							};
+							setLocalBooking(updated);
+							onBookingUpdate?.(updated);
+						}}
+						addAudit={addAudit}
+					/>
+
+					<div className="flex items-center justify-between mt-3 pt-3 border-t border-foreground/8">
+						<div className="flex items-center gap-1.5">
+							<p className="text-xs font-semibold uppercase text-foreground/70">
+								Заказ № {localBooking.id.slice(0, 8).toUpperCase()}
+							</p>
+							<p className="text-[11px] text-muted-foreground">
+								от <ClientTime iso={localBooking.createdAt} fmt="datetime" />
 							</p>
 						</div>
-						<div className="flex items-center gap-2 mt-1">
-							<InlineStatusChanger
-								bookingId={localBooking.id}
-								status={localBooking.status}
-								onChanged={(s) => {
-									const updated = { ...localBooking, status: s };
-									setLocalBooking(updated);
-									onBookingUpdate?.(updated);
-								}}
-							/>
-							<InlinePaymentChanger
-								status={localBooking.paymentStatus || "UNPAID"}
-								onChanged={(paymentStatus, bookingStatus) => {
-									const updated = {
-										...localBooking,
-										paymentStatus,
-										status: bookingStatus,
-									};
-									setLocalBooking(updated);
-									onBookingUpdate?.(updated);
-								}}
-								bookingId={booking?.id || ""}
-							/>
-						</div>
+						<InlineStatusChanger
+							bookingId={localBooking.id}
+							status={localBooking.status}
+							onChanged={(s) => {
+								const updated = { ...localBooking, status: s };
+								setLocalBooking(updated);
+								onBookingUpdate?.(updated);
+							}}
+						/>
 					</div>
+
 					{labels.length > 0 && (
 						<div className="flex flex-wrap gap-1 mt-2">
 							{labels.map((l) => (
@@ -1672,21 +1742,6 @@ export function BookingDetailSheet({
 				<div className="flex-1 overflow-y-auto">
 					{activeTab === "info" && (
 						<div className="divide-y divide-foreground/5">
-							<ClientBlock
-								booking={localBooking}
-								onSaved={(id, name, email) => {
-									const updated = {
-										...localBooking,
-										clientId: id,
-										clientName: name,
-										clientEmail: email,
-									};
-									setLocalBooking(updated);
-									onBookingUpdate?.(updated);
-								}}
-								addAudit={addAudit}
-							/>
-
 							<PeriodBlock
 								booking={localBooking}
 								onSaved={(start, end, total) => {

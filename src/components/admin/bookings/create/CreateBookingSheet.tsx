@@ -406,6 +406,7 @@ export function CreateBookingSheet({
 					clientId: selectedClient.id,
 					clientName: selectedClient.name,
 					clientEmail: selectedClient.email,
+					clientPhone: selectedClient.phone,
 					equipmentTitles: draftItems.map((d) => d.title),
 					itemCount: draftItems.reduce((s, d) => s + d.quantity, 0),
 					bookingItems: draftItems.flatMap((d) =>

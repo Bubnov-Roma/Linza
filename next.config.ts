@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NEXT_PUBLIC_APP_ENV === "development";
+
 const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net;
@@ -40,6 +42,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.ibb.co", pathname: '/**' },
     ],
     formats: ['image/avif', 'image/webp'],
+    unoptimized: isDevelopment, 
   },
   experimental: {
     optimizeCss: true,

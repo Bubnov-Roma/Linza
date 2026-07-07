@@ -927,7 +927,9 @@ export async function getPaginatedAdminBookingsAction(
 						email: true,
 						phone: true,
 						image: true,
-						clientApplication: { select: { adminOverrides: true } },
+						clientApplication: {
+							select: { adminOverrides: true, applicationData: true },
+						},
 					},
 				},
 				bookingItems: {
@@ -967,8 +969,14 @@ export async function getPaginatedAdminBookingsAction(
 					string,
 					unknown
 				> | null;
+				const appData = b.user?.clientApplication?.applicationData as Record<
+					string,
+					unknown
+				> | null;
+				const hasOverrides = overrides && Object.keys(overrides).length > 0;
+				const activeData = hasOverrides ? overrides : appData;
 
-				const { fullName } = extractEnrichedUserData(overrides, {
+				const { fullName, phone } = extractEnrichedUserData(activeData, {
 					name: b.user?.name ?? null,
 					phone: b.user?.phone ?? null,
 				});
@@ -987,6 +995,7 @@ export async function getPaginatedAdminBookingsAction(
 					clientId: b.userId,
 					clientName: fullName,
 					clientEmail: b.user?.email ?? null,
+					clientPhone: phone,
 					clientImage: b.user?.image ?? null,
 					equipmentTitles: [
 						...new Set(b.bookingItems.map((i) => i.equipment.title)),

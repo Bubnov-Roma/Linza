@@ -17,7 +17,8 @@ import {
 } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDebounceValue } from "usehooks-ts";
 import {
@@ -238,6 +239,37 @@ export default function UsersTable({
 		setActiveUser(user);
 		setSheetOpen(true);
 	};
+
+	// ── Автооткрытие карточки клиента по ?userId= (например, переход из заказа)
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <нужно среагировать только на смену userId в url>
+	useEffect(() => {
+		const targetUserId = searchParams.get("userId");
+		if (!targetUserId) return;
+
+		const alreadyLoaded = users.find((u) => u.id === targetUserId);
+		if (alreadyLoaded) {
+			openUser(alreadyLoaded);
+		} else {
+			getPaginatedUsersAction({ search: targetUserId, limit: 1 }).then(
+				(res) => {
+					const found = res.success ? res.data?.[0] : undefined;
+					if (found) openUser(found as unknown as UserProfile);
+					else toast.error("Клиент не найден");
+				}
+			);
+		}
+
+		// Убираем userId из адресной строки, чтобы повторный рендер/переход назад не открывал карточку снова
+		const params = new URLSearchParams(searchParams.toString());
+		params.delete("userId");
+		router.replace(
+			params.size ? `/admin/users?${params.toString()}` : "/admin/users",
+			{ scroll: false }
+		);
+	}, [searchParams]);
 
 	const handleSort = (field: SortField) => {
 		if (sortField === field) {

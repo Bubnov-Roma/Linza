@@ -1433,7 +1433,10 @@ export async function getPaginatedUsersAction(params: FetchUsersParams) {
 			const searchWords = searchTerm.split(/\s+/).filter(Boolean);
 			const phoneDigits = searchTerm.replace(/\D/g, "");
 
-			const orConditions: Prisma.UserWhereInput[] = [];
+			const orConditions: Prisma.UserWhereInput[] = [
+				// Прямое совпадение по ID — нужночтобы открыть карточку клиента по ссылке из заказа (/admin/users?userId=...)
+				{ id: searchTerm },
+			];
 
 			// 1. Ищем по всем вариациям раскладки (email, nickname, точное совпадение name)
 			variations.forEach((v) => {

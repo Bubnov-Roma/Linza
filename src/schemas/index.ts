@@ -38,9 +38,41 @@ const dateSchema = z
 			) {
 				age--;
 			}
-			return age >= 16 && age <= 100;
+			return age >= 14 && age <= 100;
 		},
 		{ message: "Введите корректную дату" }
+	);
+
+const passportIssueDateSchema = z
+	.string()
+	.min(10, "Укажите дату")
+	.regex(dateRegex, "ДД.ММ.ГГГГ")
+	.refine(
+		(val) => {
+			const [day, month, year] = val.split(".").map(Number);
+			if (!year || !month || !day) return false;
+
+			const issueDate = new Date(year, month - 1, day);
+			const today = new Date();
+
+			// Паспорт не может быть выдан в будущем
+			if (issueDate > today) return false;
+
+			// Считаем возраст самого документа
+			let passportAge = today.getFullYear() - issueDate.getFullYear();
+			const monthDiff = today.getMonth() - issueDate.getMonth();
+			if (
+				monthDiff < 0 ||
+				(monthDiff === 0 && today.getDate() < issueDate.getDate())
+			) {
+				passportAge--;
+			}
+
+			// Документ выдан в прошлом/сегодня и ему не более 90 лет
+			// (так как первый паспорт в РФ выдается в 14 лет)
+			return passportAge >= 0 && passportAge <= 100;
+		},
+		{ message: "Укажите корректную дату" }
 	);
 
 const phoneSchema = z
@@ -90,7 +122,7 @@ const passportSchema = z.object({
 		.string()
 		.transform((val) => val.replace(/\D/g, ""))
 		.pipe(z.string().length(10, "Серия и номер - 10 цифр")),
-	issueDate: dateSchema,
+	issueDate: passportIssueDateSchema,
 	issuedBy: z.string().min(10, "Укажите кем выдан документ"),
 });
 

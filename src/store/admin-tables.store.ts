@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type {
 	EquipmentFilter,
 	EquipmentSort,
-} from "@/actions/admin-equipment-actions";
+} from "@/actions/admin/equipment-actions";
 
 // ─── Bookings Table State ──────────────────────────────────────────────────────
 

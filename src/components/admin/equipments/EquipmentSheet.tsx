@@ -17,18 +17,18 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useDebounceCallback, useDebounceValue } from "usehooks-ts";
 import {
-	createCategoryAction,
-	createSubcategoryAction,
-} from "@/actions/admin-category-actions";
-import {
 	type CreateEquipmentData,
 	checkInventoryNumberUniqueAction,
 	createEquipmentAction,
-	getRelatedEquipmentAction,
 	syncEquipmentByTitle,
 	updateEquipment,
-} from "@/actions/admin-equipment-actions";
+} from "@/actions/admin/equipment-actions";
+import {
+	createCategoryAction,
+	createSubcategoryAction,
+} from "@/actions/admin-category-actions";
 import { clientSearchEquipmentAction } from "@/actions/client-equipment-actions";
+import { getRelatedEquipmentAction } from "@/actions/equipment-actions";
 import { ImageCell } from "@/components/admin/equipments/ImageCell";
 import {
 	CommentsBlock,
@@ -1067,7 +1067,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 											onClick={async () => {
 												if (!equipment?.id) return;
 												const { syncEquipmentImagesAction } = await import(
-													"@/actions/admin-equipment-actions"
+													"@/actions/admin/equipment-actions"
 												);
 												const result = await syncEquipmentImagesAction(
 													equipment.id

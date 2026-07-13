@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getRelatedEquipmentAction } from "@/actions/admin-equipment-actions";
+import { getRelatedEquipmentAction } from "@/actions/equipment-actions";
 import { EquipmentCard, SliderPagination } from "@/components/shared";
 import type { GroupedEquipment } from "@/core/domain/entities/Equipment";
 import { cn } from "@/lib/utils";

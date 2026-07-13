@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
-import type { EquipmentSort } from "@/actions/admin/equipment-actions";
+import type { EquipmentSort } from "@/actions/admin/admin-equipment-actions";
 import {
 	Button,
 	Select,

@@ -4,7 +4,7 @@ import { Plus, X } from "lucide-react";
 import type {
 	EquipmentFilter,
 	FilterOperator,
-} from "@/actions/admin/equipment-actions";
+} from "@/actions/admin/admin-equipment-actions";
 import {
 	Button,
 	Input,

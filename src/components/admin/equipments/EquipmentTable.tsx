@@ -36,7 +36,7 @@ import {
 	toggleEquipmentAvailabilityAction,
 	toggleEquipmentFeaturedAction,
 	toggleEquipmentPrimaryAction,
-} from "@/actions/admin/equipment-actions";
+} from "@/actions/admin/admin-equipment-actions";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { FilterBuilder } from "@/components/admin/equipments/FilterBuilder";

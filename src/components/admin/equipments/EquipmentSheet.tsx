@@ -22,7 +22,7 @@ import {
 	createEquipmentAction,
 	syncEquipmentByTitle,
 	updateEquipment,
-} from "@/actions/admin/equipment-actions";
+} from "@/actions/admin/admin-equipment-actions";
 import {
 	createCategoryAction,
 	createSubcategoryAction,
@@ -1067,7 +1067,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 											onClick={async () => {
 												if (!equipment?.id) return;
 												const { syncEquipmentImagesAction } = await import(
-													"@/actions/admin/equipment-actions"
+													"@/actions/admin/admin-equipment-actions"
 												);
 												const result = await syncEquipmentImagesAction(
 													equipment.id

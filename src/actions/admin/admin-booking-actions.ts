@@ -2,7 +2,7 @@
 
 import { BookingStatus, type Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { writeAuditLog } from "@/actions/audit-and-balance-actions";
+import { writeAuditLog } from "@/actions/admin/audit-and-balance-actions";
 import { PAYMENT_METHOD_LABELS } from "@/constants";
 import type {
 	BookingPaymentRow,

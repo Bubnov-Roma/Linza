@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createAdminNotification } from "@/actions/notification-actions";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export type DbFaqItem = {
@@ -24,17 +24,6 @@ export type DbFaqQuestion = {
 	isRead: boolean;
 };
 
-async function requireAdminOrManager(): Promise<
-	{ ok: true; userId: string } | { ok: false; error: string }
-> {
-	const session = await auth();
-	const role = session?.user?.role;
-	if (!session?.user?.id) return { ok: false, error: "Ошибка сессии" };
-	if (role !== "ADMIN" && role !== "MANAGER")
-		return { ok: false, error: "Недостаточно прав" };
-	return { ok: true, userId: session.user.id };
-}
-
 export async function getFaqItemsAction(): Promise<DbFaqItem[]> {
 	return prisma.faqItem.findMany({ orderBy: { sortOrder: "asc" } });
 }
@@ -45,8 +34,7 @@ export async function createFaqItemAction(data: {
 	category?: string;
 	tags?: string[];
 }): Promise<{ success: boolean; item?: DbFaqItem; error?: string }> {
-	const access = await requireAdminOrManager();
-	if (!access.ok) return { success: false, error: access.error };
+	const { userId } = await requireAdmin();
 
 	try {
 		const last = await prisma.faqItem.findFirst({
@@ -61,7 +49,7 @@ export async function createFaqItemAction(data: {
 				category: data.category?.trim() || null,
 				tags: data.tags ?? [],
 				sortOrder: (last?.sortOrder ?? 0) + 1,
-				createdBy: access.userId,
+				createdBy: userId,
 			},
 		});
 
@@ -83,13 +71,12 @@ export async function updateFaqItemAction(
 		>
 	>
 ): Promise<{ success: boolean; error?: string }> {
-	const access = await requireAdminOrManager();
-	if (!access.ok) return { success: false, error: access.error };
+	const { userId } = await requireAdmin();
 
 	try {
 		await prisma.faqItem.update({
 			where: { id },
-			data: { ...data, updatedBy: access.userId },
+			data: { ...data, updatedBy: userId },
 		});
 		revalidatePath("/faq");
 		revalidatePath("/admin");
@@ -103,8 +90,7 @@ export async function updateFaqItemAction(
 export async function deleteFaqItemAction(
 	id: string
 ): Promise<{ success: boolean; error?: string }> {
-	const access = await requireAdminOrManager();
-	if (!access.ok) return { success: false, error: access.error };
+	await requireAdmin();
 
 	try {
 		await prisma.faqItem.delete({ where: { id } });
@@ -120,8 +106,7 @@ export async function deleteFaqItemAction(
 export async function reorderFaqItemsAction(
 	orderedIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
-	const access = await requireAdminOrManager();
-	if (!access.ok) return { success: false, error: access.error };
+	await requireAdmin();
 
 	try {
 		await prisma.$transaction(
@@ -169,16 +154,14 @@ export async function submitFaqQuestionAction(data: {
 // ─── ADMIN: READ FAQ QUESTIONS ────────────────────────────────────────────────
 
 export async function getFaqQuestionsAction(): Promise<DbFaqQuestion[]> {
-	const access = await requireAdminOrManager();
-	if (!access.ok) return [];
+	await requireAdmin();
 	return prisma.faqQuestion.findMany({ orderBy: { createdAt: "desc" } });
 }
 
 export async function markFaqQuestionReadAction(
 	id: string
 ): Promise<{ success: boolean; error?: string }> {
-	const access = await requireAdminOrManager();
-	if (!access.ok) return { success: false, error: access.error };
+	await requireAdmin();
 
 	try {
 		await prisma.faqQuestion.update({ where: { id }, data: { isRead: true } });

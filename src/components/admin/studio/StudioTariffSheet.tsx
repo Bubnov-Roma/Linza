@@ -4,12 +4,12 @@ import { CheckIcon, ImageIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { StudioTariffData } from "@/actions/admin-studio-actions";
+import type { StudioTariffData } from "@/actions/admin/admin-studio-actions";
 import {
 	createStudioTariffAction,
 	deleteStudioTariffAction,
 	updateStudioTariffAction,
-} from "@/actions/admin-studio-actions";
+} from "@/actions/admin/admin-studio-actions";
 import {
 	AlertDialog,
 	AlertDialogAction,

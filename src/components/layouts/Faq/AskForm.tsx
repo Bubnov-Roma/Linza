@@ -3,7 +3,7 @@
 import { CheckCircleIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { submitFaqQuestionAction } from "@/actions/admin-faq-actions";
+import { submitFaqQuestionAction } from "@/actions/admin/admin-faq-actions";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 

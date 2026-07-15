@@ -19,7 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { recordStudioPaymentAction } from "@/actions/admin-studio-actions";
+import { recordStudioPaymentAction } from "@/actions/admin/admin-studio-actions";
 import {
 	AlertDialog,
 	AlertDialogAction,

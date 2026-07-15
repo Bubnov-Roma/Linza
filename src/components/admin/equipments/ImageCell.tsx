@@ -8,7 +8,7 @@ import {
 	deleteImageAction,
 	linkImageToEquipmentAction,
 	reorderImagesAction,
-} from "@/actions/upload-actions";
+} from "@/actions/admin/upload-actions";
 import { MediaUploader } from "@/components/shared";
 import {
 	Card,

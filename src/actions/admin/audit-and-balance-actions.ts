@@ -3,24 +3,9 @@
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { computePaymentStatus } from "@/actions/admin/admin-booking-actions";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
-async function requireAdmin() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Не авторизован");
-	const user = await prisma.user.findUnique({
-		where: { id: session.user.id },
-		select: { role: true, name: true },
-	});
-	if (!user || (user.role !== "ADMIN" && user.role !== "MANAGER")) {
-		throw new Error("Недостаточно прав");
-	}
-	return { userId: session.user.id, name: user.name ?? "Администратор" };
-}
 
 export interface AuditLogEntry {
 	id: string;
@@ -34,6 +19,25 @@ export interface AuditLogEntry {
 	meta?: Record<string, unknown> | null;
 }
 
+export interface BookingLabelDB {
+	id: string;
+	text: string;
+	color: string;
+	dueDate: string | null;
+	shift: string | null;
+	authorName: string | null;
+	createdAt: string;
+}
+
+export interface BalanceTx {
+	id: string;
+	type: "REFUND" | "CREDIT" | "DEBIT" | "MANUAL";
+	amount: number;
+	description: string | null;
+	bookingId: string | null;
+	authorName: string | null;
+	createdAt: string;
+}
 /**
  * Записать одну запись в лог изменений заказа.
  * Вызывается из других server actions — не напрямую из UI.
@@ -101,16 +105,6 @@ export async function getBookingAuditLogAction(
 // ═══════════════════════════════════════════════════════════════════
 // BookingLabel (метки к заказу)
 // ═══════════════════════════════════════════════════════════════════
-
-export interface BookingLabelDB {
-	id: string;
-	text: string;
-	color: string;
-	dueDate: string | null;
-	shift: string | null;
-	authorName: string | null;
-	createdAt: string;
-}
 
 export async function getBookingLabelsAction(
 	bookingId: string
@@ -203,16 +197,6 @@ export async function removeBookingLabelAction(
 // ═══════════════════════════════════════════════════════════════════
 // БЛОК 3: Баланс клиента
 // ═══════════════════════════════════════════════════════════════════
-
-export interface BalanceTx {
-	id: string;
-	type: "REFUND" | "CREDIT" | "DEBIT" | "MANUAL";
-	amount: number;
-	description: string | null;
-	bookingId: string | null;
-	authorName: string | null;
-	createdAt: string;
-}
 
 /** Получить текущий баланс клиента + историю транзакций */
 export async function getUserBalanceAction(userId: string): Promise<{

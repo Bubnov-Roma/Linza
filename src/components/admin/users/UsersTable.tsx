@@ -24,7 +24,7 @@ import { useDebounceValue } from "usehooks-ts";
 import {
 	exportAdminUsersAction,
 	getPaginatedUsersAction,
-} from "@/actions/admin-user-actions";
+} from "@/actions/admin/admin-user-actions";
 import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { toggleUserBlockAction } from "@/actions/client-application-actions";
 import { CreateUserSheet } from "@/components/admin/users/CreateUserSheet";

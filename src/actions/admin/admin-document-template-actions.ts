@@ -1,27 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { uploadToS3 } from "@/actions/upload-actions";
-import { auth } from "@/auth";
+import { uploadToS3 } from "@/actions/admin/upload-actions";
 import { TEMPLATE_VARIABLES } from "@/constants";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
 import type { BookingDocData, DocTemplateRow, DocTemplateType } from "@/types";
-
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-async function requireAdmin() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Не авторизован");
-	const user = await prisma.user.findUnique({
-		where: { id: session.user.id },
-		select: { role: true, name: true },
-	});
-	if (!user || (user.role !== "ADMIN" && user.role !== "MANAGER")) {
-		throw new Error("Недостаточно прав");
-	}
-	return { userId: session.user.id, name: user.name ?? "Администратор" };
-}
 
 /** Сумма прописью (упрощённая русскоязычная версия) */
 function amountToWords(amount: number): string {
@@ -129,6 +114,7 @@ function amountToWords(amount: number): string {
 
 /** Собирает объект переменных из данных заказа в БД */
 async function buildBookingDocData(bookingId: string): Promise<BookingDocData> {
+	await requireAdmin();
 	const booking = await prisma.booking.findUniqueOrThrow({
 		where: { id: bookingId },
 		include: {
@@ -505,7 +491,7 @@ async function fillXlsxTemplate(
 
 	const contentFiles = [
 		"xl/sharedStrings.xml",
-		// Также обходим листы
+		// обходим листы
 		...Object.keys(zip.files).filter((f) =>
 			f.startsWith("xl/worksheets/sheet")
 		),

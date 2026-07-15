@@ -1,4 +1,4 @@
-import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getCategoriesFromDb } from "@/actions/admin/admin-category-actions";
 import AdminCategoriesClient from "@/components/admin/categories/AdminCategoriesClient";
 
 export const dynamic = "force-dynamic";

@@ -10,7 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { DbFaqItem } from "@/actions/admin-faq-actions";
+import type { DbFaqItem } from "@/actions/admin/admin-faq-actions";
 import { TagInput } from "@/components/admin/faq/TagInput";
 import { MarkdownEditor, SimpleMarkdown } from "@/components/shared";
 import {

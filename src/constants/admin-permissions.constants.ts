@@ -1,4 +1,4 @@
-import type { AdminPermissions } from "@/actions/admin-permissions-actions";
+import type { AdminPermissions } from "@/actions/admin/admin-permissions-actions";
 
 export const EMPTY_PERMISSIONS: AdminPermissions = {
 	bookings_view: false,

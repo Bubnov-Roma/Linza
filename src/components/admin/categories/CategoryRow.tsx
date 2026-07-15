@@ -10,8 +10,8 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { getCategoryHistoryAction } from "@/actions/admin-category-actions";
-import { uploadCategoryImageAction } from "@/actions/upload-actions";
+import { getCategoryHistoryAction } from "@/actions/admin/admin-category-actions";
+import { uploadCategoryImageAction } from "@/actions/admin/upload-actions";
 import { IconPicker } from "@/components/admin/categories/IconPicker";
 import { SubcategoryRow } from "@/components/admin/categories/SubcategoryRow";
 import { InlineEditField, MediaUploader } from "@/components/shared";

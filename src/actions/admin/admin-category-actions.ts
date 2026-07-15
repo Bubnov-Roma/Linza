@@ -11,6 +11,7 @@ import type {
 	DbCategory,
 	DbSubcategory,
 } from "@/core/domain/entities/Equipment";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/utils";
 
@@ -93,6 +94,7 @@ export async function createCategoryAction(data: {
 	error?: string;
 }> {
 	try {
+		await requireAdmin();
 		const last = await prisma.category.findFirst({
 			orderBy: { sortOrder: "desc" },
 			select: { sortOrder: true },
@@ -154,6 +156,7 @@ export async function updateCategoryAction(
 	}
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		const current = await prisma.category.findUnique({ where: { id } });
 		if (!current) return { success: false, error: "Категория не найдена" };
 
@@ -198,6 +201,7 @@ export async function deleteCategoryAction(
 	id: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		const count = await prisma.equipment.count({ where: { categoryId: id } });
 
 		if (count > 0) {
@@ -227,6 +231,7 @@ export async function reorderCategoriesAction(
 	orderedIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		await prisma.$transaction(
 			orderedIds.map((id, index) =>
 				prisma.category.update({
@@ -247,6 +252,7 @@ export async function reorderSubcategoriesAction(
 	orderedIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		await prisma.$transaction(
 			orderedIds.map((id, index) =>
 				prisma.subcategory.update({
@@ -264,6 +270,7 @@ export async function reorderSubcategoriesAction(
 }
 
 export async function getCategoryHistoryAction(entityId: string) {
+	await requireAdmin();
 	const data = await prisma.categoryHistory.findMany({
 		where: { entityId },
 		orderBy: { changedAt: "desc" },
@@ -285,6 +292,7 @@ export async function createSubcategoryAction(data: {
 	error?: string;
 }> {
 	try {
+		await requireAdmin();
 		const last = await prisma.subcategory.findFirst({
 			where: { categoryId: data.categoryId },
 			orderBy: { sortOrder: "desc" },
@@ -333,6 +341,7 @@ export async function updateSubcategoryAction(
 	}
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		const current = await prisma.subcategory.findUnique({ where: { id } });
 		if (!current) return { success: false, error: "Подкатегория не найдена" };
 
@@ -374,7 +383,8 @@ export async function deleteSubcategoryAction(
 	id: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		// В Prisma мы поставили SetNull для связи Equipment -> Subcategory
+		await requireAdmin();
+		// В Prisma SetNull для связи Equipment -> Subcategory
 		await prisma.subcategory.delete({ where: { id } });
 
 		await logHistory("SUBCATEGORY", id, "DELETED");

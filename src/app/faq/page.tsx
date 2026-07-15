@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getFaqItemsAction } from "@/actions/admin-faq-actions";
+import { getFaqItemsAction } from "@/actions/admin/admin-faq-actions";
 import FaqClientPage from "@/components/layouts/Faq";
 
 export const metadata = {

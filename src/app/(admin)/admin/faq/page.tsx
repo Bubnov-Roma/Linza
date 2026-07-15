@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getFaqItemsAction } from "@/actions/admin-faq-actions";
+import { getFaqItemsAction } from "@/actions/admin/admin-faq-actions";
 import { auth } from "@/auth";
 import AdminFaqClient from "@/components/admin/faq/AdminFaqClient";
 

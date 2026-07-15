@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getBannersFromDb } from "@/actions/admin/admin-banner-actions";
-import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getCategoriesFromDb } from "@/actions/admin/admin-category-actions";
 import { getFeaturedEquipment } from "@/actions/equipment-actions";
 import { auth } from "@/auth";
 import { CategoriesGrid } from "@/components/core/CategoriesGrid";

@@ -17,16 +17,16 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useDebounceCallback, useDebounceValue } from "usehooks-ts";
 import {
+	createCategoryAction,
+	createSubcategoryAction,
+} from "@/actions/admin/admin-category-actions";
+import {
 	type CreateEquipmentData,
 	checkInventoryNumberUniqueAction,
 	createEquipmentAction,
 	syncEquipmentByTitle,
 	updateEquipment,
 } from "@/actions/admin/admin-equipment-actions";
-import {
-	createCategoryAction,
-	createSubcategoryAction,
-} from "@/actions/admin-category-actions";
 import { clientSearchEquipmentAction } from "@/actions/client-equipment-actions";
 import { getRelatedEquipmentAction } from "@/actions/equipment-actions";
 import { ImageCell } from "@/components/admin/equipments/ImageCell";

@@ -15,7 +15,7 @@ import {
 	adminCreateUserAction,
 	adminFindDuplicatesAction,
 	type DuplicateCandidate,
-} from "@/actions/admin-user-actions";
+} from "@/actions/admin/admin-user-actions";
 import {
 	Badge,
 	Button,

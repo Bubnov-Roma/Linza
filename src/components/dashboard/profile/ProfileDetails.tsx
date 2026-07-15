@@ -20,7 +20,7 @@ import { signOut } from "next-auth/react";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteImageAction } from "@/actions/upload-actions";
+import { deleteImageAction } from "@/actions/admin/upload-actions";
 import {
 	scheduleAccountDeletionAction,
 	updateClientSocialsAction,

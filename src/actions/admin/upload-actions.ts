@@ -8,8 +8,8 @@ import {
 } from "@aws-sdk/client-s3";
 import type { EquipmentStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import type { DbRawCSVRow } from "@/core/domain/entities/Equipment";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 // ── S3 ──
@@ -63,8 +63,7 @@ export async function deleteImageAction(
 	imageUrl: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+		await requireAdmin();
 
 		const isUUID =
 			/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
@@ -95,6 +94,7 @@ export async function reorderImagesAction(
 	orderedImageIds: string[] // массив imageId в нужном порядке
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		await prisma.$transaction(
 			orderedImageIds.map((imageId, index) =>
 				prisma.equipmentImageLink.updateMany({
@@ -117,8 +117,7 @@ export async function linkImageToEquipmentAction(
 	imageUrl: string
 ): Promise<{ id: string; url: string; error?: string }> {
 	try {
-		const session = await auth();
-		if (!session?.user?.id) throw new Error("Unauthorized");
+		await requireAdmin();
 
 		const image = await prisma.image.create({
 			data: { url: imageUrl, hash: imageUrl },
@@ -144,10 +143,7 @@ export async function importEquipmentFromCSV(data: DbRawCSVRow[]): Promise<{
 	error?: string;
 }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		// 1. Загружаем справочники
 		const [categories, subcategories, existingEq] = await Promise.all([
@@ -306,10 +302,7 @@ export async function uploadCategoryImageAction(
 	oldImageUrl?: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		const file = formData.get("file") as File;
 		if (!file) return { success: false, error: "Файл не найден" };

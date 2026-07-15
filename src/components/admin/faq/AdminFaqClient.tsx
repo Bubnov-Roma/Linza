@@ -9,7 +9,7 @@ import {
 	deleteFaqItemAction,
 	reorderFaqItemsAction,
 	updateFaqItemAction,
-} from "@/actions/admin-faq-actions";
+} from "@/actions/admin/admin-faq-actions";
 import { TagInput } from "@/components/admin/faq/TagInput";
 import { MarkdownEditor } from "@/components/shared";
 import { FaqChip } from "@/components/shared/FaqChip";

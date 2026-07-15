@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useState } from "react";
-import type { StudioTariffData } from "@/actions/admin-studio-actions";
+import type { StudioTariffData } from "@/actions/admin/admin-studio-actions";
 import { Lightbox } from "@/components/core/Lightbox";
 import { StudioBookingSheet } from "@/components/studio/StudioBookingSheet";
 import { Button, CardContent } from "@/components/ui";

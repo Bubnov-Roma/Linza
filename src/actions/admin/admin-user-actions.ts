@@ -3,8 +3,8 @@
 import type { ApplicationStatus, DiscountType, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { decrypt, encrypt } from "@/lib/crypto";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
 import {
@@ -157,20 +157,18 @@ export interface DiscountData {
 	createdBy: string | null;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function requireAdmin() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Не авторизован");
-	const user = await prisma.user.findUnique({
-		where: { id: session.user.id },
-		select: { role: true, permissions: true, name: true },
-	});
-	if (!user || (user.role !== "ADMIN" && user.role !== "MANAGER")) {
-		throw new Error("Недостаточно прав");
-	}
-	return { adminId: session.user.id, adminName: user.name ?? "Администратор" };
-}
+export type FetchUsersParams = {
+	search?: string;
+	appFilter?: string;
+	blockFilter?: string;
+	discountFilter?: string;
+	regFrom?: string;
+	regTo?: string;
+	sortField?: "createdAt" | "name";
+	sortDir?: "asc" | "desc";
+	limit?: number;
+	offset?: number;
+};
 
 export async function writeUserAuditLog(
 	targetUserId: string,
@@ -607,10 +605,7 @@ export async function adminCreateUserAction(
 	error?: string;
 }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Нет прав доступа" };
-		}
+		const { userId, name } = await requireAdmin();
 
 		// Хотя бы одно поле идентификации обязательно
 		const hasIdentifier =
@@ -703,7 +698,7 @@ export async function adminCreateUserAction(
 			await prisma.userAdminNote.create({
 				data: {
 					userId: user.id,
-					authorId: session.user.id,
+					authorId: userId,
 					note: data.note.trim(),
 				},
 			});
@@ -723,19 +718,14 @@ export async function adminCreateUserAction(
 		}
 
 		// ── Аудит ─────────────────────────────────────────────────────────────
-		await writeUserAuditLog(
-			user.id,
-			session.user.id,
-			session.user.name ?? null,
-			{
-				action: "Создан администратором",
-				meta: {
-					passwordMode: data.passwordMode,
-					hasEmail: !!data.email,
-					hasPhone: !!data.phone,
-				},
-			}
-		);
+		await writeUserAuditLog(user.id, userId, name ?? null, {
+			action: "Создан администратором",
+			meta: {
+				passwordMode: data.passwordMode,
+				hasEmail: !!data.email,
+				hasPhone: !!data.phone,
+			},
+		});
 
 		revalidatePath("/admin/users");
 
@@ -764,7 +754,7 @@ export async function adminMergeUsersAction(
 	deleteId: string // дубль — soft-delete через 2 дня
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { adminId, adminName } = await requireAdmin();
+		const { userId: adminId, name: adminName } = await requireAdmin();
 
 		if (keepId === deleteId) {
 			return { success: false, error: "Нельзя объединить профиль с собой" };
@@ -893,7 +883,7 @@ export async function adminCancelMergeAction(
 	userId: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { adminId, adminName } = await requireAdmin();
+		const { userId: adminId, name: adminName } = await requireAdmin();
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
@@ -1052,7 +1042,7 @@ export async function adminUpdateApplicationFieldAction(
 	patch: Partial<ApplicationDataFull>
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { adminId, adminName } = await requireAdmin();
+		const { userId: adminId, name: adminName } = await requireAdmin();
 
 		const app = await prisma.clientApplication.findUnique({
 			where: { userId },
@@ -1245,7 +1235,7 @@ export async function adminAssignDiscountAction(data: {
 	description?: string;
 }): Promise<{ success: boolean; error?: string; data?: DiscountData }> {
 	try {
-		const { adminId, adminName } = await requireAdmin();
+		const { userId: adminId, name: adminName } = await requireAdmin();
 
 		await prisma.userDiscount.updateMany({
 			where: { userId: data.userId, isActive: true },
@@ -1324,7 +1314,7 @@ export async function assignAutoPromoOnApprovalAction(
 
 export async function adminAddUserCommentAction(userId: string, note: string) {
 	try {
-		const { adminId, adminName } = await requireAdmin();
+		const { userId: adminId, name: adminName } = await requireAdmin();
 		const created = await prisma.userAdminNote.create({
 			data: { userId, authorId: adminId, note: note.trim() },
 		});
@@ -1345,7 +1335,7 @@ export async function adminDeleteUserCommentAction(
 	commentId: string
 ) {
 	try {
-		const { adminId, adminName } = await requireAdmin();
+		const { userId: adminId, name: adminName } = await requireAdmin();
 		const note = await prisma.userAdminNote.findUnique({
 			where: { id: commentId },
 		});
@@ -1365,6 +1355,7 @@ export async function adminDeleteUserCommentAction(
 }
 
 export async function getAdminUserCommentsAction(userId: string) {
+	await requireAdmin();
 	const notes = await prisma.userAdminNote.findMany({
 		where: { userId },
 		include: { author: { select: { name: true } } },
@@ -1404,19 +1395,6 @@ export async function getUserAuditLogAction(userId: string) {
 }
 
 // ─── PAGINATION & EXPORT ──────────────────────────────────────────────────────
-
-export type FetchUsersParams = {
-	search?: string;
-	appFilter?: string;
-	blockFilter?: string;
-	discountFilter?: string;
-	regFrom?: string;
-	regTo?: string;
-	sortField?: "createdAt" | "name";
-	sortDir?: "asc" | "desc";
-	limit?: number;
-	offset?: number;
-};
 
 export async function getPaginatedUsersAction(params: FetchUsersParams) {
 	try {

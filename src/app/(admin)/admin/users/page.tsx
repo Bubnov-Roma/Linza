@@ -1,4 +1,4 @@
-import { getPaginatedUsersAction } from "@/actions/admin-user-actions";
+import { getPaginatedUsersAction } from "@/actions/admin/admin-user-actions";
 import UsersTable from "@/components/admin/users/UsersTable";
 import type { UserProfile } from "@/core/domain/entities/User";
 

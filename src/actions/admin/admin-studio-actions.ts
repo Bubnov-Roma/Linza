@@ -7,7 +7,7 @@ import {
 	type RecordPaymentPayload,
 	type RecordPaymentResult,
 } from "@/actions/admin/admin-booking-actions";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
 
@@ -48,199 +48,6 @@ export interface StudioEquipmentSearchResult {
 	imageUrl: string | null;
 }
 
-// ─── Guards ───────────────────────────────────────────────────────────────────
-
-async function requireAdminOrManager() {
-	const session = await auth();
-	const role = session?.user?.role;
-	if (role !== "ADMIN" && role !== "MANAGER") {
-		throw new Error("Недостаточно прав");
-	}
-	return session;
-}
-
-// ─── Serialise ────────────────────────────────────────────────────────────────
-
-function serialiseTariff(t: {
-	id: string;
-	name: string;
-	description: string | null;
-	details: string | null;
-	pricePerHour: number;
-	isActive: boolean;
-	sortOrder: number;
-	imageUrls: unknown;
-	createdAt: Date;
-	updatedAt: Date;
-}): StudioTariffData {
-	return {
-		...t,
-		imageUrls: Array.isArray(t.imageUrls) ? (t.imageUrls as string[]) : [],
-	};
-}
-
-// ─── Read ─────────────────────────────────────────────────────────────────────
-
-export async function getStudioTariffsAction(): Promise<StudioTariffData[]> {
-	const tariffs = await prisma.studioTariff.findMany({
-		orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-	});
-	return tariffs.map(serialiseTariff);
-}
-
-export async function getActiveStudioTariffsAction(): Promise<
-	StudioTariffData[]
-> {
-	const tariffs = await prisma.studioTariff.findMany({
-		where: { isActive: true },
-		orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-	});
-	return tariffs.map(serialiseTariff);
-}
-
-export async function getStudioTariffByIdAction(
-	id: string
-): Promise<StudioTariffData | null> {
-	const tariff = await prisma.studioTariff.findUnique({ where: { id } });
-	return tariff ? serialiseTariff(tariff) : null;
-}
-
-// ─── Create ───────────────────────────────────────────────────────────────────
-
-export async function createStudioTariffAction(
-	input: CreateTariffInput
-): Promise<{ success: boolean; id?: string; error?: string }> {
-	try {
-		await requireAdminOrManager();
-
-		if (!input.name?.trim())
-			return { success: false, error: "Название обязательно" };
-		if (!input.pricePerHour || input.pricePerHour <= 0)
-			return { success: false, error: "Цена за час должна быть > 0" };
-
-		const tariff = await prisma.studioTariff.create({
-			data: {
-				name: input.name.trim(),
-				description: input.description?.trim() || null,
-				details: input.details?.trim() || null,
-				pricePerHour: input.pricePerHour,
-				isActive: input.isActive ?? true,
-				sortOrder: input.sortOrder ?? 0,
-				imageUrls: input.imageUrls ?? [],
-			},
-		});
-
-		revalidatePath("/admin/studio");
-		revalidatePath("/studio");
-		return { success: true, id: tariff.id };
-	} catch (e) {
-		console.error("createStudioTariffAction:", e);
-		return { success: false, error: "Ошибка создания тарифа" };
-	}
-}
-
-// ─── Update ───────────────────────────────────────────────────────────────────
-
-export async function updateStudioTariffAction(
-	input: UpdateTariffInput
-): Promise<{ success: boolean; error?: string; id?: string }> {
-	try {
-		await requireAdminOrManager();
-
-		const { id, ...data } = input;
-
-		await prisma.studioTariff.update({
-			where: { id },
-			data: {
-				...(data.name !== undefined && { name: data.name.trim() }),
-				...(data.description !== undefined && {
-					description: data.description?.trim() || null,
-				}),
-				...(data.details !== undefined && {
-					details: data.details?.trim() || null,
-				}),
-				...(data.pricePerHour !== undefined && {
-					pricePerHour: data.pricePerHour,
-				}),
-				...(data.isActive !== undefined && { isActive: data.isActive }),
-				...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
-				...(data.imageUrls !== undefined && { imageUrls: data.imageUrls }),
-			},
-		});
-
-		revalidatePath("/admin/studio");
-		revalidatePath("/studio");
-		return { success: true, id: id };
-	} catch (e) {
-		console.error("updateStudioTariffAction:", e);
-		return { success: false, error: "Ошибка обновления тарифа" };
-	}
-}
-
-// ─── Delete ───────────────────────────────────────────────────────────────────
-
-export async function deleteStudioTariffAction(
-	id: string
-): Promise<{ success: boolean; error?: string }> {
-	try {
-		await requireAdminOrManager();
-
-		// Запрет удаления если есть активные брони
-		const activeBookings = await prisma.studioBooking.count({
-			where: {
-				tariffId: id,
-				status: {
-					in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
-				},
-			},
-		});
-
-		if (activeBookings > 0) {
-			return {
-				success: false,
-				error: `Нельзя удалить тариф: ${activeBookings} активных заказов`,
-			};
-		}
-
-		await prisma.studioTariff.delete({ where: { id } });
-
-		revalidatePath("/admin/studio");
-		revalidatePath("/studio");
-		return { success: true };
-	} catch (e) {
-		console.error("deleteStudioTariffAction:", e);
-		return { success: false, error: "Ошибка удаления тарифа" };
-	}
-}
-
-// ─── Reorder ──────────────────────────────────────────────────────────────────
-
-export async function reorderStudioTariffsAction(
-	orderedIds: string[]
-): Promise<{ success: boolean; error?: string }> {
-	try {
-		await requireAdminOrManager();
-
-		await prisma.$transaction(
-			orderedIds.map((id, index) =>
-				prisma.studioTariff.update({
-					where: { id },
-					data: { sortOrder: index },
-				})
-			)
-		);
-
-		revalidatePath("/admin/studio");
-		revalidatePath("/studio");
-		return { success: true };
-	} catch (e) {
-		console.error("reorderStudioTariffsAction:", e);
-		return { success: false, error: "Ошибка сортировки" };
-	}
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface StudioBookingRow {
 	id: string;
 	userId: string;
@@ -260,7 +67,6 @@ export interface StudioBookingRow {
 	createdAt: Date;
 	updatedAt: Date;
 	itemsCount: number;
-	// Платёжный статус
 	totalPaid: number;
 	paymentStatus: "UNPAID" | "PARTIAL" | "PAID" | "OVERPAID";
 }
@@ -303,6 +109,201 @@ export interface StudioBookingFilters {
 	dateTo?: Date | undefined;
 	tariffId?: string | undefined;
 }
+
+export interface UpdateStudioBookingInput {
+	bookingId: string;
+	userId?: string;
+	tariffId?: string;
+	startDate?: Date;
+	endDate?: Date;
+	totalAmount?: number;
+	/** Полный список ID техники (replaces existing) */
+	equipmentIds?: string[];
+	note?: string;
+}
+
+// ─── Serialise ────────────────────────────────────────────────────────────────
+
+function serialiseTariff(t: {
+	id: string;
+	name: string;
+	description: string | null;
+	details: string | null;
+	pricePerHour: number;
+	isActive: boolean;
+	sortOrder: number;
+	imageUrls: unknown;
+	createdAt: Date;
+	updatedAt: Date;
+}): StudioTariffData {
+	return {
+		...t,
+		imageUrls: Array.isArray(t.imageUrls) ? (t.imageUrls as string[]) : [],
+	};
+}
+
+// ─── Read ─────────────────────────────────────────────────────────────────────
+
+export async function getStudioTariffsAction(): Promise<StudioTariffData[]> {
+	await requireAdmin();
+	const tariffs = await prisma.studioTariff.findMany({
+		orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+	});
+	return tariffs.map(serialiseTariff);
+}
+
+export async function getStudioTariffByIdAction(
+	id: string
+): Promise<StudioTariffData | null> {
+	const tariff = await prisma.studioTariff.findUnique({ where: { id } });
+	return tariff ? serialiseTariff(tariff) : null;
+}
+
+export async function getActiveStudioTariffsAction(): Promise<
+	StudioTariffData[]
+> {
+	const tariffs = await prisma.studioTariff.findMany({
+		where: { isActive: true },
+		orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+	});
+	return tariffs.map(serialiseTariff);
+}
+
+// ─── Create ───────────────────────────────────────────────────────────────────
+
+export async function createStudioTariffAction(
+	input: CreateTariffInput
+): Promise<{ success: boolean; id?: string; error?: string }> {
+	try {
+		await requireAdmin();
+
+		if (!input.name?.trim())
+			return { success: false, error: "Название обязательно" };
+		if (!input.pricePerHour || input.pricePerHour <= 0)
+			return { success: false, error: "Цена за час должна быть > 0" };
+
+		const tariff = await prisma.studioTariff.create({
+			data: {
+				name: input.name.trim(),
+				description: input.description?.trim() || null,
+				details: input.details?.trim() || null,
+				pricePerHour: input.pricePerHour,
+				isActive: input.isActive ?? true,
+				sortOrder: input.sortOrder ?? 0,
+				imageUrls: input.imageUrls ?? [],
+			},
+		});
+
+		revalidatePath("/admin/studio");
+		revalidatePath("/studio");
+		return { success: true, id: tariff.id };
+	} catch (e) {
+		console.error("createStudioTariffAction:", e);
+		return { success: false, error: "Ошибка создания тарифа" };
+	}
+}
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+export async function updateStudioTariffAction(
+	input: UpdateTariffInput
+): Promise<{ success: boolean; error?: string; id?: string }> {
+	try {
+		await requireAdmin();
+
+		const { id, ...data } = input;
+
+		await prisma.studioTariff.update({
+			where: { id },
+			data: {
+				...(data.name !== undefined && { name: data.name.trim() }),
+				...(data.description !== undefined && {
+					description: data.description?.trim() || null,
+				}),
+				...(data.details !== undefined && {
+					details: data.details?.trim() || null,
+				}),
+				...(data.pricePerHour !== undefined && {
+					pricePerHour: data.pricePerHour,
+				}),
+				...(data.isActive !== undefined && { isActive: data.isActive }),
+				...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+				...(data.imageUrls !== undefined && { imageUrls: data.imageUrls }),
+			},
+		});
+
+		revalidatePath("/admin/studio");
+		revalidatePath("/studio");
+		return { success: true, id: id };
+	} catch (e) {
+		console.error("updateStudioTariffAction:", e);
+		return { success: false, error: "Ошибка обновления тарифа" };
+	}
+}
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+
+export async function deleteStudioTariffAction(
+	id: string
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		await requireAdmin();
+
+		// Запрет удаления если есть активные брони
+		const activeBookings = await prisma.studioBooking.count({
+			where: {
+				tariffId: id,
+				status: {
+					in: ["PENDING_REVIEW", "WAIT_PAYMENT", "READY_TO_RENT", "ACTIVE"],
+				},
+			},
+		});
+
+		if (activeBookings > 0) {
+			return {
+				success: false,
+				error: `Нельзя удалить тариф: ${activeBookings} активных заказов`,
+			};
+		}
+
+		await prisma.studioTariff.delete({ where: { id } });
+
+		revalidatePath("/admin/studio");
+		revalidatePath("/studio");
+		return { success: true };
+	} catch (e) {
+		console.error("deleteStudioTariffAction:", e);
+		return { success: false, error: "Ошибка удаления тарифа" };
+	}
+}
+
+// ─── Reorder ──────────────────────────────────────────────────────────────────
+
+export async function reorderStudioTariffsAction(
+	orderedIds: string[]
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		await requireAdmin();
+
+		await prisma.$transaction(
+			orderedIds.map((id, index) =>
+				prisma.studioTariff.update({
+					where: { id },
+					data: { sortOrder: index },
+				})
+			)
+		);
+
+		revalidatePath("/admin/studio");
+		revalidatePath("/studio");
+		return { success: true };
+	} catch (e) {
+		console.error("reorderStudioTariffsAction:", e);
+		return { success: false, error: "Ошибка сортировки" };
+	}
+}
+
+// ─── helpers ────────────────────────────────────────────────────────────────────
 
 function calcPaymentStatus(
 	totalAmount: number,
@@ -363,7 +364,7 @@ function buildRow(b: {
 export async function getStudioBookingsAction(
 	filters: StudioBookingFilters = {}
 ): Promise<StudioBookingRow[]> {
-	await requireAdminOrManager();
+	await requireAdmin();
 
 	const where: Record<string, unknown> = {};
 
@@ -414,7 +415,7 @@ export async function getStudioBookingsAction(
 export async function getStudioBookingDetailAction(
 	id: string
 ): Promise<StudioBookingDetail | null> {
-	await requireAdminOrManager();
+	await requireAdmin();
 
 	const b = await prisma.studioBooking.findUnique({
 		where: { id },
@@ -488,6 +489,7 @@ export async function getStudioBookingDetailAction(
 
 export async function getPendingStudioBookingsCountAction(): Promise<number> {
 	try {
+		await requireAdmin();
 		return await prisma.studioBooking.count({
 			where: { status: "PENDING_REVIEW" },
 		});
@@ -504,7 +506,7 @@ export async function updateStudioBookingStatusAction(
 	reason?: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await requireAdminOrManager();
+		const { userId, name } = await requireAdmin();
 
 		const booking = await prisma.studioBooking.findUnique({
 			where: { id: bookingId },
@@ -529,8 +531,8 @@ export async function updateStudioBookingStatusAction(
 		await prisma.studioBookingAuditLog.create({
 			data: {
 				studioBookingId: bookingId,
-				authorId: session?.user?.id ?? null,
-				authorName: session?.user?.name ?? null,
+				authorId: userId ?? null,
+				authorName: name ?? null,
 				action: "STATUS_CHANGED",
 				fieldName: "status",
 				valueBefore: oldStatus,
@@ -549,18 +551,6 @@ export async function updateStudioBookingStatusAction(
 
 // ─── Full booking update (admin) ──────────────────────────────────────────────
 
-export interface UpdateStudioBookingInput {
-	bookingId: string;
-	userId?: string;
-	tariffId?: string;
-	startDate?: Date;
-	endDate?: Date;
-	totalAmount?: number;
-	/** Полный список ID техники (replaces existing) */
-	equipmentIds?: string[];
-	note?: string;
-}
-
 /**
  * Полное редактирование заказа студии администратором.
  * Позволяет изменить клиента, тариф, период, технику и сумму.
@@ -569,9 +559,7 @@ export async function updateStudioBookingFullAction(
 	input: UpdateStudioBookingInput
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await requireAdminOrManager();
-		const authorId = session?.user?.id ?? null;
-		const authorName = session?.user?.name ?? null;
+		const { userId: authorId, name: authorName } = await requireAdmin();
 
 		const existing = await prisma.studioBooking.findUnique({
 			where: { id: input.bookingId },
@@ -757,9 +745,7 @@ export async function refundStudioToBalanceAction(
 	amount: number
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await requireAdminOrManager();
-		const authorId = session?.user?.id ?? null;
-		const authorName = session?.user?.name ?? null;
+		const { userId: authorId, name: authorName } = await requireAdmin();
 
 		const booking = await prisma.studioBooking.findUnique({
 			where: { id: studioBookingId },
@@ -829,7 +815,7 @@ export async function createStudioBookingByAdminAction(input: {
 	note?: string;
 }): Promise<{ success: boolean; bookingId?: string; error?: string }> {
 	try {
-		const session = await requireAdminOrManager();
+		const { userId: authorId, name: authorName } = await requireAdmin();
 
 		// Считаем длительность
 		const durationMs = input.endDate.getTime() - input.startDate.getTime();
@@ -895,8 +881,8 @@ export async function createStudioBookingByAdminAction(input: {
 		await prisma.studioBookingAuditLog.create({
 			data: {
 				studioBookingId: booking.id,
-				authorId: session?.user?.id ?? null,
-				authorName: session?.user?.name ?? null,
+				authorId: authorId ?? null,
+				authorName: authorName ?? null,
 				action: "CREATED",
 				meta: {
 					createdByAdmin: true,
@@ -919,12 +905,7 @@ export async function deleteStudioBookingAction(
 	bookingId: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN")
-			return {
-				success: false,
-				error: "Только администратор может удалять заказы",
-			};
+		await requireAdmin();
 
 		await prisma.studioBooking.delete({ where: { id: bookingId } });
 
@@ -954,7 +935,7 @@ export async function searchStudioEquipmentAdminAction(
 	endDate?: Date
 ): Promise<StudioEquipmentSearchResult[]> {
 	try {
-		await requireAdminOrManager();
+		await requireAdmin();
 		if (!query.trim()) return [];
 
 		// Если переданы даты — вычисляем занятую технику (исключая текущий заказ)
@@ -1013,7 +994,7 @@ export async function searchStudioEquipmentAdminAction(
  */
 export async function getStudioPaymentsAction(bookingId: string) {
 	try {
-		await requireAdminOrManager();
+		await requireAdmin();
 
 		const booking = await prisma.studioBooking.findUnique({
 			where: { id: bookingId },
@@ -1060,9 +1041,7 @@ export async function recordStudioPaymentAction(
 	payload: RecordPaymentPayload
 ): Promise<RecordPaymentResult> {
 	try {
-		const session = await requireAdminOrManager();
-		const userId = session?.user?.id;
-		const name = session?.user?.name;
+		const { userId, name } = await requireAdmin();
 
 		if (!userId) throw new Error("Не авторизован");
 
@@ -1193,7 +1172,7 @@ export async function deleteStudioPaymentAction(
 	paymentId: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await requireAdminOrManager();
+		const { userId, name } = await requireAdmin();
 
 		const payment = await prisma.studioBookingPayment.findUnique({
 			where: { id: paymentId },
@@ -1206,8 +1185,8 @@ export async function deleteStudioPaymentAction(
 		await prisma.studioBookingAuditLog.create({
 			data: {
 				studioBookingId: bookingId,
-				authorId: session?.user?.id ?? null,
-				authorName: session?.user?.name ?? null,
+				authorId: userId ?? null,
+				authorName: name ?? null,
 				action: "PAYMENT_DELETED",
 				fieldName: "payment",
 				valueBefore: String(payment.amount),

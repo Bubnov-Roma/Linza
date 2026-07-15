@@ -11,7 +11,7 @@ import Papa from "papaparse";
 import type React from "react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { importEquipmentFromCSV } from "@/actions/upload-actions";
+import { importEquipmentFromCSV } from "@/actions/admin/upload-actions";
 import {
 	Button,
 	Card,

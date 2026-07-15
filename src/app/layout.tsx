@@ -10,7 +10,7 @@ import { RootProvider } from "@/providers/root-provider";
 import "./globals.css";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getCategoriesFromDb } from "@/actions/admin/admin-category-actions";
 import { getSupportInfo } from "@/actions/admin-settings-actions";
 import { auth } from "@/auth";
 import {

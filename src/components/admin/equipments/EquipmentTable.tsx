@@ -26,6 +26,7 @@ import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useDebounceValue } from "usehooks-ts";
+import { getCategoriesFromDb } from "@/actions/admin/admin-category-actions";
 import {
 	deleteEquipment,
 	duplicateEquipment,
@@ -37,7 +38,6 @@ import {
 	toggleEquipmentFeaturedAction,
 	toggleEquipmentPrimaryAction,
 } from "@/actions/admin/admin-equipment-actions";
-import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { FilterBuilder } from "@/components/admin/equipments/FilterBuilder";
 import { SortBuilder } from "@/components/admin/equipments/SortBuilder";

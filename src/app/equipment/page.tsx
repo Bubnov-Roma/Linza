@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getCategoriesFromDb } from "@/actions/admin-category-actions";
+import { getCategoriesFromDb } from "@/actions/admin/admin-category-actions";
 import { getEquipment } from "@/actions/equipment-actions";
 import EquipmentClientPage from "@/components/core/EquipmentClientPage";
 import { EquipmentGrid } from "@/components/core/EquipmentGrid";

@@ -20,7 +20,7 @@ import {
 	grantAdminAction,
 	revokeAdminAction,
 	updateAdminPermissionsAction,
-} from "@/actions/admin-permissions-actions";
+} from "@/actions/admin/admin-permissions-actions";
 import {
 	Badge,
 	Button,

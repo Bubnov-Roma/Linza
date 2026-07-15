@@ -23,7 +23,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { searchUsersAction } from "@/actions/admin/admin-booking-actions";
-import type { StudioBookingDetail } from "@/actions/admin-studio-actions";
+import type { StudioBookingDetail } from "@/actions/admin/admin-studio-actions";
 import {
 	deleteStudioPaymentAction,
 	getStudioBookingDetailAction,
@@ -34,8 +34,8 @@ import {
 	searchStudioEquipmentAdminAction,
 	updateStudioBookingFullAction,
 	updateStudioBookingStatusAction,
-} from "@/actions/admin-studio-actions";
-import { getUserBalanceAction } from "@/actions/audit-and-balance-actions";
+} from "@/actions/admin/admin-studio-actions";
+import { getUserBalanceAction } from "@/actions/admin/audit-and-balance-actions";
 import { PaymentsPanel } from "@/components/admin/bookings/PaymentsPanel";
 import {
 	RentalPeriod,

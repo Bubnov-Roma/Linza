@@ -15,8 +15,8 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
-import type { StudioTariffData } from "@/actions/admin-studio-actions";
-import { getActiveStudioTariffsAction } from "@/actions/admin-studio-actions";
+import type { StudioTariffData } from "@/actions/admin/admin-studio-actions";
+import { getActiveStudioTariffsAction } from "@/actions/admin/admin-studio-actions";
 import {
 	checkStudioAvailabilityAction,
 	getStudioAvailableEquipmentAction,

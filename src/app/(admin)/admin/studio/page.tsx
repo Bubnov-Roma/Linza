@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import {
 	getPendingStudioBookingsCountAction,
 	getStudioTariffsAction,
-} from "@/actions/admin-studio-actions";
+} from "@/actions/admin/admin-studio-actions";
 import { auth } from "@/auth";
 import { AdminStudioPageClient } from "@/components/admin/studio/AdminStudioPageClient";
 

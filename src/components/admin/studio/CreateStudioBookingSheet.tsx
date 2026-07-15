@@ -24,8 +24,8 @@ import {
 import { toast } from "sonner";
 import { useDebounceValue } from "usehooks-ts";
 import { searchUsersAction } from "@/actions/admin/admin-booking-actions";
-import type { StudioTariffData } from "@/actions/admin-studio-actions";
-import { createStudioBookingByAdminAction } from "@/actions/admin-studio-actions";
+import type { StudioTariffData } from "@/actions/admin/admin-studio-actions";
+import { createStudioBookingByAdminAction } from "@/actions/admin/admin-studio-actions";
 import {
 	checkStudioAvailabilityAction,
 	getStudioAvailableEquipmentAction,

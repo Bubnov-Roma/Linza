@@ -14,7 +14,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { DbFaqItem } from "@/actions/admin-faq-actions";
+import type { DbFaqItem } from "@/actions/admin/admin-faq-actions";
 import { AskForm } from "@/components/layouts/Faq/AskForm";
 import { FaqChip } from "@/components/shared/FaqChip";
 import { Button, Input } from "@/components/ui";

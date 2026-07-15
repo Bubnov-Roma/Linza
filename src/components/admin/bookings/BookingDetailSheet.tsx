@@ -59,7 +59,7 @@ import {
 	getUserBalanceAction,
 	refundToBalanceAction,
 	removeBookingLabelAction,
-} from "@/actions/audit-and-balance-actions";
+} from "@/actions/admin/audit-and-balance-actions";
 import { InlineStatusChanger } from "@/components/admin/bookings/BookingInlineChanger";
 import { DocumentsPanel } from "@/components/admin/bookings/documents/DocumentsPanel";
 import { PaymentsPanel } from "@/components/admin/bookings/PaymentsPanel";

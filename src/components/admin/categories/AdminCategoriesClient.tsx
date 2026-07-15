@@ -19,7 +19,7 @@ import {
 	reorderSubcategoriesAction,
 	updateCategoryAction,
 	updateSubcategoryAction,
-} from "@/actions/admin-category-actions";
+} from "@/actions/admin/admin-category-actions";
 import { CategoryRow } from "@/components/admin/categories/CategoryRow";
 import { IconPicker } from "@/components/admin/categories/IconPicker";
 import { Badge, Button, Input, Label } from "@/components/ui";

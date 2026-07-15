@@ -23,7 +23,7 @@ import {
 	adminGetUserDiscountAction,
 	adminUpdateApplicationFieldAction,
 	getAdminUserCommentsAction,
-} from "@/actions/admin-user-actions";
+} from "@/actions/admin/admin-user-actions";
 import {
 	toggleUserBlockAction,
 	updateApplicationStatusAction,

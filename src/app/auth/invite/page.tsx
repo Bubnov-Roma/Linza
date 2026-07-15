@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { consumeInviteTokenAction } from "@/actions/admin-user-actions";
+import { consumeInviteTokenAction } from "@/actions/admin/admin-user-actions";
 import { signInByUserId } from "@/lib/auth-helpers";
 
 interface InvitePageProps {

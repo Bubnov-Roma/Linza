@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getActiveStudioTariffsAction } from "@/actions/admin-studio-actions";
+import { getActiveStudioTariffsAction } from "@/actions/admin/admin-studio-actions";
 import { StudioPageClient } from "@/components/studio/StudioPageClient";
 
 export const metadata = {

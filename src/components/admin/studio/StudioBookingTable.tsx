@@ -20,11 +20,11 @@ import type {
 	StudioBookingFilters,
 	StudioBookingRow,
 	StudioTariffData,
-} from "@/actions/admin-studio-actions";
+} from "@/actions/admin/admin-studio-actions";
 import {
 	getStudioBookingsAction,
 	updateStudioBookingStatusAction,
-} from "@/actions/admin-studio-actions";
+} from "@/actions/admin/admin-studio-actions";
 import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import {
 	Badge,

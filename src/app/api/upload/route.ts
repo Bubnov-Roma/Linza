@@ -3,7 +3,7 @@
 // и получает { url: "https://..." }
 
 import { NextResponse } from "next/server";
-import { uploadToS3 } from "@/actions/upload-actions";
+import { uploadToS3 } from "@/actions/admin/upload-actions";
 import { auth } from "@/auth";
 
 export const maxDuration = 60;

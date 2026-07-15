@@ -6,7 +6,7 @@ import { useCallback, useState, useTransition } from "react";
 import {
 	getStudioTariffsAction,
 	type StudioTariffData,
-} from "@/actions/admin-studio-actions";
+} from "@/actions/admin/admin-studio-actions";
 import { AdminStudioTariffsPanel } from "@/components/admin/studio/AdminStudioTariffsPanel";
 import { StudioBookingTable } from "@/components/admin/studio/StudioBookingTable";
 import { Badge, Button } from "@/components/ui";

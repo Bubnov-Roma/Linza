@@ -7,10 +7,11 @@ import {
 	type Role,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { assignAutoPromoOnApprovalAction } from "@/actions/admin-user-actions";
+import { assignAutoPromoOnApprovalAction } from "@/actions/admin/admin-user-actions";
 import { createAdminNotification } from "@/actions/notification-actions";
 import { auth } from "@/auth";
 import { encrypt } from "@/lib/crypto";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import {
 	buildFullName,
@@ -304,14 +305,14 @@ export async function addUserAdminNoteAction(
 	}
 }
 
-export async function getUserAdminNotesAction(userId: string) {
-	const notes = await prisma.userAdminNote.findMany({
-		where: { userId },
-		include: { author: { select: { name: true } } },
-		orderBy: { createdAt: "desc" },
-	});
-	return notes;
-}
+// export async function getUserAdminNotesAction(userId: string) {
+// 	const notes = await prisma.userAdminNote.findMany({
+// 		where: { userId },
+// 		include: { author: { select: { name: true } } },
+// 		orderBy: { createdAt: "desc" },
+// 	});
+// 	return notes;
+// }
 
 export async function updateApplicationStatusAction(
 	applicationId: string,
@@ -319,10 +320,7 @@ export async function updateApplicationStatusAction(
 	rejectionReason?: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Нет прав доступа" };
-		}
+		await requireAdmin();
 
 		const app = await prisma.clientApplication.update({
 			where: { id: applicationId },

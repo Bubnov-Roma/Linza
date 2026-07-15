@@ -9,11 +9,11 @@ import {
 import Image from "next/image";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { StudioTariffData } from "@/actions/admin-studio-actions";
+import type { StudioTariffData } from "@/actions/admin/admin-studio-actions";
 import {
 	reorderStudioTariffsAction,
 	updateStudioTariffAction,
-} from "@/actions/admin-studio-actions";
+} from "@/actions/admin/admin-studio-actions";
 import { Badge, Button, CardContent, Switch } from "@/components/ui";
 import { cn, fmtRub } from "@/lib/utils";
 import { StudioTariffSheet } from "./StudioTariffSheet";

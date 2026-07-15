@@ -7,7 +7,7 @@ import {
 	TrashIcon,
 	UserIcon,
 } from "@phosphor-icons/react";
-import type { ApplicationDataFull } from "@/actions/admin-user-actions";
+import type { ApplicationDataFull } from "@/actions/admin/admin-user-actions";
 import { ProfileField } from "@/components/admin/users/details-panel/ProfileField";
 import { InlineEditField, SectionCard } from "@/components/shared";
 import { Button, Label } from "@/components/ui";

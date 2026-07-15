@@ -1,6 +1,6 @@
 import { ClockIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { getUserAuditLogAction } from "@/actions/admin-user-actions";
+import { getUserAuditLogAction } from "@/actions/admin/admin-user-actions";
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {
 	VIEW_APPLICATION: "Просмотр анкеты",

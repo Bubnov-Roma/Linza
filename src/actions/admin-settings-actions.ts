@@ -12,7 +12,7 @@ import {
 	SUPPORT_VK_DEFAULT,
 	type SupportInfo,
 } from "@/constants";
-
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { WORK_END, WORK_START } from "@/lib/utils";
 
@@ -92,6 +92,7 @@ export async function updateSiteSettingsAction(
 	patch: Partial<SiteSettingsInfo>
 ): Promise<{ success: boolean; error?: string }> {
 	try {
+		await requireAdmin();
 		const promises: PrismaPromise<unknown>[] = [];
 
 		// Функция-хелпер для upsert

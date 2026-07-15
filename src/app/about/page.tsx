@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getAboutSettings } from "@/actions/admin-about-actions";
+import { getAboutSettings } from "@/actions/admin/admin-about-actions";
 import { auth } from "@/auth";
 import AboutClientView from "@/components/layouts/About/AboutClientView";
 

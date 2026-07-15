@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export interface UpdateAboutInput {
@@ -13,6 +13,7 @@ export interface UpdateAboutInput {
 
 export async function getAboutSettings() {
 	try {
+		await requireAdmin();
 		let settings = await prisma.aboutPageSettings.findUnique({
 			where: { id: "default" },
 		});
@@ -31,14 +32,7 @@ export async function getAboutSettings() {
 
 export async function updateAboutSettings(data: UpdateAboutInput) {
 	try {
-		const session = await auth();
-
-		// Проверка на блокировку (у вас в инвайте есть поле isBlocked, защитимся от заблокированных менеджеров)
-		// Роли проверяем строго по вашему Enum (ADMIN, MANAGER)
-		const role = session?.user?.role;
-		if (role !== "ADMIN" && role !== "MANAGER") {
-			return { error: "Недостаточно прав для редактирования" };
-		}
+		await requireAdmin();
 
 		await prisma.aboutPageSettings.update({
 			where: { id: "default" },

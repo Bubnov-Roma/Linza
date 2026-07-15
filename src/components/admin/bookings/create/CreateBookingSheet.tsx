@@ -19,7 +19,7 @@ import {
 	adminCreateBookingAction,
 	searchEquipmentAction,
 	searchUsersAction,
-} from "@/actions/admin-booking-actions";
+} from "@/actions/admin/admin-booking-actions";
 import { checkAvailabilityAction } from "@/actions/client-booking-actions";
 import {
 	getDefaultRentalPeriod,

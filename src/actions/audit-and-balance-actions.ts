@@ -2,7 +2,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { computePaymentStatus } from "@/actions/admin-booking-actions";
+import { computePaymentStatus } from "@/actions/admin/admin-booking-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";

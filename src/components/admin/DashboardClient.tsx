@@ -8,7 +8,7 @@ import {
 	UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import type { Banner } from "@/actions/admin-banner-actions";
+import type { Banner } from "@/actions/admin/admin-banner-actions";
 import { BannerManager } from "@/components/admin/banner/BannerManager";
 import { QuickActionLink } from "@/components/shared";
 import {

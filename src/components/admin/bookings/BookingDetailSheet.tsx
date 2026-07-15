@@ -49,7 +49,7 @@ import {
 	recordBookingPaymentAction,
 	searchEquipmentAction,
 	searchUsersAction,
-} from "@/actions/admin-booking-actions";
+} from "@/actions/admin/admin-booking-actions";
 import {
 	type AuditLogEntry,
 	addBookingLabelAction,

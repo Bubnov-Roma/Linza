@@ -15,7 +15,7 @@ import {
 	useTransform,
 } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Banner } from "@/actions/admin-banner-actions";
+import type { Banner } from "@/actions/admin/admin-banner-actions";
 import { BannerCard } from "@/components/layouts/home/events-banner/BannerCard";
 import { BannerModal } from "@/components/layouts/home/events-banner/BannerModal";
 import { Button, Card, Label } from "@/components/ui";

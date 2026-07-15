@@ -9,11 +9,11 @@ import type {
 	BannerImage,
 	BannerPlacement,
 	BannerType,
-} from "@/actions/admin-banner-actions";
+} from "@/actions/admin/admin-banner-actions";
 import {
 	createBannerAction,
 	updateBannerAction,
-} from "@/actions/admin-banner-actions";
+} from "@/actions/admin/admin-banner-actions";
 import { BannerMediaManager } from "@/components/admin/banner/BannerMediaManager";
 import { MarkdownEditor } from "@/components/shared";
 import {

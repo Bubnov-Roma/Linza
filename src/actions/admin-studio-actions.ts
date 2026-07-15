@@ -6,7 +6,7 @@ import {
 	computePaymentStatus,
 	type RecordPaymentPayload,
 	type RecordPaymentResult,
-} from "@/actions/admin-booking-actions";
+} from "@/actions/admin/admin-booking-actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";

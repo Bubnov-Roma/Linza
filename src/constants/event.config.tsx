@@ -10,7 +10,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 
 import type { JSX } from "react";
-import type { BannerType } from "@/actions/admin-banner-actions";
+import type { BannerType } from "@/actions/admin/admin-banner-actions";
 
 export const PLACEMENT_OPTIONS: {
 	value: "hero" | "studio" | "both";

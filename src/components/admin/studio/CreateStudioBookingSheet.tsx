@@ -23,7 +23,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useDebounceValue } from "usehooks-ts";
-import { searchUsersAction } from "@/actions/admin-booking-actions";
+import { searchUsersAction } from "@/actions/admin/admin-booking-actions";
 import type { StudioTariffData } from "@/actions/admin-studio-actions";
 import { createStudioBookingByAdminAction } from "@/actions/admin-studio-actions";
 import {

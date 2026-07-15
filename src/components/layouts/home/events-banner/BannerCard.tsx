@@ -3,7 +3,7 @@
 import { PlayCircleIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useRef } from "react";
-import type { Banner } from "@/actions/admin-banner-actions";
+import type { Banner } from "@/actions/admin/admin-banner-actions";
 import { ClientTime } from "@/components/shared";
 import { EVENT_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";

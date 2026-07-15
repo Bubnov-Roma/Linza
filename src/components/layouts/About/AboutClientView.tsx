@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import {
 	type UpdateAboutInput,
 	updateAboutSettings,
-} from "@/actions/admin-about-actions";
+} from "@/actions/admin/admin-about-actions";
 import { MarkdownEditor, SimpleMarkdown } from "@/components/shared";
 import { MediaUploader } from "@/components/shared/MediaUploader";
 import { Card } from "@/components/ui";

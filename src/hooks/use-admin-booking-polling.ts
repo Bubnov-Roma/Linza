@@ -48,7 +48,7 @@ export function useAdminBookingPolling({
 
 			// Также получаем счётчик PENDING_REVIEW для бейджа
 			const { getPendingReviewCountAction } = await import(
-				"@/actions/admin-booking-actions"
+				"@/actions/admin/admin-booking-actions"
 			);
 			const { count } = await getPendingReviewCountAction();
 

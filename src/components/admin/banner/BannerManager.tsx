@@ -14,12 +14,12 @@ import {
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { Banner, BannerType } from "@/actions/admin-banner-actions";
+import type { Banner, BannerType } from "@/actions/admin/admin-banner-actions";
 import {
 	deleteBannerAction,
 	reorderBannersAction,
 	updateBannerAction,
-} from "@/actions/admin-banner-actions";
+} from "@/actions/admin/admin-banner-actions";
 import { BannerFormDialog } from "@/components/admin/banner/BannerFormDialog";
 import { BannerCarousel } from "@/components/layouts/home/events-banner/BannerCarousel";
 import { Button, CardContent } from "@/components/ui";

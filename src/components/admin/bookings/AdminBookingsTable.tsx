@@ -22,7 +22,7 @@ import { useDebounceValue } from "usehooks-ts";
 import {
 	adminForceSetBookingStatusAction,
 	getPaginatedAdminBookingsAction,
-} from "@/actions/admin-booking-actions";
+} from "@/actions/admin/admin-booking-actions";
 import { getAutocompleteAction } from "@/actions/autocomplete-actions";
 import { BookingDetailSheet } from "@/components/admin/bookings/BookingDetailSheet";
 import {

@@ -22,7 +22,7 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
-import { searchUsersAction } from "@/actions/admin-booking-actions";
+import { searchUsersAction } from "@/actions/admin/admin-booking-actions";
 import type { StudioBookingDetail } from "@/actions/admin-studio-actions";
 import {
 	deleteStudioPaymentAction,

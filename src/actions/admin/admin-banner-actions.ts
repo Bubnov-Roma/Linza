@@ -3,7 +3,7 @@
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { BANNER_INCLUDE } from "@/utils";
 
@@ -55,6 +55,7 @@ export const getBannersFromDb = cache(async (): Promise<Banner[]> => {
 
 export async function getAllBannersAdmin(): Promise<Banner[]> {
 	try {
+		await requireAdmin();
 		const data = await prisma.banner.findMany({
 			orderBy: { sortOrder: "asc" },
 			include: BANNER_INCLUDE,
@@ -81,10 +82,7 @@ export async function createBannerAction(input: {
 	eventDate?: string;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		const userId = await requireAdmin();
 
 		const last = await prisma.banner.findFirst({
 			orderBy: { sortOrder: "desc" },
@@ -105,7 +103,7 @@ export async function createBannerAction(input: {
 				isActive: input.isActive ?? true,
 				eventDate: input.eventDate ? new Date(input.eventDate) : null,
 				sortOrder: (last?.sortOrder ?? 0) + 1,
-				createdBy: session.user.id,
+				createdBy: userId.role,
 			},
 		});
 
@@ -137,10 +135,7 @@ export async function updateBannerAction(
 	}>
 ): Promise<{ success: boolean; error?: string; id?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		const data: Prisma.BannerUpdateInput = {};
 
@@ -174,10 +169,8 @@ export async function deleteBannerAction(
 	id: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
+
 		await prisma.banner.delete({ where: { id } });
 		revalidatePath("/");
 		return { success: true };
@@ -193,10 +186,7 @@ export async function reorderBannersAction(
 	orderedIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		await prisma.$transaction(
 			orderedIds.map((id, index) =>
@@ -222,10 +212,7 @@ export async function addBannerImageAction(
 	imageUrl: string
 ): Promise<{ success: boolean; image?: BannerImage; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		const count = await prisma.bannerImage.count({ where: { bannerId } });
 		if (count >= 10) {
@@ -264,10 +251,7 @@ export async function addBannerVideoAction(
 	thumbnailUrl?: string
 ): Promise<{ success: boolean; image?: BannerImage; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		const count = await prisma.bannerImage.count({ where: { bannerId } });
 		if (count >= 10) {
@@ -310,10 +294,7 @@ export async function deleteBannerImageAction(
 	imageId: string
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		const img = await prisma.bannerImage.findUnique({
 			where: { id: imageId },
@@ -351,10 +332,7 @@ export async function reorderBannerImagesAction(
 	orderedIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const session = await auth();
-		if (session?.user?.role !== "ADMIN" && session?.user?.role !== "MANAGER") {
-			return { success: false, error: "Unauthorized" };
-		}
+		await requireAdmin();
 
 		await prisma.$transaction(
 			orderedIds.map((id, index) =>

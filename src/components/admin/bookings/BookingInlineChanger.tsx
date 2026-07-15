@@ -8,7 +8,7 @@ import {
 	adminForceSetBookingStatusAction,
 	adminHalfPayBookingAction,
 	adminQuickPayBookingAction,
-} from "@/actions/admin-booking-actions";
+} from "@/actions/admin/admin-booking-actions";
 import {
 	Badge,
 	DropdownMenu,

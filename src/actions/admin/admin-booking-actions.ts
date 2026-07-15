@@ -3,38 +3,18 @@
 import { BookingStatus, type Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/actions/audit-and-balance-actions";
-import { auth } from "@/auth";
 import { PAYMENT_METHOD_LABELS } from "@/constants";
 import type {
 	BookingPaymentRow,
 	PaymentMethod,
 	PaymentStatus,
 } from "@/core/domain/entities/Booking";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { fmtRub } from "@/lib/utils";
 import { extractEnrichedUserData } from "@/utils";
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
-async function requireAdmin() {
-	const session = await auth();
-	if (!session?.user?.id) throw new Error("Не авторизован");
-	const user = await prisma.user.findUnique({
-		where: { id: session.user.id },
-		select: { role: true, permissions: true, name: true },
-	});
-	if (!user || (user.role !== "ADMIN" && user.role !== "MANAGER")) {
-		throw new Error("Недостаточно прав");
-	}
-	return {
-		userId: session.user.id,
-		name: user.name ?? "Администратор",
-		role: user.role,
-		permissions: user.permissions as Record<string, boolean>,
-	};
-}
-
-// Создание нового заказа администратором/менеджером
+// TYPES
 export interface AdminCreateBookingPayload {
 	userId: string;
 	startDate: string; // ISO-строка
@@ -53,6 +33,65 @@ export interface AdminCreateBookingPayload {
 	initialStatus?: BookingStatus;
 	internalNote?: string; // Будет записан в аудит-лог
 }
+
+export interface RecordPaymentPayload {
+	bookingId: string;
+	/** Положительное — приход, отрицательное — возврат/расход */
+	amount: number;
+	method: PaymentMethod;
+	type: "PAYMENT" | "DEPOSIT" | "OTHER";
+	note?: string;
+}
+
+export type RecordPaymentResult =
+	| {
+			success: true;
+			payment: BookingPaymentRow;
+			newTotalPaid: number;
+			paymentStatus: PaymentStatus;
+			totalAmount: number;
+	  }
+	| {
+			success: false;
+			error: string;
+	  };
+
+export interface AdminUpdateItemsPayload {
+	items: {
+		equipmentId: string;
+		title: string;
+		quantity: number;
+		pricePerUnit: number;
+		depositPerUnit: number;
+		replacementValuePerUnit: number;
+	}[];
+	totalAmount: number;
+	totalReplacementValue: number;
+}
+
+export type PriceAdjustmentType = "percent" | "fixed" | "promo" | "penalty";
+
+export interface PriceAdjustment {
+	type: PriceAdjustmentType;
+	value: number;
+	description?: string;
+	promoCode?: string;
+	itemIds?: string[];
+}
+
+export type FetchAdminBookingsParams = {
+	search: string;
+	statusFilter: string;
+	paymentFilter: string;
+	dateFrom: string;
+	dateTo: string;
+	sortField: "createdAt" | "startDate" | "totalAmount" | "status";
+	sortDir: "asc" | "desc";
+	limit: number;
+	offset: number;
+};
+
+//-----------------------  ACTIONS  ---------------
 
 export async function adminCreateBookingAction(
 	payload: AdminCreateBookingPayload
@@ -135,7 +174,6 @@ export async function adminCreateBookingAction(
 	}
 }
 
-// Смена статуса (без ограничений — любой → любой)
 export async function adminForceSetBookingStatusAction(
 	bookingId: string,
 	newStatus: BookingStatus,
@@ -184,6 +222,7 @@ export async function computePaymentStatus(
 	totalPaid: number,
 	totalAmount: number
 ): Promise<PaymentStatus> {
+	await requireAdmin();
 	if (totalPaid <= 0) return "UNPAID";
 	const ratio = totalPaid / totalAmount;
 	if (ratio >= 1.005) return "OVERPAID"; // допуск 0.5%
@@ -243,27 +282,6 @@ export async function getBookingPaymentsAction(bookingId: string): Promise<{
 	}
 }
 
-export interface RecordPaymentPayload {
-	bookingId: string;
-	/** Положительное — приход, отрицательное — возврат/расход */
-	amount: number;
-	method: PaymentMethod;
-	type: "PAYMENT" | "DEPOSIT" | "OTHER";
-	note?: string;
-}
-
-export type RecordPaymentResult =
-	| {
-			success: true;
-			payment: BookingPaymentRow;
-			newTotalPaid: number;
-			paymentStatus: PaymentStatus;
-			totalAmount: number;
-	  }
-	| {
-			success: false;
-			error: string;
-	  };
 /** Зафиксировать платёж */
 export async function recordBookingPaymentAction(
 	payload: RecordPaymentPayload
@@ -486,19 +504,6 @@ export async function adminChangeBookingClientAction(
 
 // ── 2.3 Update booking items ──────────────────────────────────────────────────
 
-export interface AdminUpdateItemsPayload {
-	items: {
-		equipmentId: string;
-		title: string;
-		quantity: number;
-		pricePerUnit: number;
-		depositPerUnit: number;
-		replacementValuePerUnit: number;
-	}[];
-	totalAmount: number;
-	totalReplacementValue: number;
-}
-
 export async function adminUpdateBookingItemsAction(
 	bookingId: string,
 	payload: AdminUpdateItemsPayload
@@ -568,16 +573,6 @@ export async function adminUpdateBookingItemsAction(
 }
 
 // ── 2.4 Update booking pricing ────────────────────────────────────────────────
-
-export type PriceAdjustmentType = "percent" | "fixed" | "promo" | "penalty";
-
-export interface PriceAdjustment {
-	type: PriceAdjustmentType;
-	value: number;
-	description?: string;
-	promoCode?: string;
-	itemIds?: string[];
-}
 
 export async function adminUpdateBookingPricingAction(
 	bookingId: string,
@@ -872,18 +867,6 @@ export async function writeBookingAuditLog(
 }
 
 // ─── PAGINATION & INLINE PAYMENTS ─────────────────────────────────────────────
-
-export type FetchAdminBookingsParams = {
-	search: string;
-	statusFilter: string;
-	paymentFilter: string;
-	dateFrom: string;
-	dateTo: string;
-	sortField: "createdAt" | "startDate" | "totalAmount" | "status";
-	sortDir: "asc" | "desc";
-	limit: number;
-	offset: number;
-};
 
 export async function getPaginatedAdminBookingsAction(
 	params: FetchAdminBookingsParams

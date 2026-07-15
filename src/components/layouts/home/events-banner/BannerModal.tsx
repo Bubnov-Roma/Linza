@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Banner } from "@/actions/admin-banner-actions";
+import type { Banner } from "@/actions/admin/admin-banner-actions";
 import { MediaBlock } from "@/components/layouts/home/events-banner/MediaBlock";
 import {
 	ClientTime,

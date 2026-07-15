@@ -16,13 +16,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { BannerImage } from "@/actions/admin-banner-actions";
+import type { BannerImage } from "@/actions/admin/admin-banner-actions";
 import {
 	addBannerImageAction,
 	addBannerVideoAction,
 	deleteBannerImageAction,
 	reorderBannerImagesAction,
-} from "@/actions/admin-banner-actions";
+} from "@/actions/admin/admin-banner-actions";
 import { MediaUploader, VideoEmbed } from "@/components/shared"; // Предполагаем, что MarkdownEditor здесь не нужен
 import {
 	Button,

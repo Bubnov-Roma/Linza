@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getBannersFromDb } from "@/actions/admin-banner-actions";
+import { getBannersFromDb } from "@/actions/admin/admin-banner-actions";
 import { getCategoriesFromDb } from "@/actions/admin-category-actions";
 import { getFeaturedEquipment } from "@/actions/equipment-actions";
 import { auth } from "@/auth";

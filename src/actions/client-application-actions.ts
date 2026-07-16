@@ -7,7 +7,10 @@ import {
 	type Role,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { assignAutoPromoOnApprovalAction } from "@/actions/admin/admin-user-actions";
+import {
+	assignAutoPromoOnApprovalAction,
+	writeUserAuditLog,
+} from "@/actions/admin/admin-user-actions";
 import { createAdminNotification } from "@/actions/notification-actions";
 import { auth } from "@/auth";
 import { encrypt } from "@/lib/crypto";
@@ -76,15 +79,6 @@ export async function submitClientApplicationAction(
 			},
 		});
 
-		const existingUser = await prisma.user.findUnique({
-			where: { id: session.user.id },
-			select: { createdAt: true },
-		});
-
-		const isFirstApplication =
-			!existingUser?.createdAt ||
-			Date.now() - existingUser.createdAt.getTime() < 60_000;
-
 		await prisma.clientApplication.upsert({
 			where: { userId: session.user.id },
 			update: {
@@ -103,10 +97,21 @@ export async function submitClientApplicationAction(
 		});
 
 		await createAdminNotification({
-			type: isFirstApplication ? "userRegistered" : "applicationSubmitted",
+			type: "applicationSubmitted",
 			userId: session.user.id,
-			entityType: isFirstApplication ? "user" : "application",
+			entityType: "application",
 		});
+
+		await writeUserAuditLog(
+			session.user.id,
+			session.user.id,
+			fullName || session.user.name || "Клиент",
+			{
+				action: "Анкета полностью заполнена и отправлена",
+				fieldName: "status",
+				valueAfter: "PENDING",
+			}
+		);
 
 		revalidatePath("/dashboard/profile");
 		return { success: true, message: "Анкета успешно отправлена ✔️" };

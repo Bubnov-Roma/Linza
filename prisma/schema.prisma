@@ -172,6 +172,7 @@ model User {
   balanceTransactions        BalanceTransaction[]      @relation("UserBalance")
   balanceTxAuthored          BalanceTransaction[]      @relation("TxAuthor")
   bookingAuditLogs           BookingAuditLog[]         @relation("AuditAuthor")
+  equipmentAuditLogs         EquipmentAuditLog[]       @relation("EquipmentAuditAuthor")
   bookingLabels              BookingLabel[]            @relation("LabelAuthor")
   documentGenerationLogs     DocumentGenerationLog[]   @relation("DocGenAuthor")
   documentTemplates          DocumentTemplate[]        @relation("TemplateCreator")
@@ -423,7 +424,25 @@ model Equipment {
   studioBookingItems       StudioBookingItem[]
 
   promoRestrictions        PromoCodeEquipment[]
+  auditLogs                EquipmentAuditLog[]
 }
+
+model EquipmentAuditLog {
+  id          String   @id @default(uuid())
+  equipmentId String
+  authorId    String?
+  authorName  String?
+  action      String
+  fieldName   String?
+  valueBefore String?  @db.Text
+  valueAfter  String?  @db.Text
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  author      User?     @relation("EquipmentAuditAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+}
+
 
 model EquipmentRelation {
   id          String @id @default(uuid())

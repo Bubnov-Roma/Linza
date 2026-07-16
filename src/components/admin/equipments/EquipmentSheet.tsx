@@ -3,6 +3,7 @@
 import {
 	ArrowsClockwiseIcon,
 	CircleNotchIcon,
+	ClockCounterClockwiseIcon,
 	DotsNineIcon,
 	InfoIcon,
 	LinkIcon,
@@ -27,6 +28,8 @@ import {
 	syncEquipmentByTitle,
 	updateEquipment,
 } from "@/actions/admin/admin-equipment-actions";
+import { getEquipmentAuditLogAction } from "@/actions/admin/admin-equipment-audit-log-actions";
+import type { AuditLogEntry } from "@/actions/admin/audit-and-balance-actions";
 import { clientSearchEquipmentAction } from "@/actions/client-equipment-actions";
 import { getRelatedEquipmentAction } from "@/actions/equipment-actions";
 import { ImageCell } from "@/components/admin/equipments/ImageCell";
@@ -794,7 +797,72 @@ const TABS = [
 	{ id: "info", label: "Основное", icon: InfoIcon },
 	{ id: "related", label: "Сопутствующие", icon: LinkIcon },
 	{ id: "notes", label: "Заметки", icon: NoteIcon },
+	{ id: "history", label: "История", icon: ClockCounterClockwiseIcon },
 ] as const;
+
+// ─── AuditBlock: история изменений позиции ────────────────────────────────
+
+function EquipmentAuditBlock({ entries }: { entries: AuditLogEntry[] }) {
+	if (!entries.length)
+		return (
+			<div className="py-10 text-center text-sm text-muted-foreground">
+				История изменений пуста
+			</div>
+		);
+
+	return (
+		<div className="space-y-2">
+			{entries.map((e) => (
+				<div
+					key={e.id}
+					className="flex gap-3 p-3 rounded-xl bg-foreground/3 border border-foreground/6"
+				>
+					<div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0 mt-1.5" />
+					<div className="flex-1 min-w-0">
+						<div className="flex items-baseline gap-2 flex-wrap">
+							<span className="text-xs font-semibold">{e.action}</span>
+							{e.fieldName && (
+								<span className="text-[10px] text-muted-foreground font-mono">
+									[{e.fieldName}]
+								</span>
+							)}
+							<span className="text-[10px] text-muted-foreground">
+								{e.authorName ?? "Система"}
+							</span>
+							<span className="text-[10px] text-muted-foreground ml-auto">
+								{new Date(e.createdAt).toLocaleString("ru-RU", {
+									day: "numeric",
+									month: "short",
+									year: "numeric",
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</span>
+						</div>
+						{(e.valueBefore || e.valueAfter) && (
+							<div className="mt-1 text-[10px] text-muted-foreground space-y-0.5">
+								{e.valueBefore && (
+									<p>
+										Было:{" "}
+										<span className="text-foreground/70 line-through">
+											{e.valueBefore}
+										</span>
+									</p>
+								)}
+								{e.valueAfter && (
+									<p>
+										Стало:{" "}
+										<span className="text-foreground/80">{e.valueAfter}</span>
+									</p>
+								)}
+							</div>
+						)}
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
 
 export function EquipmentSheet(props: EquipmentSheetProps) {
 	const {
@@ -809,7 +877,11 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 	const hasSiblings = props.hasSiblings ?? false;
 	const { markClean, isDirty, markDirty } = useUnsavedChanges();
 
-	const [tab, setTab] = useState<"info" | "related" | "notes">("info");
+	const [tab, setTab] = useState<"info" | "related" | "notes" | "history">(
+		"info"
+	);
+	const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+	const [isLoadingAudit, setIsLoadingAudit] = useState(false);
 
 	const [isPending, setIsPending] = useState(false);
 	const [syncFields, setSyncFields] = useState<string[]>([]);
@@ -862,6 +934,16 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 			setSyncFields([]);
 			setShowSync(false);
 			setTab("info");
+			setAuditLog([]);
+
+			if (equipment?.id) {
+				setIsLoadingAudit(true);
+				getEquipmentAuditLogAction(equipment.id)
+					.then((r) => {
+						if (r.success && r.data) setAuditLog(r.data);
+					})
+					.finally(() => setIsLoadingAudit(false));
+			}
 		}
 	}, [open, equipment, markClean]);
 
@@ -1017,33 +1099,40 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 
 				{/* ── TABS ── */}
 				<div className="flex border-b border-foreground/8 shrink-0 overflow-x-auto">
-					{TABS.map(({ id, label, icon: Icon }) => (
-						<button
-							type="button"
-							key={id}
-							onClick={() => setTab(id)}
-							className={cn(
-								"cursor-pointer flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
-								tab === id
-									? "text-foreground border-foreground"
-									: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/3"
-							)}
-						>
-							<Icon
-								size={14}
-								weight={tab === id ? "duotone" : "bold"}
+					{TABS.filter((t) => t.id !== "history" || isEdit).map(
+						({ id, label, icon: Icon }) => (
+							<button
+								type="button"
+								key={id}
+								onClick={() => setTab(id)}
 								className={cn(
-									tab === id ? "text-foreground" : "text-muted-foreground"
+									"cursor-pointer flex-1 min-w-0 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap px-4 outline-none",
+									tab === id
+										? "text-foreground border-foreground"
+										: "text-muted-foreground border-transparent hover:text-foreground hover:bg-foreground/3"
 								)}
-							/>{" "}
-							{label}
-							{id === "notes" && comments.length > 0 && (
-								<span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-muted-foreground/20 text-foreground text-[10px] font-bold">
-									{comments.length}
-								</span>
-							)}
-						</button>
-					))}
+							>
+								<Icon
+									size={14}
+									weight={tab === id ? "duotone" : "bold"}
+									className={cn(
+										tab === id ? "text-foreground" : "text-muted-foreground"
+									)}
+								/>{" "}
+								{label}
+								{id === "notes" && comments.length > 0 && (
+									<span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-muted-foreground/20 text-foreground text-[10px] font-bold">
+										{comments.length}
+									</span>
+								)}
+								{id === "history" && auditLog.length > 0 && (
+									<span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-muted-foreground/20 text-foreground text-[10px] font-bold">
+										{auditLog.length}
+									</span>
+								)}
+							</button>
+						)
+					)}
 				</div>
 
 				<div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -1356,7 +1445,7 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 															Исправно
 														</SelectItem>
 														<SelectItem
-															value="MAINTENACE"
+															value="MAINTENANCE"
 															className="hover:bg-muted-foreground/10 cursor-pointer"
 														>
 															В ремонте
@@ -1553,6 +1642,20 @@ export function EquipmentSheet(props: EquipmentSheetProps) {
 								onChange={(ids) => set({ relatedIds: ids })}
 								{...(mode === "edit" ? { excludeId: equipment.id } : {})}
 							/>
+						</div>
+					)}
+
+					{tab === "history" && (
+						<div className="space-y-1.5">
+							<p className="text-xs text-muted-foreground mb-3">
+								Кто и когда создал позицию, какие поля менялись и как — значения
+								до и после изменения
+							</p>
+							{isLoadingAudit ? (
+								<CircleNotchIcon className="w-6 h-6 animate-spin mx-auto my-10 text-muted-foreground" />
+							) : (
+								<EquipmentAuditBlock entries={auditLog} />
+							)}
 						</div>
 					)}
 

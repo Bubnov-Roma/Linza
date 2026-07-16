@@ -60,13 +60,29 @@ const fetchEquipmentCached = cache(
 			},
 		});
 
-		return groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+		const grouped = groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+
+		// Показываем только "витринную" позицию группы. Если у всех
+		// сиблингов с этим названием звёздочка снята — группа скрыта.
+		return grouped.filter((item) => item.isPrimary);
 	}
 );
 
 export async function getFeaturedEquipment(): Promise<GroupedEquipment[]> {
-	const data = await prisma.equipment.findMany({
+	// isFeatured может стоять на любом экземпляре группы (не обязательно нa isPrimary),
+	// поэтому сперва находим затронутые title, а затем догружаем ВСЕХ сиблингов — иначе группировка не найдёт настоящего isPrimary.
+	const featuredTitles = await prisma.equipment.findMany({
 		where: { isFeatured: true, isAvailable: true },
+		select: { title: true },
+		distinct: ["title"],
+	});
+	if (featuredTitles.length === 0) return [];
+
+	const data = await prisma.equipment.findMany({
+		where: {
+			title: { in: featuredTitles.map((t) => t.title) },
+			isAvailable: true,
+		},
 		include: {
 			equipmentImageLinks: {
 				include: { image: true },
@@ -75,7 +91,8 @@ export async function getFeaturedEquipment(): Promise<GroupedEquipment[]> {
 		},
 		orderBy: { updatedAt: "desc" },
 	});
-	return groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+	const grouped = groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+	return grouped.filter((item) => item.isPrimary);
 }
 
 export async function getEquipment(filters: {

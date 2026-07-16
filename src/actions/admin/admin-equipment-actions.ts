@@ -3,13 +3,165 @@
 import type { EquipmentStatus, OwnershipType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { writeEquipmentAuditLog } from "@/actions/admin/admin-equipment-audit-log-actions";
 import type {
 	DbEquipment,
 	DbEquipmentWithImages,
 } from "@/core/domain/entities/Equipment";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { fmtRub } from "@/lib/utils";
 import { getSearchVariations, slugify } from "@/utils";
+
+// ─── AUDIT HELPERS ──────────────────────────────────────────────────────────
+
+const EQUIPMENT_STATUS_LABELS: Record<string, string> = {
+	AVAILABLE: "Исправно",
+	RENTED: "В аренде",
+	RESERVED: "Забронировано",
+	MAINTENANCE: "В ремонте",
+	BROKEN: "Неисправно",
+	RETIRED: "Списано",
+};
+
+const OWNERSHIP_LABELS: Record<string, string> = {
+	INTERNAL: "Своё",
+	SUBLEASE: "Субаренда",
+};
+
+function formatPlain(v: unknown): string {
+	if (v === null || v === undefined || v === "") return "—";
+	return String(v);
+}
+
+function formatPrice(v: unknown): string {
+	return fmtRub(Number(v ?? 0));
+}
+
+function formatBool(v: unknown): string {
+	return v ? "Да" : "Нет";
+}
+
+function formatStatus(v: unknown): string {
+	return EQUIPMENT_STATUS_LABELS[String(v)] ?? formatPlain(v);
+}
+
+function formatOwnership(v: unknown): string {
+	return OWNERSHIP_LABELS[String(v)] ?? formatPlain(v);
+}
+
+function formatCategoryName(v: unknown, map: Map<string, string>): string {
+	if (!v || typeof v !== "string") return "—";
+	return map.get(v) ?? v;
+}
+
+function isEqualValue(a: unknown, b: unknown): boolean {
+	// Числа с плавающей точкой сравниваем с небольшим допуском
+	if (typeof a === "number" && typeof b === "number") {
+		return Math.abs(a - b) < 0.001;
+	}
+	return (a ?? null) === (b ?? null);
+}
+
+// Поля, изменения которых фиксируются в истории позиции.
+// Порядок и подписи — как в карточке товара.
+const TRACKED_EQUIPMENT_FIELDS: {
+	key: string;
+	label: string;
+	format?: (v: unknown) => string;
+}[] = [
+	{ key: "title", label: "Наименование" },
+	{ key: "inventoryNumber", label: "Инвентарный номер" },
+	{ key: "categoryId", label: "Категория" },
+	{ key: "subcategoryId", label: "Подкатегория" },
+	{ key: "pricePerDay", label: "Цена/сутки", format: formatPrice },
+	{ key: "price4h", label: "Цена/4ч", format: formatPrice },
+	{ key: "price8h", label: "Цена/8ч", format: formatPrice },
+	{ key: "priceStudio", label: "Цена в студии", format: formatPrice },
+	{ key: "deposit", label: "Залог", format: formatPrice },
+	{
+		key: "replacementValue",
+		label: "Стоимость (для страховки)",
+		format: formatPrice,
+	},
+	{ key: "status", label: "Техническое состояние", format: formatStatus },
+	{ key: "isAvailable", label: "Доступность", format: formatBool },
+	{ key: "isFeatured", label: "Рекомендуемое", format: formatBool },
+	{ key: "studioAvailable", label: "Доступно в студии", format: formatBool },
+	{ key: "ownershipType", label: "Тип владения", format: formatOwnership },
+	{ key: "partnerName", label: "Владелец (субаренда)" },
+	{ key: "description", label: "Описание" },
+	{ key: "defects", label: "Дефекты" },
+	{ key: "kit", label: "Комплектация" },
+	{ key: "kitDescription", label: "Описание комплекта" },
+];
+
+/**
+ * Сравнивает состояние позиции до/после изменения и пишет
+ * по одной записи в историю на каждое изменённое поле.
+ */
+async function logEquipmentChanges(
+	equipmentId: string,
+	authorId: string,
+	authorName: string,
+	before: Record<string, unknown>,
+	after: Record<string, unknown>
+): Promise<void> {
+	const categoryIds = [before.categoryId, after.categoryId].filter(
+		(v): v is string => typeof v === "string"
+	);
+	const subcategoryIds = [before.subcategoryId, after.subcategoryId].filter(
+		(v): v is string => typeof v === "string"
+	);
+
+	const [categories, subcategories] = await Promise.all([
+		categoryIds.length
+			? prisma.category.findMany({
+					where: { id: { in: [...new Set(categoryIds)] } },
+					select: { id: true, name: true },
+				})
+			: Promise.resolve([]),
+		subcategoryIds.length
+			? prisma.subcategory.findMany({
+					where: { id: { in: [...new Set(subcategoryIds)] } },
+					select: { id: true, name: true },
+				})
+			: Promise.resolve([]),
+	]);
+	const categoryNameById = new Map(categories.map((c) => [c.id, c.name]));
+	const subcategoryNameById = new Map(subcategories.map((s) => [s.id, s.name]));
+
+	for (const { key, label, format } of TRACKED_EQUIPMENT_FIELDS) {
+		const beforeVal = before[key];
+		const afterVal = after[key];
+
+		if (isEqualValue(beforeVal, afterVal)) continue;
+
+		let valueBefore: string;
+		let valueAfter: string;
+
+		if (key === "categoryId") {
+			valueBefore = formatCategoryName(beforeVal, categoryNameById);
+			valueAfter = formatCategoryName(afterVal, categoryNameById);
+		} else if (key === "subcategoryId") {
+			valueBefore = formatCategoryName(beforeVal, subcategoryNameById);
+			valueAfter = formatCategoryName(afterVal, subcategoryNameById);
+		} else if (format) {
+			valueBefore = format(beforeVal);
+			valueAfter = format(afterVal);
+		} else {
+			valueBefore = formatPlain(beforeVal);
+			valueAfter = formatPlain(afterVal);
+		}
+
+		await writeEquipmentAuditLog(equipmentId, authorId, authorName, {
+			action: `Изменено поле «${label}»`,
+			fieldName: key,
+			valueBefore,
+			valueAfter,
+		});
+	}
+}
 
 // ─── TYPES & HELPERS ────────────────────────────────────────────────────────
 
@@ -156,7 +308,7 @@ export async function createEquipmentAction(
 	data: CreateEquipmentData
 ): Promise<{ success: boolean; id?: string; error?: string }> {
 	try {
-		await requireAdmin();
+		const { userId: authorId, name: authorName } = await requireAdmin();
 		// Проверяем, есть ли уже техника с таким названием
 		const existing = await prisma.equipment.findFirst({
 			where: { title: data.title },
@@ -201,6 +353,12 @@ export async function createEquipmentAction(
 						}
 					: {}),
 			},
+		});
+		await writeEquipmentAuditLog(created.id, authorId, authorName, {
+			action: "Позиция создана",
+			fieldName: "title",
+			valueAfter: created.title,
+			meta: { inventoryNumber: created.inventoryNumber },
 		});
 
 		revalidatePath("/admin/equipment");
@@ -450,8 +608,13 @@ export async function updateEquipment(
 	id: string,
 	updates: Partial<DbEquipment>
 ): Promise<DbEquipment> {
-	await requireAdmin();
-	// 1. Формируем slug
+	const { userId: authorId, name: authorName } = await requireAdmin();
+
+	// Снимок состояния ДО изменений — нужен для истории изменений
+	const before = await prisma.equipment.findUnique({ where: { id } });
+	if (!before) throw new Error("Позиция не найдена");
+
+	// Формируем slug
 	const withSlug =
 		updates.title && !updates.slug
 			? { ...updates, slug: slugify(updates.title) }
@@ -462,7 +625,7 @@ export async function updateEquipment(
 		Object.entries(withSlug).filter(([, v]) => v !== undefined)
 	);
 
-	// 2. Реляционные поля (categoryId, subcategoryId) и поле relatedIds (которого физически нет в схеме Prisma, но оно приходит с фронта)
+	// Реляционные поля (categoryId, subcategoryId) и поле relatedIds (которого физически нет в схеме Prisma, но оно приходит с фронта)
 	const {
 		categoryId,
 		subcategoryId,
@@ -470,15 +633,15 @@ export async function updateEquipment(
 		...restData // Здесь остались только скалярные поля (title, price и т.д.)
 	} = cleanUpdates;
 
-	// 3. Формируем правильный объект для Prisma
+	// Формируем правильный объект для Prisma
 	const prismaData: Prisma.EquipmentUpdateInput = { ...restData };
 
-	// --- Подключаем Категорию ---
+	// Подключаем Категорию
 	if (categoryId) {
 		prismaData.category = { connect: { id: String(categoryId) } };
 	}
 
-	// --- Подключаем Подкатегорию ---
+	// Подключаем Подкатегорию
 	if (subcategoryId !== undefined) {
 		if (subcategoryId === null) {
 			prismaData.subcategory = { disconnect: true };
@@ -487,7 +650,7 @@ export async function updateEquipment(
 		}
 	}
 
-	// --- RELATED_IDS ---
+	// RELATED_IDS
 	// Если с фронта пришел массив relatedIds (даже пустой), обновляем связи
 	if (Array.isArray(relatedIds)) {
 		prismaData.relatedEquipment = {
@@ -500,10 +663,31 @@ export async function updateEquipment(
 		};
 	}
 
+	const VALID_STATUSES = new Set([
+		"AVAILABLE",
+		"RENTED",
+		"RESERVED",
+		"MAINTENANCE",
+		"BROKEN",
+		"RETIRED",
+	]);
+
+	if (prismaData.status && !VALID_STATUSES.has(String(prismaData.status))) {
+		throw new Error(`Недопустимый статус техники: ${prismaData.status}`);
+	}
+
 	const updated = await prisma.equipment.update({
 		where: { id },
 		data: prismaData,
 	});
+
+	await logEquipmentChanges(
+		id,
+		authorId,
+		authorName,
+		before as unknown as Record<string, unknown>,
+		updated as unknown as Record<string, unknown>
+	);
 
 	revalidatePath("/admin/equipment");
 	return updated as unknown as DbEquipment;

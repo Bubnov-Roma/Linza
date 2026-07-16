@@ -94,6 +94,7 @@ export async function clientSearchEquipmentAction(
 				title: { contains: v, mode: "insensitive" },
 			})),
 		},
+		orderBy: { isPrimary: "desc" },
 		take: 10,
 		include: {
 			equipmentImageLinks: {
@@ -103,5 +104,10 @@ export async function clientSearchEquipmentAction(
 		},
 	});
 
-	return groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+	const grouped = groupEquipmentRows(data as unknown as RawEquipmentRow[]);
+
+	// Показываем только "витринную" позицию группы (isPrimary).
+	// Если у всех сиблингов с этим названием звёздочка снята админом —
+	// группа не должна попадать в результаты поиска (как и в каталоге).
+	return grouped.filter((item) => item.isPrimary);
 }

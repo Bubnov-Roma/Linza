@@ -4,15 +4,15 @@ const isDevelopment = process.env.NEXT_PUBLIC_APP_ENV === "development";
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net;
-    connect-src 'self' https://va.vercel-scripts.com https://suggestions.dadata.ru https://mc.yandex.ru https://yastatic.net;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net https://api-maps.yandex.ru;
+    connect-src 'self' https://va.vercel-scripts.com https://suggestions.dadata.ru https://mc.yandex.ru https://yastatic.net https://api-maps.yandex.ru;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://i.ibb.co https://ibb.co https://*.beget.cloud https://avatars.yandex.net https://lh3.googleusercontent.com https://mc.yandex.ru https://yastatic.net;
+    img-src 'self' blob: data: https://i.ibb.co https://ibb.co https://*.beget.cloud https://avatars.yandex.net https://lh3.googleusercontent.com https://mc.yandex.ru https://yastatic.net https://api-maps.yandex.ru;
     font-src 'self';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    frame-src 'self' https://www.youtube.com https://youtube.com https://vk.com https://vkvideo.ru https://rutube.ru https://player.vimeo.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net;
+    frame-src 'self' https://www.youtube.com https://youtube.com https://vk.com https://vkvideo.ru https://rutube.ru https://player.vimeo.com https://challenges.cloudflare.com https://mc.yandex.ru https://yastatic.net https://yandex.ru;
     upgrade-insecure-requests;
 `.replace(/\s{2,}/g, ' ').trim();
 

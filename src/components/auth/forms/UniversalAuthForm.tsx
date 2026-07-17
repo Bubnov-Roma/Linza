@@ -1,8 +1,8 @@
 "use client";
 
 import { Turnstile } from "@marsidev/react-turnstile";
+import { EnvelopeIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ export function UniversalAuthForm({
 	const handleSubmit = async (e: React.SubmitEvent) => {
 		e.preventDefault();
 		if (!turnstileToken) {
-			toast.error("Пожалуйста, подождите проверку безопасности");
+			toast.error("Пожалуйста, дождитесь завершения проверки безопасности");
 			return;
 		}
 
@@ -202,7 +202,7 @@ export function UniversalAuthForm({
 									value={email}
 									onChange={(e) => handleEmailChange(e.target.value)}
 									error={error}
-									icon={<Mail className="h-4 w-4" />}
+									icon={<EnvelopeIcon className="h-4 w-4" />}
 									required
 								/>
 								<Button

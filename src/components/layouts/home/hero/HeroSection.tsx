@@ -10,7 +10,7 @@ interface HeroSectionProps {
 
 export const HeroSection = async ({ banners, isAdmin }: HeroSectionProps) => {
 	return (
-		<section className="w-full pt-4 md:pt-10 px-4">
+		<section className="w-full pt-4 md:pt-10 md:px-4">
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,480px)] xl:grid-cols-[1fr_minmax(0,540px)] gap-4 md:gap-8 items-center rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface transition-all duration-300">
 				{/* Левая колонка — Текст и УТП */}
 				<div className="md:space-y-6 lg:space-y-8 md:pr-4 px-2 pt-2 md:p-0">

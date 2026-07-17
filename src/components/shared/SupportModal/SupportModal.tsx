@@ -1,8 +1,10 @@
 "use client";
 
+import { Turnstile } from "@marsidev/react-turnstile"; // Добавляем импорт капчи
 import { useSession } from "next-auth/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { sendSupportEmailAction } from "@/actions/auth-actions";
 import {
 	createSupportThreadAction,
 	type DbSupportThread,
@@ -20,8 +22,6 @@ import {
 	Input,
 	Textarea,
 } from "@/components/ui";
-
-// ─── component ───────────────────────────────────────────────────────────────
 
 export interface SupportModalProps {
 	open: boolean;
@@ -44,12 +44,12 @@ export function SupportModal({
 	const [contactInfo, setContactInfo] = useState("");
 	const [newSubject, setNewSubject] = useState("");
 	const [newMessage, setNewMessage] = useState("");
+	const [turnstileToken, setTurnstileToken] = useState(""); // Стейт для капчи гостя
 
 	// Ответ в существующий поток
 	const [replyMessage, setReplyMessage] = useState("");
 
 	const isNewThread = !existingThread;
-
 	const isContactRequired = !isAuthed;
 	const isContactMissing = isContactRequired && !contactInfo.trim();
 
@@ -68,23 +68,47 @@ export function SupportModal({
 					toast.error("Укажите контакт для ответа");
 					return;
 				}
-
-				const result = await createSupportThreadAction({
-					subject: newSubject.trim(),
-					platform: "WEBSITE",
-					initialMessage: newMessage.trim(),
-					contactInfo: contactInfo.trim() || "",
-				});
-
-				if (!result.success) {
-					toast.error(result.error || "Ошибка отправки");
+				if (!isAuthed && !turnstileToken) {
+					toast.error("Пожалуйста, дождитесь завершения проверки безопасности");
 					return;
 				}
 
-				toast.success("Вопрос отправлен! Ожидайте ответа поддержки");
+				if (isAuthed) {
+					// 1. Клиент АВТОРИЗОВАН — создаем привычный тред в БД через Prisma
+					const result = await createSupportThreadAction({
+						subject: newSubject.trim(),
+						platform: "WEBSITE",
+						initialMessage: newMessage.trim(),
+						contactInfo: contactInfo.trim() || "",
+					});
+
+					if (!result.success) {
+						toast.error(result.error || "Ошибка отправки");
+						return;
+					}
+					toast.success("Вопрос отправлен! Ожидайте ответа поддержки");
+				} else {
+					// 2. Клиент НЕ авторизован — отправляем email напрямую, минуя БД
+					const result = await sendSupportEmailAction({
+						name: "Гость (Модальное окно)",
+						email: contactInfo.trim(),
+						message: `Тема: ${newSubject.trim()}\n\n${newMessage.trim()}`,
+						turnstileToken,
+					});
+
+					if (!result.success) {
+						toast.error(result.error || "Ошибка отправки");
+						return;
+					}
+					toast.success(
+						"Сообщение успешно отправлено! Мы ответим вам на указанный Email."
+					);
+				}
+
 				resetForm();
 				onOpenChange(false);
 			} else {
+				// Логика отправки ответа в существующий тред (доступно только авторизованным)
 				if (!replyMessage.trim()) {
 					toast.error("Напишите сообщение");
 					return;
@@ -112,6 +136,7 @@ export function SupportModal({
 		setNewMessage("");
 		setContactInfo("");
 		setReplyMessage("");
+		setTurnstileToken(""); // Сбрасываем токен капчи
 	};
 
 	const handleOpenChange = (newOpen: boolean) => {
@@ -173,6 +198,19 @@ export function SupportModal({
 										: "Опционально"}
 								</p>
 							</div>
+
+							{/* Отрендерим компактный Turnstile только для неавторизованных пользователей */}
+							{!isAuthed && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+								<div className="flex justify-center min-h-17.5 pt-1">
+									<Turnstile
+										siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+										onSuccess={(token) => setTurnstileToken(token)}
+										options={{
+											theme: "auto",
+										}}
+									/>
+								</div>
+							)}
 						</>
 					)}
 
@@ -198,7 +236,7 @@ export function SupportModal({
 							disabled={isPending}
 							asChild
 						>
-							<Button size="md" variant="outline">
+							<Button size="md" variant="outline" className="flex-1 py-2">
 								Отменить
 							</Button>
 						</DialogClose>
@@ -210,9 +248,11 @@ export function SupportModal({
 								(isNewThread &&
 									(!newSubject.trim() ||
 										!newMessage.trim() ||
-										isContactMissing)) ||
+										isContactMissing ||
+										(!isAuthed && !turnstileToken))) ||
 								(!isNewThread && !replyMessage.trim())
 							}
+							className="flex-1 py-2"
 						>
 							{isPending ? "Отправляем..." : "Отправить"}
 						</Button>

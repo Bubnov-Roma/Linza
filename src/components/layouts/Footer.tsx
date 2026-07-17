@@ -230,17 +230,10 @@ export async function Footer({ support }: { support: SupportInfo }) {
 				<div className="mt-16 pt-8 pb-8 md:pb-0 border-t border-foreground/5">
 					<div className="flex flex-col items-center justify-between gap-6 md:flex-row">
 						<p className="text-xs font-medium text-muted-foreground/60 select-none">
-							© {new Date().getFullYear()} LINZA RENTAL. С любовью к кадру.
+							© {new Date().getFullYear()} LINZA RENTAL
 						</p>
 
 						<div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
-							<Link
-								href="/privacy"
-								target="_blank"
-								className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
-							>
-								Конфиденциальность
-							</Link>
 							<Link
 								href="/terms"
 								target="_blank"
@@ -249,7 +242,14 @@ export async function Footer({ support }: { support: SupportInfo }) {
 								Оферта
 							</Link>
 							<Link
-								href="/sitemap"
+								href="/privacy"
+								target="_blank"
+								className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+							>
+								Конфиденциальность
+							</Link>
+							<Link
+								href="/sitemap.xml"
 								target="_blank"
 								className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
 							>

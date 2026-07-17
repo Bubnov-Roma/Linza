@@ -147,7 +147,6 @@ function EquipmentCell({ booking }: { booking: AdminBookingRow }) {
 						<span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap shrink-0">
 							{fmtRub(item.priceAtBooking)}
 						</span>
-						{/* <span>{triggerText}</span> */}
 					</div>
 				))}
 			</HoverCardContent>

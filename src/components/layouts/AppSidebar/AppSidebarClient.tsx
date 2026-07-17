@@ -614,7 +614,7 @@ export function AppSidebarClient({
 																		/>
 																	</div>
 																	<span className="font-medium text-base truncate ml-3 text-left">
-																		Вcя техника
+																		Вся техника
 																	</span>
 																</div>
 															</Link>

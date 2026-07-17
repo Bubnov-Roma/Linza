@@ -109,8 +109,7 @@ export function PriceSelector({
 				(currentBenefit ? (
 					<div className="flex items-center gap-1.5 text-lime-600 dark:text-lime-400">
 						<span className="text-[11px] font-bold">
-							Экономия {fmtRub(currentBenefit.savings)}
-							относительно суток
+							Экономия {fmtRub(currentBenefit.savings)} относительно суток
 						</span>
 					</div>
 				) : currentActivePeriod === "day" ? (

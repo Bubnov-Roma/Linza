@@ -1,11 +1,16 @@
 import type React from "react";
 
-export function VkLogoIcon(props: React.SVGProps<SVGSVGElement>) {
+export interface IconProps extends React.SVGProps<SVGSVGElement> {
+	size?: string | number;
+	weight?: "regular" | "bold" | "fill" | "duotone" | "light" | "thin";
+}
+
+export function VkLogoIcon({ size = "1em", weight, ...props }: IconProps) {
 	return (
 		<svg
 			viewBox="0 0 18 18"
-			width="1.2em"
-			height="1.2em"
+			width={size}
+			height={size}
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
 			{...props}

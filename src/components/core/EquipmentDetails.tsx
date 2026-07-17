@@ -567,9 +567,6 @@ export default function EquipmentDetails({
 											<span className="text-4xl font-black italic uppercase tracking-tighter">
 												{fmtRub(math.totalRental)}
 											</span>
-											<span className="text-xl font-bold text-muted-foreground italic">
-												₽
-											</span>
 										</div>
 									</div>
 									<AddToCartButton

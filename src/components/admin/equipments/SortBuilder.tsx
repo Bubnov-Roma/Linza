@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
+import {
+	ArrowDownIcon,
+	ArrowUpIcon,
+	PlusIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import type { EquipmentSort } from "@/actions/admin/admin-equipment-actions";
 import {
 	Button,
@@ -71,7 +76,7 @@ export function SortBuilder({ sorts, onSortChange }: SortBuilderProps) {
 					onClick={addSort}
 					className="h-8 text-xs"
 				>
-					<Plus className="w-3 h-3 mr-1" />
+					<PlusIcon className="w-3 h-3 mr-1" />
 					Добавить сортировку
 				</Button>
 				{sorts.length > 0 && (
@@ -117,12 +122,12 @@ export function SortBuilder({ sorts, onSortChange }: SortBuilderProps) {
 							>
 								{sort.ascending ? (
 									<>
-										<ArrowUp className="w-3 h-3 mr-1" />
+										<ArrowUpIcon className="w-3 h-3 mr-1" />
 										По возр.
 									</>
 								) : (
 									<>
-										<ArrowDown className="w-3 h-3 mr-1" />
+										<ArrowDownIcon className="w-3 h-3 mr-1" />
 										По убыв.
 									</>
 								)}
@@ -134,7 +139,7 @@ export function SortBuilder({ sorts, onSortChange }: SortBuilderProps) {
 								onClick={() => removeSort(index)}
 								className="h-8 w-8 shrink-0"
 							>
-								<X className="w-3 h-3" />
+								<XIcon className="w-3 h-3" />
 							</Button>
 						</div>
 					))}

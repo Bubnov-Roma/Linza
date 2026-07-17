@@ -19,20 +19,6 @@ export const LogoIcon = () => {
 						<stop offset="71%" stop-color="#4b0082"></stop>
 						<stop offset="85.2%" stop-color="#8b00ff"></stop>
 						<stop offset="100%" stop-color="#ff0000"></stop>
-						{/* <animate
-							attributeName="x1"
-							from="-200%"
-							to="0%"
-							dur="5s"
-							repeatCount="indefinite"
-						/>
-						<animate
-							attributeName="x2"
-							from="0%"
-							to="200%"
-							dur="5s"
-							repeatCount="indefinite"
-						/> */}
 					</linearGradient>
 				</defs>
 

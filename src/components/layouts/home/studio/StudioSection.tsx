@@ -9,7 +9,7 @@ interface StudioSectionProps {
 }
 
 const STUDIO_FEATURES = [
-	"Просторная циклорама, топовый свет и огромный xромакей",
+	"Просторная циклорама, топовый свет и огромный хромакей",
 	"Любое оборудование из каталога доступно прямо в зале",
 	"Готовые сетапы для подкастов, стримов, трансляций",
 	"Воркшопы, мастер-классы и открытые съёмки",
@@ -20,7 +20,7 @@ export const StudioSection = async ({
 	isAdmin,
 }: StudioSectionProps) => {
 	return (
-		<section className="w-full pt-4 md:pt-10 px-4">
+		<section className="w-full pt-4 md:pt-10 md:px-4">
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,480px)] xl:grid-cols-[1fr_minmax(0,540px)] gap-8 items-center bg-muted/30 dark:bg-muted/5 rounded-3xl p-2 md:p-8 md:border md:border-foreground/5 backdrop-blur-xs card-surface transition-all duration-300">
 				{/* Левая колонка — Текст и УТП студии */}
 				<div className="space-y-6 pt-1 md:pr-4">

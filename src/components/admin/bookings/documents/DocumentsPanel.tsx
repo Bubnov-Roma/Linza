@@ -1,19 +1,19 @@
 "use client";
 
 import {
-	ChevronRight,
-	Clock,
-	Download,
-	ExternalLink,
-	FileText,
-	Loader2,
-	Plus,
-	Printer,
-	RefreshCw,
-	Trash2,
-	Upload,
-	X,
-} from "lucide-react";
+	ArrowCounterClockwiseIcon,
+	ArrowSquareOutIcon,
+	CaretRightIcon,
+	CircleNotchIcon,
+	ClockIcon,
+	DownloadSimpleIcon,
+	FileTextIcon,
+	PlusIcon,
+	PrinterIcon,
+	TrashIcon,
+	UploadSimpleIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -68,7 +68,7 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
 	),
 };
 
-// ─── Upload form ──────────────────────────────────────────────────────────────
+// ─── UploadSimpleIcon form ──────────────────────────────────────────────────────────────
 
 function UploadTemplateForm({
 	onUploaded,
@@ -115,7 +115,7 @@ function UploadTemplateForm({
 					onClick={onClose}
 					className="text-muted-foreground hover:text-foreground"
 				>
-					<X size={13} />
+					<XIcon size={13} />
 				</button>
 			</div>
 
@@ -190,7 +190,7 @@ function UploadTemplateForm({
 					/>
 					{file ? (
 						<div className="flex items-center justify-center gap-2">
-							<FileText size={14} className="text-primary" />
+							<FileTextIcon size={14} className="text-primary" />
 							<span className="text-xs font-medium truncate max-w-48">
 								{file.name}
 							</span>
@@ -202,12 +202,15 @@ function UploadTemplateForm({
 								}}
 								className="text-muted-foreground hover:text-red-500"
 							>
-								<X size={12} />
+								<XIcon size={12} />
 							</button>
 						</div>
 					) : (
 						<div className="space-y-1">
-							<Upload size={20} className="mx-auto text-muted-foreground/40" />
+							<UploadSimpleIcon
+								size={20}
+								className="mx-auto text-muted-foreground/40"
+							/>
 							<p className="text-[11px] text-muted-foreground">
 								Нажмите или перетащите файл
 							</p>
@@ -236,9 +239,9 @@ function UploadTemplateForm({
 					disabled={isPending || !file || !name.trim()}
 				>
 					{isPending ? (
-						<Loader2 size={12} className="animate-spin" />
+						<CircleNotchIcon size={12} className="animate-spin" />
 					) : (
-						<Upload size={12} />
+						<UploadSimpleIcon size={12} />
 					)}
 					{isPending ? "Загрузка..." : "Загрузить"}
 				</Button>
@@ -268,7 +271,7 @@ function VariablesReference({
 					onClick={onClose}
 					className="text-muted-foreground hover:text-foreground"
 				>
-					<X size={12} />
+					<XIcon size={12} />
 				</button>
 			</div>
 			<p className="text-[10px] text-muted-foreground">
@@ -369,7 +372,7 @@ function GenerationResult({
 		<div className="p-3 rounded-xl bg-green-500/8 border border-green-500/20 space-y-3">
 			<div className="flex items-center gap-2">
 				<div className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center shrink-0">
-					<FileText size={15} className="text-green-500" />
+					<FileTextIcon size={15} className="text-green-500" />
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="text-xs font-semibold text-green-600 dark:text-green-400">
@@ -384,7 +387,7 @@ function GenerationResult({
 					onClick={onClose}
 					className="text-muted-foreground hover:text-foreground shrink-0"
 				>
-					<X size={12} />
+					<XIcon size={12} />
 				</button>
 			</div>
 			<div className="flex gap-2">
@@ -394,7 +397,7 @@ function GenerationResult({
 					className="flex-1 text-xs gap-1 text-green-600 border-green-500/30 hover:bg-green-500/10"
 					onClick={handleDownload}
 				>
-					<Download size={12} /> Скачать
+					<DownloadSimpleIcon size={12} /> Скачать
 				</Button>
 				<Button
 					size="sm"
@@ -402,7 +405,7 @@ function GenerationResult({
 					className="flex-1 text-xs gap-1"
 					onClick={handlePrint}
 				>
-					<Printer size={12} />{" "}
+					<PrinterIcon size={12} />{" "}
 					{fileFormat === "pdf" ? "Печать" : "Скачать и открыть"}
 				</Button>
 			</div>
@@ -489,7 +492,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 	if (loading) {
 		return (
 			<div className="py-10 flex items-center justify-center gap-2 text-muted-foreground">
-				<Loader2 size={16} className="animate-spin" />
+				<CircleNotchIcon size={16} className="animate-spin" />
 				<span className="text-sm">Загрузка шаблонов...</span>
 			</div>
 		);
@@ -508,7 +511,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 						setShowVars(false);
 					}}
 				>
-					<Plus size={12} /> Загрузить шаблон
+					<PlusIcon size={12} /> Загрузить шаблон
 				</Button>
 				<Button
 					size="sm"
@@ -519,7 +522,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 						setShowUpload(false);
 					}}
 				>
-					<ChevronRight
+					<CaretRightIcon
 						size={12}
 						className={cn("transition-transform", showVars && "rotate-90")}
 					/>
@@ -527,7 +530,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 				</Button>
 			</div>
 
-			{/* Upload form */}
+			{/* UploadSimpleIcon form */}
 			{showUpload && (
 				<UploadTemplateForm
 					onUploaded={(t) => setTemplates((prev) => [...prev, t])}
@@ -546,7 +549,10 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 			{/* Templates list */}
 			{templates.length === 0 ? (
 				<div className="py-8 text-center space-y-2">
-					<FileText size={28} className="mx-auto text-muted-foreground/20" />
+					<FileTextIcon
+						size={28}
+						className="mx-auto text-muted-foreground/20"
+					/>
 					<p className="text-sm text-muted-foreground">
 						Нет загруженных шаблонов
 					</p>
@@ -567,7 +573,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 						>
 							<div className="w-8 h-8 rounded-lg bg-foreground/8 flex items-center justify-center shrink-0">
 								{FORMAT_ICONS[t.fileFormat] ?? (
-									<FileText size={14} className="text-muted-foreground" />
+									<FileTextIcon size={14} className="text-muted-foreground" />
 								)}
 							</div>
 							<div className="flex-1 min-w-0">
@@ -586,9 +592,9 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 									disabled={generatingId !== null}
 								>
 									{generatingId === t.id ? (
-										<Loader2 size={11} className="animate-spin" />
+										<CircleNotchIcon size={11} className="animate-spin" />
 									) : (
-										<RefreshCw size={11} />
+										<ArrowCounterClockwiseIcon size={11} />
 									)}
 									{generatingId === t.id ? "..." : "Сформировать"}
 								</Button>
@@ -598,7 +604,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 									className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
 									title="Удалить шаблон"
 								>
-									<Trash2 size={12} />
+									<TrashIcon size={12} />
 								</button>
 							</div>
 						</div>
@@ -617,7 +623,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 							key={doc.id}
 							className="flex items-center gap-2.5 py-2 border-b border-foreground/5 last:border-0"
 						>
-							<Clock size={11} className="text-muted-foreground shrink-0" />
+							<ClockIcon size={11} className="text-muted-foreground shrink-0" />
 							<div className="flex-1 min-w-0">
 								<p className="text-xs truncate">{doc.templateName}</p>
 								<p className="text-[10px] text-muted-foreground">
@@ -637,7 +643,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
 									className="text-muted-foreground hover:text-foreground transition-colors"
 									title="Открыть"
 								>
-									<ExternalLink size={12} />
+									<ArrowSquareOutIcon size={12} />
 								</Link>
 							)}
 						</div>

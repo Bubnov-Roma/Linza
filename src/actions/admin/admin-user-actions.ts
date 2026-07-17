@@ -3,6 +3,7 @@
 import type { ApplicationStatus, DiscountType, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { REFERRAL_OPTIONS } from "@/constants";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -122,6 +123,7 @@ export interface ClientDataBlocks {
 		registrationAddress?: string;
 	};
 	additional?: {
+		referralSource?: string;
 		recommendation?: string;
 		labels?: ApplicationDataFull["labels"];
 	};
@@ -328,7 +330,12 @@ function mapClientDataToFlat(root: DbClientJson): ApplicationDataFull {
 	const resAddress = addresses.actual?.address || address.residentialAddress;
 	if (resAddress) result.address.residentialAddress = resAddress;
 
-	const recBy = additional.recommendation || root.recommendedBy;
+	const referralLabel = REFERRAL_OPTIONS.find(
+		(opt) => opt.id === additional.referralSource
+	)?.label;
+	const recBy =
+		[referralLabel, additional.recommendation].filter(Boolean).join(": ") ||
+		root.recommendedBy;
 	if (recBy) result.recommendedBy = recBy;
 
 	result.labels = additional.labels || raw.labels || [];

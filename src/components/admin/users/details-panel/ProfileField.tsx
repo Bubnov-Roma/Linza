@@ -1,7 +1,11 @@
 "use client";
 
-import { CheckIcon, CopyIcon, PasswordIcon } from "@phosphor-icons/react";
-import { Info as InfoIcon } from "lucide-react";
+import {
+	CheckIcon,
+	CopyIcon,
+	InfoIcon,
+	PasswordIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { InlineEditField } from "@/components/shared";

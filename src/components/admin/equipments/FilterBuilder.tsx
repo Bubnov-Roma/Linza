@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import type {
 	EquipmentFilter,
 	FilterOperator,
@@ -141,7 +141,7 @@ export function FilterBuilder({
 		<div className="space-y-2">
 			<div className="flex items-center justify-between p-3">
 				<Button variant="outline" size="sm" onClick={addFilter}>
-					<Plus className="w-3 h-3 mr-1" />
+					<PlusIcon className="w-3 h-3 mr-1" />
 					Добавить
 				</Button>
 				{filters.length > 0 && (
@@ -303,7 +303,7 @@ export function FilterBuilder({
 									onClick={() => removeFilter(index)}
 									className="h-8 w-8 shrink-0"
 								>
-									<X className="w-3 h-3" />
+									<XIcon className="w-3 h-3" />
 								</Button>
 							</div>
 						);

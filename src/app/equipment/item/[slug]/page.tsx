@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getCategoriesFromDb } from "@/actions/admin/admin-category-actions";
-import { getEquipmentBySlug } from "@/actions/equipment-actions";
+import {
+	getEquipmentBySlug,
+	resolveEquipmentRedirect,
+} from "@/actions/equipment-actions";
 import EquipmentDetails, {
 	type EquipmentFormState,
 } from "@/components/core/EquipmentDetails";
@@ -73,6 +76,16 @@ export default async function EquipmentDetailsPage({
 	]);
 
 	if (!equipment) notFound();
+
+	if (equipment.slug !== slug) {
+		permanentRedirect(`/equipment/item/${equipment.slug}`);
+	}
+
+	if (!equipment) {
+		const target = await resolveEquipmentRedirect(slug);
+		if (target) permanentRedirect(`/equipment/item/${target}`);
+		notFound();
+	}
 
 	const currentCategory = categories.find((c) => c.id === equipment.categoryId);
 

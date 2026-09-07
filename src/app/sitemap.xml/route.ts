@@ -7,10 +7,9 @@ export async function GET() {
 	const baseUrl = "https://linzarental.ru";
 
 	try {
-		// 1. Параллельно запрашиваем данные из БД
 		const [equipment, categories, history] = await Promise.all([
-			// Получаем технику с датой изменения
 			prisma.equipment.findMany({
+				where: { isPrimary: true, isAvailable: true },
 				select: {
 					slug: true,
 					updatedAt: true,

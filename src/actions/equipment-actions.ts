@@ -243,3 +243,18 @@ export async function getRelatedEquipmentAction(ids: string[] | undefined) {
 	const byId = Object.fromEntries(grouped.map((g) => [g.id, g]));
 	return ids.map((id) => byId[id]).filter(Boolean);
 }
+
+export async function resolveEquipmentRedirect(
+	slug: string,
+	depth = 0
+): Promise<string | null> {
+	if (depth > 5) return null;
+	const record = await prisma.equipmentSlugRedirect.findUnique({
+		where: { oldSlug: slug },
+	});
+	if (!record) return null;
+	if (!record.newSlug) return null;
+
+	const chained = await resolveEquipmentRedirect(record.newSlug, depth + 1);
+	return chained ?? record.newSlug;
+}

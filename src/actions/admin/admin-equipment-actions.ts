@@ -689,6 +689,14 @@ export async function updateEquipment(
 		updated as unknown as Record<string, unknown>
 	);
 
+	if (before.slug !== updated.slug) {
+		await prisma.equipmentSlugRedirect.upsert({
+			where: { oldSlug: before.slug },
+			create: { oldSlug: before.slug, newSlug: updated.slug },
+			update: { newSlug: updated.slug },
+		});
+	}
+
 	revalidatePath("/admin/equipment");
 	return updated as unknown as DbEquipment;
 }
@@ -708,7 +716,24 @@ export async function deleteEquipment(ids: string[]) {
 		const freeIds = ids.filter((id) => !refIds.includes(id));
 
 		if (freeIds.length > 0) {
+			const toDelete = await prisma.equipment.findMany({
+				where: { id: { in: freeIds } },
+				select: { slug: true, title: true },
+			});
+
 			await prisma.equipment.deleteMany({ where: { id: { in: freeIds } } });
+
+			for (const row of toDelete) {
+				const replacement = await prisma.equipment.findFirst({
+					where: { title: row.title, isPrimary: true },
+					select: { slug: true },
+				});
+				await prisma.equipmentSlugRedirect.upsert({
+					where: { oldSlug: row.slug },
+					create: { oldSlug: row.slug, newSlug: replacement?.slug ?? null },
+					update: { newSlug: replacement?.slug ?? null },
+				});
+			}
 		}
 
 		await prisma.equipment.updateMany({
@@ -727,7 +752,24 @@ export async function deleteEquipment(ids: string[]) {
 		};
 	}
 
+	const toDelete = await prisma.equipment.findMany({
+		where: { id: { in: ids } },
+		select: { slug: true, title: true },
+	});
+
 	await prisma.equipment.deleteMany({ where: { id: { in: ids } } });
+
+	for (const row of toDelete) {
+		const replacement = await prisma.equipment.findFirst({
+			where: { title: row.title, isPrimary: true },
+			select: { slug: true },
+		});
+		await prisma.equipmentSlugRedirect.upsert({
+			where: { oldSlug: row.slug },
+			create: { oldSlug: row.slug, newSlug: replacement?.slug ?? null },
+			update: { newSlug: replacement?.slug ?? null },
+		});
+	}
 
 	revalidatePath("/admin/equipment");
 	return { success: true };

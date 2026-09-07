@@ -455,6 +455,15 @@ model EquipmentRelation {
   @@unique([equipmentId, relatedId])
 }
 
+model EquipmentSlugRedirect {
+  id        String   @id @default(cuid())
+  oldSlug   String   @unique
+  newSlug   String?
+  createdAt DateTime @default(now())
+
+  @@index([oldSlug])
+}
+
 model Category {
   id            String  @id @default(uuid())
   name          String

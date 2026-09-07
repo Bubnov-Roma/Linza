@@ -23,9 +23,9 @@ function ThemeIcon({ className }: { className?: string }) {
 
 	if (!mounted) return <SunHorizonIcon className={className} />;
 	return resolvedTheme === "dark" ? (
-		<MoonIcon className={className} />
+		<MoonIcon className={className} weight="duotone" />
 	) : (
-		<SunIcon className={className} />
+		<SunIcon className={className} weight="duotone" />
 	);
 }
 
@@ -64,7 +64,7 @@ export function ThemeCard() {
 	);
 }
 
-// ─── Variant: "toggle" — переключатель с ползунком (для dropdown/меню) ────────
+// ─── Variant: "toggle" ────────
 
 export function ThemeToggle({
 	className,
@@ -94,40 +94,35 @@ export function ThemeToggle({
 			type="button"
 			onClick={handleToggle}
 			className={cn(
-				"flex items-center gap-3 transition-colors rounded-xl",
+				"flex w-full items-center gap-3 transition-colors rounded-xl text-muted-foreground text-md flex-1 font-medium",
 				className
 			)}
 		>
 			<ThemeIcon
-				className={cn(
-					"text-muted-foreground shrink-0",
-					`w-${iconSize / 4} h-${iconSize / 4}`
-				)}
+				className={cn("shrink-0", `w-${iconSize / 4} h-${iconSize / 4}`)}
 			/>
 			{showLabel && (
-				<span className="text-sm font-medium flex-1 text-left">
+				<span className="flex-1 text-left pl-1">
 					{!mounted ? "Тема" : isDark ? "Тёмная тема" : "Светлая тема"}
 				</span>
 			)}
 			{/* Toggle pill */}
 			<div
 				className={cn(
-					"w-8 h-4 rounded-full relative transition-colors shrink-0",
+					"w-10 h-5 rounded-full relative transition-colors shrink-0",
 					mounted && isDark ? "bg-primary/40" : "bg-foreground/10"
 				)}
 			>
 				<div
 					className={cn(
-						"absolute top-1 left-1 w-2 h-2 rounded-full bg-foreground transition-all",
-						mounted && isDark && "translate-x-4 bg-primary"
+						"absolute top-1 left-1 w-3 h-3 rounded-full bg-foreground transition-all",
+						mounted && isDark && "translate-x-5 bg-primary"
 					)}
 				/>
 			</div>
 		</button>
 	);
 }
-
-// ─── Variant: "icon-button" — адаптирован под обычный вид и под AppSidebar ───
 
 interface ThemeIconButtonProps {
 	size?: number;
@@ -171,7 +166,7 @@ export function ThemeIconButton({
 		<MoonIcon size={size} weight={weight} />
 	);
 
-	// Интеграция внутрь структуры AppSidebar
+	// AppSidebar
 	if (isSidebar) {
 		return (
 			<SidebarMenuItem>
@@ -186,7 +181,6 @@ export function ThemeIconButton({
 							isCollapsed ? "flex-col justify-center gap-1" : ""
 						)}
 					>
-						{/* Контейнер-пилюля вокруг иконки */}
 						<div
 							className={cn(
 								"flex items-center justify-center shrink-0 transition-all duration-300 text-muted-foreground group-hover/btn:text-foreground",
@@ -211,7 +205,6 @@ export function ThemeIconButton({
 		);
 	}
 
-	// Дефолтный изолированный вариант кнопки (например, для шапки)
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: <for span>
 		<span

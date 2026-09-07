@@ -2,8 +2,8 @@
 
 import {
 	AddressBookIcon,
-	CameraIcon,
 	CaretRightIcon,
+	FilmSlateIcon,
 	InfoIcon,
 	ListIcon,
 	MapPinIcon,
@@ -18,7 +18,7 @@ import { useOnClickOutside } from "usehooks-ts";
 import { clientAutocompleteEquipmentAction } from "@/actions/autocomplete-actions";
 import { SearchPanel } from "@/components/core/search/SearchPanel";
 import { Logo } from "@/components/icons/Logo";
-import { ThemeIconButton } from "@/components/layouts/ThemeToggle";
+import { ThemeToggle } from "@/components/layouts/ThemeToggle";
 import { AdminNotificationsPanel } from "@/components/shared/notification";
 import { SupportModal } from "@/components/shared/SupportModal/SupportModal";
 import {
@@ -51,8 +51,8 @@ interface HeaderProps {
 }
 
 const STATIC_LINKS = [
-	{ href: "/about", label: "О нас", icon: InfoIcon },
-	{ href: "/faq", label: "FAQ", icon: QuestionIcon },
+	{ href: "/about", label: "О компании", icon: InfoIcon },
+	{ href: "/faq", label: "Вопросы и ответы", icon: QuestionIcon },
 	{ href: "/contacts", label: "Контакты", icon: AddressBookIcon },
 ];
 
@@ -60,6 +60,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 	const [isFocused, setIsFocused] = useState(false);
 	const [isMapMenuOpen, setIsMapMenuOpen] = useState(false);
 	const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+	const [isSheetOpen, setIsSheepOpen] = useState(false);
 
 	const { state: searchState } = useSearchState(categories);
 	const { addToHistory } = useSearchHistory();
@@ -97,7 +98,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 		>
 			{/* ── Mobile: Лого + Гамбургер меню ── */}
 			<div className="md:hidden flex items-center justify-between gap-3 w-full">
-				<Sheet>
+				<Sheet open={isSheetOpen} onOpenChange={setIsSheepOpen}>
 					<SheetTrigger asChild>
 						<Button
 							variant="ghost"
@@ -116,6 +117,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 							<SheetTitle className="flex items-center gap-2">
 								<Link
 									href="/"
+									onClick={() => setIsSheepOpen(false)}
 									className={cn(
 										"flex items-center gap-3 transition-all duration-300 px-4 bg-primary shadow-lg shadow-primary/20 rounded-full h-10 z-5 backdrop-blur-2xl relative",
 										isCollapsed ? "w-10 justify-center px-0" : "w-fit min-w-0"
@@ -135,13 +137,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 						</SheetHeader>
 
 						<div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-							{/* Группа 1: Навигация и Каталог */}
 							<div className="space-y-1">
-								<h4 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/50 px-3 mb-2">
-									Навигация
-								</h4>
-
-								{/* Выпадающий каталог оборудования */}
 								<Collapsible className="group/catalog w-full">
 									<CollapsibleTrigger asChild>
 										<button
@@ -154,7 +150,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 													className="text-muted-foreground"
 													weight="duotone"
 												/>
-												<span>Каталог техники</span>
+												<span>Каталог</span>
 											</div>
 											<CaretRightIcon
 												size={16}
@@ -165,6 +161,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 									<CollapsibleContent className="pl-11 pt-1 space-y-1 border-l ml-5 border-muted-foreground/10">
 										<Link
 											href="/equipment"
+											onClick={() => setIsSheepOpen(false)}
 											className="block p-2 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors"
 										>
 											Все позиции
@@ -173,7 +170,8 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 											<Link
 												key={cat.id}
 												href={`/equipment?category=${cat.slug}`}
-												className="block p-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+												onClick={() => setIsSheepOpen(false)}
+												className="block p-2 text-md text-muted-foreground hover:text-foreground transition-colors"
 											>
 												{cat.name}
 											</Link>
@@ -181,12 +179,12 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 									</CollapsibleContent>
 								</Collapsible>
 
-								{/* Ссылка на Студию */}
 								<Link
 									href="/studio"
+									onClick={() => setIsSheepOpen(false)}
 									className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted-foreground/10 transition-colors font-medium text-foreground/80"
 								>
-									<CameraIcon
+									<FilmSlateIcon
 										size={20}
 										className="text-muted-foreground"
 										weight="duotone"
@@ -198,6 +196,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 									<Link
 										key={link.href}
 										href={link.href}
+										onClick={() => setIsSheepOpen(false)}
 										className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted-foreground/10 transition-colors font-medium text-foreground/80"
 									>
 										<link.icon
@@ -208,7 +207,6 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 										{link.label}
 									</Link>
 								))}
-								{/* Адрес с подкатегориями карт */}
 								<Collapsible
 									open={isMapMenuOpen}
 									onOpenChange={setIsMapMenuOpen}
@@ -228,43 +226,45 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 											className="transition-transform duration-300 group-data-[state=open]/map:rotate-90 text-muted-foreground/70 shrink-0 ml-2"
 										/>
 									</CollapsibleTrigger>
-									<CollapsibleContent className="pl-11 pt-1 space-y-1 border-l ml-5 border-muted-foreground/10">
+									<CollapsibleContent className="pt-1 space-y-1 border-l ml-5 border-muted-foreground/10 text-foreground/70">
 										<Link
 											href={`https://yandex.ru/maps/?text=${encodedAddress}`}
 											target="_blank"
 											rel="noreferrer"
-											className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											onClick={() => setIsSheepOpen(false)}
+											className="block py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-r-2xl transition-colors"
 										>
-											📍 Открыть в Яндекс Картах
+											Открыть в Яндекс Картах
 										</Link>
 										<Link
 											href={`https://2gis.ru/search/${encodedAddress}`}
 											target="_blank"
 											rel="noreferrer"
-											className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											onClick={() => setIsSheepOpen(false)}
+											className="block py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-r-2xl transition-colors"
 										>
-											🏢 Открыть в 2GIS
+											Открыть в 2GIS
 										</Link>
 										<Link
 											href={`https://maps.google.com/?q=${encodedAddress}`}
 											target="_blank"
 											rel="noreferrer"
-											className="block text-xs py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-lg transition-colors"
+											onClick={() => setIsSheepOpen(false)}
+											className="block py-2 px-3 bg-muted-foreground/5 hover:bg-muted-foreground/10 rounded-r-2xl transition-colors"
 										>
-											🗺 Открыть в Google Maps
+											Открыть в Google Maps
 										</Link>
 									</CollapsibleContent>
 								</Collapsible>
 							</div>
-							{/* Группа 3: Оформление / Переключатель Темы */}
-							<div className="pt-2 border-t border-foreground/5">
-								<ThemeIconButton weight="fill" isSidebar />
+							<div className="pt-6 border-t border-foreground/5 p-3">
+								<ThemeToggle className="w-full justify-between" />
 							</div>
 						</div>
 					</SheetContent>
 				</Sheet>
 			</div>
-			{/* ── Desktop: toggle кнопка когда sidebar свёрнут ── */}
+			{/* ── Desktop: toggle ── */}
 			{isCollapsed && !isMobile && (
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -279,7 +279,7 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 					<TooltipContent>Развернуть боковую панель</TooltipContent>
 				</Tooltip>
 			)}
-			{/* ── Desktop: поле поиска (гибкое, занимает всё доступное место) ── */}
+			{/* ── Desktop: Search field ── */}
 			<div
 				ref={containerRef}
 				className="relative md:flex-1 max-w-2xl hidden md:block ml-4 mr-auto min-w-0"
@@ -348,7 +348,6 @@ export function Header({ categories, support, isAdmin }: HeaderProps) {
 					)}
 				</Link>
 			)}
-			{/* Модальное окно чата для мобильной версии */}
 			<SupportModal
 				open={isMobileChatOpen}
 				onOpenChange={setIsMobileChatOpen}

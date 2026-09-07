@@ -98,7 +98,7 @@ export function EquipmentCard({
 						>
 							<h3
 								className={cn(
-									"font-bold leading-tight line-clamp-2 text-sm text-foreground/70 px-1 transition-colors group-hover/card:text-foreground"
+									"font-bold leading-tight line-clamp-2 text-sm text-foreground/70 px-1 transition-colors group-hover/card:text-foreground capitalize"
 								)}
 								style={{
 									display: "-webkit-box",

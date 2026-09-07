@@ -173,7 +173,8 @@ export function CategoryFilter({
 												handleSubcategoryClick(expandedCategory, sub.slug)
 											}
 											className={cn(
-												"relative text-[10px] transition-all uppercase tracking-widest font-medium text-foreground/80 shrink-0",
+												"relative flex items-center gap-1 whitespace-nowrap shrink-0 rounded-2xl transition-all font-bold uppercase tracking-[0.12em]",
+												"h-8 px-3 text-[11px]",
 												loading && isActive && "opacity-50",
 												isActive
 													? "snap-center bg-foreground/7 dark:bg-primary/15 text-foreground"

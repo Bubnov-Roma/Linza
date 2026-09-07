@@ -1,7 +1,7 @@
 "use client";
 
 import { CookieIcon } from "@phosphor-icons/react";
-import Link from "next/link";
+// import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 
@@ -21,37 +21,37 @@ export default function CookieBanner() {
 	if (!isVisible) return null;
 
 	return (
-		<div className="fixed bottom-16 sm:bottom-4 max-w-fit mx-auto sm:ml-auto left-0 right-0 rounded-3xl dark:bg-slate-500/90  bg-slate-900/90 backdrop-blur-2xl text-white p-4 z-50 shadow-2xl shadow-muted-foreground flex flex-col md:flex-row items-center justify-between">
-			<div className="text-xs border-spacing-2 text-center mb-4 md:mb-0 md:mr-8 max-w-4xl font-stretch-100%">
-				Мы используем файлы <strong>cookies</strong> чтобы улучшить работу
-				сервиса. Вы можете отключить cookies в настройках вашего браузера.
-				<br />
-				Продолжая использовать сайт, вы принимаете{" "}
-				<Link
-					href="/privacy"
-					target="_blank"
-					className="underline hover:text-blue-400 font-black"
+		<div className="fixed bottom-16 md:right-10 gap-2 sm:max-w-2xs rounded-3xl bg-muted-foreground/25 drop-shadow-2xl backdrop-blur-2xl p-4 z-50 shadow-2xl shadow-muted-foreground/60">
+			<div className="flex flex-row items-center justify-between gap-3">
+				<span className="text-xs border-spacing-2 text-center mb-0 leading-relaxed font-normal">
+					Мы используем файлы <strong>cookie</strong> чтобы делать сервис
+					удобнее.
+					{/* Продолжая использовать сайт, вы принимаете{" "}
+					<Link
+						href="/privacy"
+						target="_blank"
+						className="underline hover:text-blue-400 font-black"
+					>
+						политику
+					</Link>{" "}
+					и{" "}
+					<Link
+						href="/terms"
+						target="_blank"
+						className="underline hover:text-blue-400 font-black"
+					>
+						соглашение
+					</Link>
+					. */}
+				</span>
+				<Button
+					size="md"
+					onClick={acceptCookies}
+					className="rounded-full gap-0! text-lg font-semibold"
 				>
-					политику конфиденциальности
-				</Link>{" "}
-				и{" "}
-				<Link
-					href="/terms"
-					target="_blank"
-					className="underline hover:text-blue-400 font-black"
-				>
-					пользовательское соглашение
-				</Link>
-				.
+					<CookieIcon size={13} weight="bold" />K
+				</Button>
 			</div>
-			<Button
-				size="lg"
-				onClick={acceptCookies}
-				className="rounded-2xl w-full sm:w-auto  max-w-md font-black italic font-stretch-ultra-condensed"
-			>
-				<CookieIcon size={13} weight="duotone" />
-				Принять
-			</Button>
 		</div>
 	);
 }

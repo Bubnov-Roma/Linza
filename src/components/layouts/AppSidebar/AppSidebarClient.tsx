@@ -241,7 +241,6 @@ export function AppSidebarClient({
 
 		return (
 			<>
-				{/* Тонкий разделитель перед дополнительными сервисами */}
 				<div className="h-px bg-foreground/5 my-1 mx-3 shrink-0" />
 
 				{extraLinks.map((item) => (
@@ -287,11 +286,13 @@ export function AppSidebarClient({
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				))}
+				{/* <SidebarMenuItem> */}
 				<ThemeIconButton
 					isSidebar={true}
 					isCollapsed={isCollapsed}
 					CollapseLabel={CollapseLabel}
 				/>
+				{/* </SidebarMenuItem> */}
 			</>
 		);
 	};

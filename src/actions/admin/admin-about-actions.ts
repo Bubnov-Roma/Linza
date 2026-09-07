@@ -13,7 +13,6 @@ export interface UpdateAboutInput {
 
 export async function getAboutSettings() {
 	try {
-		await requireAdmin();
 		let settings = await prisma.aboutPageSettings.findUnique({
 			where: { id: "default" },
 		});

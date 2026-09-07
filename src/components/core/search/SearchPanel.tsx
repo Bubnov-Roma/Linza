@@ -227,7 +227,7 @@ export function SearchPanel({
 								>
 									<button
 										type="button"
-										className="flex items-center gap-3 flex-1 min-w-0 px-2 py-2 text-left"
+										className="cursor-pointer flex items-center gap-3 flex-1 min-w-0 px-2 py-2 text-left"
 										onClick={() => handleItemClick(item)}
 									>
 										<div
@@ -251,7 +251,7 @@ export function SearchPanel({
 										<div className="min-w-0 flex-1">
 											<div
 												className={cn(
-													"font-medium truncate group-hover/item:text-primary transition-colors leading-tight",
+													"font-medium truncate group-hover/item:text-foreground transition-colors leading-tight capitalize",
 													isDesktop ? "text-sm max-w-65" : "text-sm max-w-50"
 												)}
 											>

@@ -63,11 +63,11 @@ export function CategoryNavItem({
 					>
 						<Link
 							href={catHref}
-							className="flex flex-col items-center justify-center gap-1 w-full h-full active:scale-95 active:shadow-none group/btn"
+							className="flex flex-col items-center justify-start gap-1 w-full h-full active:scale-95 active:shadow-none group/btn"
 						>
 							<div
 								className={cn(
-									"flex items-center justify-center shrink-0 transition-all duration-300 text-muted-foreground group-hover/btn:text-foreground w-12 h-7 rounded-full group-hover/btn:bg-foreground/10 group-hover/btn:scale-110",
+									"flex items-center justify-start shrink-0 transition-all duration-300 text-muted-foreground group-hover/btn:text-foreground w-12 h-7 rounded-full group-hover/btn:bg-foreground/10 group-hover/btn:scale-110",
 									inCat && "bg-muted-foreground/10 text-foreground"
 								)}
 							>
@@ -101,11 +101,11 @@ export function CategoryNavItem({
 							isActive={inCat}
 							className={cn(
 								menuBtnClass(inCat, false),
-								"w-full flex items-center justify-between pr-4 select-none cursor-pointer"
+								"w-full flex items-center justify-start pr-4 select-none cursor-pointer"
 							)}
 						>
 							<div className="flex items-center min-w-0 flex-1">
-								<div className="flex items-center justify-center shrink-0 w-6">
+								<div className="flex items-center justify-start shrink-0 w-6">
 									<RenderIcon icon={Icon} isActive={inCat} />
 								</div>
 								<span className="font-medium text-base truncate ml-3 text-left">
@@ -180,7 +180,7 @@ export function CategoryNavItem({
 					<div className="flex items-center justify-center shrink-0 w-6">
 						<RenderIcon icon={Icon} isActive={inCat} />
 					</div>
-					<span className="font-medium text-base truncate ml-3 flex-1 text-left">
+					<span className="font-medium text-base truncate ml-1 flex-1 text-left">
 						{category.name}
 					</span>
 				</Link>
